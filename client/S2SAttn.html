@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>S2S Attention</title>
+
+    <script src="../node_modules/jquery/dist/jquery.min.js"></script>
+    <script src="../node_modules/d3/build/d3.min.js"></script>
+    <script src="../node_modules/d3-selection-multi/build/d3-selection-multi.min.js"></script>
+    <script src="../node_modules/lodash/lodash.min.js"></script>
+
+    <link rel="stylesheet" href="../node_modules/bootswatch/cosmo/bootstrap.min.css">
+    <link rel="stylesheet" href="../node_modules/font-awesome/css/font-awesome.min.css">
+
+    <script src="es6/etc/URLHandler.js"></script>
+    <script src="es6/etc/Networking.js"></script>
+    <script src="es6/etc/SimpleEventHandler.js"></script>
+    <script src="es6/etc/Util.js"></script>
+    <script src="es6/etc/SVGplus.js"></script>
+
+    <script src="es6/vis/vcomponent.js"></script>
+    <script src="es6/vis/S2SAttention.js"></script>
+
+    <link rel="stylesheet" type="text/css" href="css/main.css">
+    <script src="es6/main.js"></script>
+
+
+</head>
+<body>
+
+<div class="container-fluid">
+    <!--<div class="page-header">-->
+    <div class="row" id="title">
+        <h3 id='title_text' class="col-sm-12">Start entering some English text...</h3>
+    </div>
+    <div class="row" style="border-bottom: thin solid #c6c4b2;" id="ui">
+        <div class="col-xs-11">
+            <div class="form-group form-group-sm">
+                <!--<label class="control-label" for="focusedInput">Focused input</label>-->
+                <!--<div class="input-group">-->
+                    <input type="text" class="form-control" id="query_input"/>
+                    <!--<span class="input-group-btn">-->
+                          <!--<button class="btn btn-default btn-sm" type="button" id="query_button">query</button>-->
+                        <!--</span>-->
+                <!--</div>-->
+            </div>
+
+        </div>
+
+    </div>
+
+    <!--</div>-->
+    <div class="row">
+        <svg class="col-xs-12" id="vis" width="500" height="500"></svg>
+    </div>
+
+
+</div>
+
+
+</body>
+</html>

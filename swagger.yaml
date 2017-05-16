@@ -1,0 +1,74 @@
+# see als: https://github.com/hjacobs/connexion-example
+
+swagger: '2.0'
+info:
+  title: S2S API
+  version: "0.1"
+consumes:
+  - application/json
+produces:
+  - application/json
+basePath: /api
+#security:
+  # enable OAuth protection for all REST endpoints
+  # (only active if the TOKENINFO_URL environment variable is set)
+#  - oauth2: [uid]
+
+# a simple data path:
+paths:
+  /translate:
+    get:
+      tags: [Translate]
+      operationId: server.get_translation
+      summary: Get Translation and Data for sentence
+      parameters:
+        - $ref: '#/parameters/inSentence'
+      responses:
+        200:
+          description: Return Translation and meta data
+          schema:
+            $ref: '#/definitions/Translation'
+
+parameters:
+  inSentence:
+    name: in
+    description: the input sentence
+    in: query
+    type: string
+    default:  ""
+
+# These definitions are only needed for proper documentation
+# no functional purpose
+definitions:
+  Translation:
+    type: object
+    required:
+      - in
+      - out
+      - attn
+    properties:
+      in:
+        type: string
+        description: input sentence
+        example: "The sun is yellow ."
+      out:
+        type: string
+        description: translated sentence
+        example: "Die Sonne ist gelb ."
+      attn:
+        type: array
+        description: Attention for each output position
+        example: [[.1,.2,.13],[.3,.4,.2]]
+        items:
+          type: integer
+
+
+
+
+#securityDefinitions:
+#  oauth2:
+#    type: oauth2
+#    flow: implicit
+#    authorizationUrl: https://example.com/oauth2/dialog
+#    scopes:
+#      uid: Unique identifier of the user accessing the service.
