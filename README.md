@@ -11,4 +11,4 @@ cd S2Splay
 
 - Start Vis Server: `S2SPlay:> python server.py --port 8080`
 
-- Enjoy-- localhost:8080/client/client/S2SAttn.html
+- Enjoy-- localhost:8080/client/S2SAttn.html
