@@ -66,7 +66,7 @@ def get_translation(**request):
         if min_i < len(values):
             attn[row_i, dec_order[min_i:]] = 0.
 
-        print(attn[row_i], min_i)
+        # print(attn[row_i], min_i)
 
     # print(attn, np.argsort(attn, axis=1)[::-1])
 
