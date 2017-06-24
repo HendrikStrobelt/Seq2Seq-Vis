@@ -31,14 +31,15 @@
 <div class="container-fluid">
     <!--<div class="page-header">-->
     <div class="row" id="title">
-        <h3 id='title_text' class="col-sm-12">Start entering some English text...</h3>
+        <h3 id='title_text' class="col-sm-12">Start entering some English text (space and enter trigger request)...</h3>
     </div>
     <div class="row" style="border-bottom: thin solid #c6c4b2;" id="ui">
-        <div class="col-xs-11">
+        <div class="col-xs-12">
             <div class="form-group form-group-sm">
                 <!--<label class="control-label" for="focusedInput">Focused input</label>-->
                 <!--<div class="input-group">-->
                     <input type="text" class="form-control" id="query_input"/>
+
                     <!--<span class="input-group-btn">-->
                           <!--<button class="btn btn-default btn-sm" type="button" id="query_button">query</button>-->
                         <!--</span>-->
@@ -49,8 +50,10 @@
 
     </div>
 
+    <i id='spinner' class="fa fa-spinner fa-spin" style="font-size:24px; position: absolute; left: 10px; top:130px;display:none;"></i>
     <!--</div>-->
     <div class="row">
+
         <svg class="col-xs-12" id="vis" width="500" height="500"></svg>
     </div>
 

@@ -18,8 +18,9 @@ window.onload = () => {
         request
           .get(payload)
           .then(data => {
-              console.log(data, "--- data");
+              // console.log(data, "--- data");
               sv.update(JSON.parse(data))
+              $('#spinner').hide();
           })
           .catch(error => console.log(error, "--- error"));
     };
@@ -28,6 +29,7 @@ window.onload = () => {
     d3.select('#query_button').on('click', updateAllVis);
     d3.select('#query_input').on('keypress', () => {
         if (d3.event instanceof KeyboardEvent && (d3.event.keyCode === 13 || d3.event.keyCode === 32)) {
+            $('#spinner').show();
             updateAllVis();
         }
     })

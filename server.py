@@ -7,6 +7,7 @@ import logging
 import requests
 
 from flask import send_from_directory, redirect, json
+import numpy as np
 
 __author__ = 'Hendrik Strobelt'
 
@@ -51,10 +52,28 @@ def get_translation(**request):
 
     res = r.json()[0][0]
 
+    attn = np.array(res['attn'])
+    sorted_indices = np.argsort(attn, axis=1)
+
+    for row_i in range(len(attn)):
+        dec_order = sorted_indices[row_i][::-1]
+        values = attn[row_i, dec_order]
+        min_i = 0
+        acc = 0.
+        while acc < 0.75:
+            acc += values[min_i]
+            min_i += 1
+        if min_i < len(values):
+            attn[row_i, dec_order[min_i:]] = 0.
+
+        print(attn[row_i], min_i)
+
+    # print(attn, np.argsort(attn, axis=1)[::-1])
+
     return {
         'in': res['src'],
         'out': res['tgt'],
-        'attn': res['attn'],
+        'attn': attn.tolist(),
         'score': res['pred_score']
     }
 

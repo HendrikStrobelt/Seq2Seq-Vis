@@ -34,7 +34,7 @@ class S2SAttention extends VComponent {
         data['inWords'] = toWords(data.in);
         data['outWords'] = toWords(data.out);
 
-        console.log(data, "--- data");
+        // console.log(data, "--- data");
         return data;
     }
 
@@ -90,11 +90,13 @@ class S2SAttention extends VComponent {
         // renderData.attn.forEach(atn => console.log(_.sum(atn), "--- "))
         // _.unzip(renderData.attn).forEach(atn => console.log(_.sum(atn), "-TTT-- "))
 
+        console.log(renderData,"--- renderData");
+        
         const maxWidthPixel = 15;
         const attnPerInWord = _.unzip(renderData.attn);
         const attnPerInWordSum = attnPerInWord.map(a => _.sum(a));
         const maxAttnPerAllWords = Math.max(1, _.max(attnPerInWordSum));
-        const lineWidthScale = d3.scaleLinear().domain([0, maxAttnPerAllWords]).range([1, maxWidthPixel]);
+        const lineWidthScale = d3.scaleLinear().domain([0, maxAttnPerAllWords]).range([0, maxWidthPixel]);
 
         const inPositionGraph = renderData.inWords.map((inWord, inIndex) => {
             const offset = inPositions[inIndex] + (inWord.width - lineWidthScale(attnPerInWordSum[inIndex])) / 2;
@@ -112,7 +114,7 @@ class S2SAttention extends VComponent {
             let inc = offset;
             renderData.inWords.forEach((_, inIndex) => {
                 const line = inPositionGraph[inIndex][outIndex]
-                console.log(line, "--- line");
+                // console.log(line, "--- line");
                 line['outPos'] = inc + line.width * .5;
                 inc += line.width;
             })
@@ -140,7 +142,7 @@ class S2SAttention extends VComponent {
         }).style('stroke-width', d => d.width);
 
 
-        console.log(inPositionGraph, "--- inPositionGraph");
+        // console.log(inPositionGraph, "--- inPositionGraph");
 
     }
 
