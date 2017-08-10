@@ -1,3 +1,6 @@
+__author__ = 'hs, sg'
+
+
 class AbstractModelAPI:
     def translate(self, in_text: str, partial_decode: str = None, k: int = 10, attn: dict = None):
         """
@@ -7,13 +10,13 @@ class AbstractModelAPI:
         attention values used for translation (k x dec_length x encoder_length).
 
         Returns an dict:
-        {encoder: [{<1>},...], decoder: [[{<2>},..]], attn: [[{<1>},...]]};
+        {encoder: [{<1>},...], decoder: [[{<1>},..]], attn: [[[<2>],...]]};
 
         encoder, decoder, attn -- the inner [{},..] lists tokens in their order;
         decoder, attn -- the outer [[..]] lists the sorted top k predictions;
 
         <1>: {token:str, state:[], embed:[]} -- for each token encoder/decoder ;
-        <2>: {attn:[]};
+        <2>: [[[a: attention for each encoder word]: for each decoder token]: for each of top k];
 
 
 

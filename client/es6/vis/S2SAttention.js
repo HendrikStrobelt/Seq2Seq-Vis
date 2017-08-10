@@ -25,16 +25,22 @@ class S2SAttention extends VComponent {
         //     out (string): translated sentence
         // }
 
+        //
+        // const toWords = sentence => sentence.split(' ').map(d => ({
+        //     text: d,
+        //     width: Math.max(this.measurer.textLength(d), 20)
+        // }));
+        //
+        const toWord = token => ({
+            text: token,
+            width: Math.max(this.measurer.textLength(token), 20)
+        });
 
-        const toWords = sentence => sentence.split(' ').map(d => ({
-            text: d,
-            width: Math.max(this.measurer.textLength(d), 20)
-        }));
 
-        data['inWords'] = toWords(data.in);
-        data['outWords'] = toWords(data.out);
+        // noinspection JSUnresolvedVariable
+        data['inWords'] = data.encoder.map(w => toWord(w.token));
+        data['outWords'] = data.decoder[0].map(w => toWord(w.token));
 
-        // console.log(data, "--- data");
         return data;
     }
 
@@ -61,10 +67,10 @@ class S2SAttention extends VComponent {
         all.select('text').attr('x', d => d.width * .5).text(d => d.text);
         all.select('rect').attr('width', d => d.width + 6)
           .on('mouseenter', (d, i) => {
-              this.layers.main.selectAll(`.${hoverPrefix+i}`).raise().classed('highlight', true);
+              this.layers.main.selectAll(`.${hoverPrefix + i}`).raise().classed('highlight', true);
           })
           .on('mouseout', (d, i) => {
-              this.layers.main.selectAll(`.${hoverPrefix+i}`).classed('highlight', null);
+              this.layers.main.selectAll(`.${hoverPrefix + i}`).classed('highlight', null);
           })
         ;
 
@@ -90,10 +96,11 @@ class S2SAttention extends VComponent {
         // renderData.attn.forEach(atn => console.log(_.sum(atn), "--- "))
         // _.unzip(renderData.attn).forEach(atn => console.log(_.sum(atn), "-TTT-- "))
 
-        console.log(renderData,"--- renderData");
-        
+        console.log(renderData, "--- renderData");
+
         const maxWidthPixel = 15;
-        const attnPerInWord = _.unzip(renderData.attn);
+        // noinspection JSUnresolvedVariable
+        const attnPerInWord = _.unzip(renderData.attnFiltered[0]);
         const attnPerInWordSum = attnPerInWord.map(a => _.sum(a));
         const maxAttnPerAllWords = Math.max(1, _.max(attnPerInWordSum));
         const lineWidthScale = d3.scaleLinear().domain([0, maxAttnPerAllWords]).range([0, maxWidthPixel]);
