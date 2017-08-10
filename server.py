@@ -9,6 +9,8 @@ import requests
 from flask import send_from_directory, redirect, json
 import numpy as np
 
+from model_api.onmt_lua_model_api import ONMTLuaModelAPI
+
 __author__ = 'Hendrik Strobelt'
 
 logging.basicConfig(level=logging.INFO)
@@ -43,39 +45,50 @@ def send_static_dep(path):
 
 # ------ API routing as defined in swagger.yaml (connexion)
 def get_translation(**request):
-    inSentence = request['in']
+    in_sentence = request['in']
 
-    r = requests.post('http://127.0.0.1:7784/translator/translate', data=json.dumps([{"src": inSentence}]))
+    lua_model = ONMTLuaModelAPI()
+    translate = lua_model.translate(in_text=in_sentence)
 
-    # res: [[{'src': 'Hello World', 'tgt': 'Hallo Welt', 'pred_score': -0.1768690943718, 'attn': [[0.62342292070389,
-    # 0.37657704949379], [0.16017833352089, 0.83982169628143]], 'n_best': 1}]]
+    # r = requests.post('http://127.0.0.1:7784/translator/translate', data=json.dumps([{"src": inSentence}]))
+    #
+    # # res: [[{'src': 'Hello World', 'tgt': 'Hallo Welt', 'pred_score': -0.1768690943718, 'attn': [[0.62342292070389,
+    # # 0.37657704949379], [0.16017833352089, 0.83982169628143]], 'n_best': 1}]]
+    #
+    # res = r.json()[0][0]
+    #
+    a_f = []
 
-    res = r.json()[0][0]
+    for attn_row in translate['attn']:
+        attn = np.array(attn_row)
+        sorted_indices = np.argsort(attn, axis=1)
 
-    attn = np.array(res['attn'])
-    sorted_indices = np.argsort(attn, axis=1)
+        for row_i in range(len(attn)):
+            dec_order = sorted_indices[row_i][::-1]
+            values = attn[row_i, dec_order]
+            min_i = 0
+            acc = 0.
+            while acc < 0.75:
+                acc += values[min_i]
+                min_i += 1
+            if min_i < len(values):
+                attn[row_i, dec_order[min_i:]] = 0.
 
-    for row_i in range(len(attn)):
-        dec_order = sorted_indices[row_i][::-1]
-        values = attn[row_i, dec_order]
-        min_i = 0
-        acc = 0.
-        while acc < 0.75:
-            acc += values[min_i]
-            min_i += 1
-        if min_i < len(values):
-            attn[row_i, dec_order[min_i:]] = 0.
+        a_f.append(attn.tolist())
 
-        # print(attn[row_i], min_i)
+    translate['attnFiltered'] = a_f
+
+    # print(attn[row_i], min_i)
 
     # print(attn, np.argsort(attn, axis=1)[::-1])
 
-    return {
-        'in': res['src'],
-        'out': res['tgt'],
-        'attn': attn.tolist(),
-        'score': res['pred_score']
-    }
+    return translate
+    # return {
+    #     'in': res['src'],
+    #     'out': res['tgt'],
+    #     'attn': attn.tolist(),
+    #     'score': res['pred_score']
+    # }
 
 
 app.add_api('swagger.yaml')
