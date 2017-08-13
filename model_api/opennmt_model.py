@@ -4,7 +4,7 @@ import onmt
 import torch
 import torchtext
 
-from abstract_model_api import AbstractModelAPI
+from model_api.abstract_model_api import AbstractModelAPI
 from collections import Counter
 from onmt.IO import extractFeatures
 
@@ -219,6 +219,8 @@ class ONMTmodelAPI(AbstractModelAPI):
                     currentDec['embed'] = []
                     topIx.append(currentDec)
                     topIxAttn.append(list(a))
+                    if t in ['.', '!', '?']:
+                        break
                 decoderRes.append(topIx)
                 attnRes.append(topIxAttn)
 
