@@ -151,7 +151,7 @@ class ONMTStringData(torchtext.data.Dataset):
 
 
 class ONMTmodelAPI(AbstractModelAPI):
-    def __init__(self, model_loc, gpu=-1, beam_size=10):
+    def __init__(self, model_loc, gpu=-1, beam_size=5):
         # Simulate all commandline args
         parser = argparse.ArgumentParser(description='translate.py')
         add_translate_arguments(parser)
@@ -166,12 +166,12 @@ class ONMTmodelAPI(AbstractModelAPI):
             torch.cuda.set_device(self.opt.gpu)
 
         parser2 = argparse.ArgumentParser(description='train.py')
-        add_model_arguments(parser2)  
+        add_model_arguments(parser2)
         self.opt2 = parser2.parse_known_args()[0]
 
         self.translator = onmt.Translator(self.opt, self.opt2.__dict__)
 
-    def translate(self, in_text, partial_decode=None, k=10, attn=None):
+    def translate(self, in_text, partial_decode=None, k=5, attn=None):
         # set n_best in translator
         self.translator.opt.n_best = k
         # Increase Beam size if asked for large k

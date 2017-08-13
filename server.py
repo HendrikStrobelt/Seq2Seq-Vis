@@ -10,11 +10,29 @@ from flask import send_from_directory, redirect, json
 import numpy as np
 
 from model_api.onmt_lua_model_api import ONMTLuaModelAPI
+from model_api.opennmt_model import ONMTmodelAPI
 
 __author__ = 'Hendrik Strobelt'
 
 logging.basicConfig(level=logging.INFO)
 app = connexion.App(__name__)
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--nodebug", default=False)
+parser.add_argument("--port", default="8888")
+parser.add_argument("--nocache", default=False)
+parser.add_argument("-dir", type=str, default=os.path.abspath('data'))
+parser.add_argument('-api', type=str, default='pytorch',
+                    choices=['pytorch', 'lua'],
+                    help="""The API to use.""")
+args = parser.parse_args()
+
+print(args)
+global model
+if args.api == "pytorch":
+    model = ONMTmodelAPI("model_api/data/ende.dot.restart_acc_40.69_ppl_30.62_e13.pt")
+else:
+    model = ONMTLuaModelAPI()
 
 
 # just a simple flask route
@@ -46,9 +64,7 @@ def send_static_dep(path):
 # ------ API routing as defined in swagger.yaml (connexion)
 def get_translation(**request):
     in_sentence = request['in']
-
-    lua_model = ONMTLuaModelAPI()
-    translate = lua_model.translate(in_text=in_sentence)
+    translate = model.translate(in_text=in_sentence)
 
     # r = requests.post('http://127.0.0.1:7784/translator/translate', data=json.dumps([{"src": inSentence}]))
     #
@@ -94,13 +110,4 @@ def get_translation(**request):
 app.add_api('swagger.yaml')
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--nodebug", default=False)
-    parser.add_argument("--port", default="8888")
-    parser.add_argument("--nocache", default=False)
-    parser.add_argument("-dir", type=str, default=os.path.abspath('data'))
-    args = parser.parse_args()
-
-    print(args)
-
     app.run(port=int(args.port), debug=not args.nodebug)
