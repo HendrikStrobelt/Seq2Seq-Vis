@@ -150,55 +150,6 @@ class ONMTStringData(torchtext.data.Dataset):
 
         super(ONMTStringData, self).__init__(examples, fields, None)
 
-    # def __getstate__(self):
-    #     return self.__dict__
-
-
-    # def __setstate__(self, d):
-    #     self.__dict__.update(d)
-
-    # @staticmethod
-    # def get_fields(src_path=None, tgt_path=None):
-    #     fields = {}
-    #     fields["src"] = torchtext.data.Field(
-    #         pad_token=PAD_WORD,
-    #         include_lengths=True)
-
-    #     fields["tgt"] = torchtext.data.Field(
-    #         init_token=BOS_WORD, eos_token=EOS_WORD,
-    #         pad_token=PAD_WORD)
-
-    #     def make_src(data, _):
-    #         src_size = max([t.size(0) for t in data])
-    #         src_vocab_size = max([t.max() for t in data]) + 1
-    #         alignment = torch.FloatTensor(src_size, len(data),
-    #                                       src_vocab_size).fill_(0)
-    #         for i in range(len(data)):
-    #             for j, t in enumerate(data[i]):
-    #                 alignment[j, i, t] = 1
-    #         return alignment
-
-    #     fields["src_map"] = torchtext.data.Field(
-    #         use_vocab=False, tensor_type=torch.FloatTensor,
-    #         postprocessing=make_src, sequential=False)
-
-    #     def make_tgt(data, _):
-    #         tgt_size = max([t.size(0) for t in data])
-    #         alignment = torch.LongTensor(tgt_size, len(data)).fill_(0)
-    #         for i in range(len(data)):
-    #             alignment[:data[i].size(0), i] = data[i]
-    #         return alignment
-
-    #     fields["alignment"] = torchtext.data.Field(
-    #         use_vocab=False, tensor_type=torch.LongTensor,
-    #         postprocessing=make_tgt, sequential=False)
-
-    #     fields["indices"] = torchtext.data.Field(
-    #         use_vocab=False, tensor_type=torch.LongTensor,
-    #         sequential=False)
-
-    #     return fields
-
 
 class ONMTmodelAPI(AbstractModelAPI):
     def __init__(self, model_loc, gpu=-1, beam_size=5):
