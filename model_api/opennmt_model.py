@@ -3,10 +3,16 @@ import json
 import onmt
 import torch
 import torchtext
+import os
 
 from model_api.abstract_model_api import AbstractModelAPI
 from collections import Counter
 from onmt.IO import extractFeatures
+
+PAD_WORD = '<blank>'
+UNK = 0
+BOS_WORD = '<s>'
+EOS_WORD = '</s>'
 
 
 def add_model_arguments(parser):
@@ -114,27 +120,22 @@ def add_translate_arguments(parser):
 
 class ONMTStringData(torchtext.data.Dataset):
     def __init__(self, srcline, tgt, fields, opt):
-        srctoks = srcline.split()
-        src, src_feats, _ = extractFeatures(srctoks)
+        src = srcline.split()
         d = {"src": src, "indices": 0}
-        for j, v in enumerate(src_feats):
-            d["src_feat_" + str(j)] = v
 
         examples = [d]
         # src_words = [src]
 
-        # Create dynamic dictionaries
-        if opt is None or opt.dynamic_dict:
-            # a temp vocab of a single source example
-            src_vocab = torchtext.vocab.Vocab(Counter(src))
+        # a temp vocab of a single source example
+        src_vocab = torchtext.vocab.Vocab(Counter(src))
 
-            # mapping source tokens to indices in the dynamic dict
-            src_map = torch.LongTensor(len(src)).fill_(0)
-            for j, w in enumerate(src):
-                src_map[j] = src_vocab.stoi[w]
+        # mapping source tokens to indices in the dynamic dict
+        src_map = torch.LongTensor(len(src)).fill_(0)
+        for j, w in enumerate(src):
+            src_map[j] = src_vocab.stoi[w]
 
-            self.src_vocabs = [src_vocab]
-            examples[0]["src_map"] = src_map
+        self.src_vocabs = [src_vocab]
+        examples[0]["src_map"] = src_map
 
         # TODO: same for tgt
         if tgt is not None:
@@ -147,7 +148,56 @@ class ONMTStringData(torchtext.data.Dataset):
                                                          fields)
                          for ex in examples])
 
-        super(ONMTStringData, self).__init__(examples, fields)
+        super(ONMTStringData, self).__init__(examples, fields, None)
+
+    # def __getstate__(self):
+    #     return self.__dict__
+
+
+    # def __setstate__(self, d):
+    #     self.__dict__.update(d)
+
+    # @staticmethod
+    # def get_fields(src_path=None, tgt_path=None):
+    #     fields = {}
+    #     fields["src"] = torchtext.data.Field(
+    #         pad_token=PAD_WORD,
+    #         include_lengths=True)
+
+    #     fields["tgt"] = torchtext.data.Field(
+    #         init_token=BOS_WORD, eos_token=EOS_WORD,
+    #         pad_token=PAD_WORD)
+
+    #     def make_src(data, _):
+    #         src_size = max([t.size(0) for t in data])
+    #         src_vocab_size = max([t.max() for t in data]) + 1
+    #         alignment = torch.FloatTensor(src_size, len(data),
+    #                                       src_vocab_size).fill_(0)
+    #         for i in range(len(data)):
+    #             for j, t in enumerate(data[i]):
+    #                 alignment[j, i, t] = 1
+    #         return alignment
+
+    #     fields["src_map"] = torchtext.data.Field(
+    #         use_vocab=False, tensor_type=torch.FloatTensor,
+    #         postprocessing=make_src, sequential=False)
+
+    #     def make_tgt(data, _):
+    #         tgt_size = max([t.size(0) for t in data])
+    #         alignment = torch.LongTensor(tgt_size, len(data)).fill_(0)
+    #         for i in range(len(data)):
+    #             alignment[:data[i].size(0), i] = data[i]
+    #         return alignment
+
+    #     fields["alignment"] = torchtext.data.Field(
+    #         use_vocab=False, tensor_type=torch.LongTensor,
+    #         postprocessing=make_tgt, sequential=False)
+
+    #     fields["indices"] = torchtext.data.Field(
+    #         use_vocab=False, tensor_type=torch.LongTensor,
+    #         sequential=False)
+
+    #     return fields
 
 
 class ONMTmodelAPI(AbstractModelAPI):
@@ -158,6 +208,7 @@ class ONMTmodelAPI(AbstractModelAPI):
         self.opt = parser.parse_known_args()[0]
         self.opt.model = model_loc
         self.opt.beam_size = beam_size
+        self.opt.batch_size = 1
 
         # Make GPU decoding possible
         self.opt.gpu = gpu
@@ -206,6 +257,9 @@ class ONMTmodelAPI(AbstractModelAPI):
                                    'embed': []})
             res['encoder'] = encoderRes
 
+            os.write(1, bytes('\n PRED %d: %s\n' %
+                              (1, " ".join(predBatch[0][0])), 'UTF-8'))
+
             # Fill decoder Result
             decoderRes = []
             attnRes = []
@@ -219,8 +273,8 @@ class ONMTmodelAPI(AbstractModelAPI):
                     currentDec['embed'] = []
                     topIx.append(currentDec)
                     topIxAttn.append(list(a))
-                    if t in ['.', '!', '?']:
-                        break
+                    # if t in ['.', '!', '?']:
+                    #     break
                 decoderRes.append(topIx)
                 attnRes.append(topIxAttn)
 
@@ -231,7 +285,7 @@ class ONMTmodelAPI(AbstractModelAPI):
 
 
 def main():
-    model = ONMTmodelAPI("data/test_acc_74.91_ppl_3.66_e13.pt")
+    model = ONMTmodelAPI("data/ende.dot_acc_45.33_ppl_24.59_e13.pt")
 
     model.translate("This is a test")
 

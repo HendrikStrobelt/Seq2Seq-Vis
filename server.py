@@ -19,7 +19,7 @@ app = connexion.App(__name__)
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--nodebug", default=False)
-parser.add_argument("--port", default="8888")
+parser.add_argument("--port", default="8080")
 parser.add_argument("--nocache", default=False)
 parser.add_argument("-dir", type=str, default=os.path.abspath('data'))
 parser.add_argument('-api', type=str, default='pytorch',
@@ -30,7 +30,7 @@ args = parser.parse_args()
 print(args)
 global model
 if args.api == "pytorch":
-    model = ONMTmodelAPI("model_api/data/ende.dot.restart_acc_40.69_ppl_30.62_e13.pt")
+    model = ONMTmodelAPI("model_api/data/ende.dot_acc_45.85_ppl_21.55_e13.pt")
 else:
     model = ONMTLuaModelAPI()
 
