@@ -30,7 +30,7 @@ args = parser.parse_args()
 print(args)
 global model
 if args.api == "pytorch":
-    model = ONMTmodelAPI("model_api/data/ende.dot_acc_45.85_ppl_21.55_e13.pt")
+    model = ONMTmodelAPI("model_api/data/ende_acc_15.72_ppl_912.74_e9.pt")
 else:
     model = ONMTLuaModelAPI()
 

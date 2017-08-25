@@ -7,22 +7,24 @@ class AbstractModelAPI:
         translates `in_text` using the associated model and returns
         meta information about the encoder side , the top `k` best
         translations (incl. decoder states and meta-data), and the
-        attention values used for translation (k x dec_length x encoder_length).
+        attention values used for translation (k x dec_length x encoder_length)
 
         Returns an dict:
         {encoder: [{<1>},...], decoder: [[{<1>},..]], attn: [[[<2>],...]]};
 
-        encoder, decoder, attn -- the inner [{},..] lists tokens in their order;
+        encoder, decoder, attn -- the inner [{},..] lists tokens in their order
         decoder, attn -- the outer [[..]] lists the sorted top k predictions;
 
-        <1>: {token:str, state:[], embed:[]} -- for each token encoder/decoder ;
-        <2>: [[[a: attention for each encoder word]: for each decoder token]: for each of top k];
+        <1>: {token:str, state:[], embed:[]} -- for each token encoder/decoder
+        <2>: [[[a: attention for each encoder word]: for each decoder token]:
+                                                     for each of top k];
 
 
 
         :param attn: use alternative attention values
         :param k: k for top k translations
-        :param partial_decode: a partial decoder string defines the left side of a decoding sequence
+        :param partial_decode: a partial decoder string defines the left side
+                               of a decoding sequence
         :param in_text: the input text
         :return: see dictionary above
 
