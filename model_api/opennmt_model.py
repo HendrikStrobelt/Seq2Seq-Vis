@@ -16,16 +16,53 @@ EOS_WORD = '</s>'
 
 
 def add_model_arguments(parser):
+    """
+    These options are passed to the construction of the model.
+    Be careful with these as they will be used during translation.
+    """
     # Model options
-    parser.add_argument('-layers', type=int, default=2,
-                        help='Number of layers in the LSTM encoder/decoder')
+    parser.add_argument('-model_type', default='text',
+                        help="Type of encoder to use. Options are [text|img].")
+    # Embedding Options
+    parser.add_argument('-word_vec_size', type=int, default=-1,
+                        help='Word embedding for both.')
+    parser.add_argument('-src_word_vec_size', type=int, default=500,
+                        help='Src word embedding sizes')
+    parser.add_argument('-tgt_word_vec_size', type=int, default=500,
+                        help='Tgt word embedding sizes')
+
+    parser.add_argument('-feat_vec_size', type=int, default=20,
+                        help="""When using -feat_merge mlp, feature embedding
+                        sizes will be set to this.""")
+    parser.add_argument('-feat_merge', type=str, default='concat',
+                        choices=['concat', 'sum', 'mlp'],
+                        help='Merge action for the features embeddings')
+    parser.add_argument('-feat_vec_exponent', type=float, default=0.7,
+                        help="""When using -feat_merge concat, feature embedding
+                        sizes will be set to N^feat_vec_exponent where N is the
+                        number of values the feature takes.""")
+    parser.add_argument('-position_encoding', action='store_true',
+                        help='Use a sin to mark relative words positions.')
+    parser.add_argument('-share_decoder_embeddings', action='store_true',
+                        help='Share the word and out embeddings for decoder.')
+
+    # RNN Options
+    parser.add_argument('-encoder_type', type=str, default='rnn',
+                        choices=['rnn', 'brnn', 'mean', 'transformer'],
+                        help="""Type of encoder layer to use.""")
+    parser.add_argument('-decoder_type', type=str, default='rnn',
+                        choices=['rnn', 'transformer'],
+                        help='Type of decoder layer to use.')
+
+    parser.add_argument('-layers', type=int, default=-1,
+                        help='Number of layers in enc/dec.')
+    parser.add_argument('-enc_layers', type=int, default=2,
+                        help='Number of layers in the encoder')
+    parser.add_argument('-dec_layers', type=int, default=2,
+                        help='Number of layers in the decoder')
+
     parser.add_argument('-rnn_size', type=int, default=500,
                         help='Size of LSTM hidden states')
-    parser.add_argument('-word_vec_size', type=int, default=500,
-                        help='Word embedding sizes')
-    parser.add_argument('-feature_vec_size', type=int, default=100,
-                        help='Feature vec sizes')
-
     parser.add_argument('-input_feed', type=int, default=1,
                         help="""Feed the context vector at each time step as
                         additional input (via concatenation with the word
@@ -33,46 +70,35 @@ def add_model_arguments(parser):
     parser.add_argument('-rnn_type', type=str, default='LSTM',
                         choices=['LSTM', 'GRU'],
                         help="""The gate type to use in the RNNs""")
-    parser.add_argument('-brnn', action='store_true',
-                        help='Use a bidirectional encoder')
+    # parser.add_argument('-residual',   action="store_true",
+    #                     help="Add residual connections between RNN layers.")
+
+    parser.add_argument('-brnn',   action="store_true",
+                        help="Deprecated, use `encoder_type`.")
     parser.add_argument('-brnn_merge', default='concat',
-                        help="""Merge action for the bidirectional hidden states:
-                        [concat|sum]""")
+                        choices=['concat', 'sum'],
+                        help="Merge action for the bidir hidden states")
+
+    parser.add_argument('-context_gate', type=str, default=None,
+                        choices=['source', 'target', 'both'],
+                        help="""Type of context gate to use.
+                        Do not select for no context gate.""")
+
+    # Attention options
+    parser.add_argument('-global_attention', type=str, default='general',
+                        choices=['dot', 'general', 'mlp'],
+                        help="""The attention type to use:
+                        dotprot or general (Luong) or MLP (Bahdanau)""")
+
+    # Genenerator and loss options.
     parser.add_argument('-copy_attn', action="store_true",
                         help='Train copy attention layer.')
     parser.add_argument('-copy_attn_force', action="store_true",
-                        help="""Train copy attention layer to copy even
-                        if word is in the src vocab.
-                        .""")
-
+                        help='When available, train to copy.')
     parser.add_argument('-coverage_attn', action="store_true",
                         help='Train a coverage attention layer.')
     parser.add_argument('-lambda_coverage', type=float, default=1,
                         help='Lambda value for coverage.')
-
-    parser.add_argument('-encoder_layer', type=str, default='rnn',
-                        help="""Type of encoder layer to use.
-                        Options: [rnn|mean|transformer]""")
-    parser.add_argument('-decoder_layer', type=str, default='rnn',
-                        help='Type of decoder layer to use. [rnn|transformer]')
-    parser.add_argument('-context_gate', type=str, default=None,
-                        choices=['source', 'target', 'both'],
-                        help="""Type of context gate to use [source|target|both].
-                        Do not select for no context gate.""")
-    parser.add_argument('-attention_type', type=str, default='dot',
-                        choices=['dot', 'mlp'],
-                        help="""The attention type to use:
-                        dotprot (Luong) or MLP (Bahdanau)""")
-    parser.add_argument('-encoder_type', default='text',
-                        help="Type of encoder to use. Options are [text|img].")
-    parser.add_argument('-dropout', type=float, default=0.3,
-                        help='Dropout probability.')
-    parser.add_argument('-position_encoding', action='store_true',
-                        help='Use a sinusoids for words positions.')
-    parser.add_argument('-share_decoder_embeddings', action='store_true',
-                        help='Share the word and softmax embeddings..')
-    parser.add_argument('-share_embeddings', action='store_true',
-                        help='Share word embeddings between encoder/decoder')
 
 
 def add_translate_arguments(parser):
@@ -197,14 +223,14 @@ class ONMTmodelAPI(AbstractModelAPI):
 
         # Only has one batch, but indexing does not work
         for batch in testData:
-            predBatch, predScore, goldScore, attn, src\
-                = self.translator.translate(batch, data)
+            predBatch, predScore, goldScore, attn, src, context, decStates\
+                = self.translator.translate(batch, data, states=True)
             res = {}
             # Fill encoder Result
             encoderRes = []
-            for t in in_text.split():
+            for ix, t in enumerate(in_text.split()):
                 encoderRes.append({'token': t,
-                                   'state': [],
+                                   'state': context[ix].tolist(),
                                    'embed': []})
             res['encoder'] = encoderRes
 
@@ -215,28 +241,29 @@ class ONMTmodelAPI(AbstractModelAPI):
             decoderRes = []
             attnRes = []
             for ix, p in enumerate(predBatch[0]):
-                topIx = []
-                topIxAttn = []
-                for t, a in zip(p, attn[0][ix]):
-                    currentDec = {}
-                    currentDec['token'] = t
-                    currentDec['state'] = []
-                    currentDec['embed'] = []
-                    topIx.append(currentDec)
-                    topIxAttn.append(list(a))
-                    # if t in ['.', '!', '?']:
-                    #     break
-                decoderRes.append(topIx)
-                attnRes.append(topIxAttn)
-
+                if p: 
+                    topIx = []
+                    topIxAttn = []
+                    for t, a, s in zip(p, attn[0][ix], decStates[ix]):
+                        currentDec = {}
+                        currentDec['token'] = t
+                        currentDec['state'] = s.tolist()
+                        currentDec['embed'] = []
+                        topIx.append(currentDec)
+                        topIxAttn.append(list(a))
+                        # if t in ['.', '!', '?']:
+                        #     break
+                    decoderRes.append(topIx)
+                    attnRes.append(topIxAttn)
+            res['scores'] = predScore[0].numpy().tolist()
             res['decoder'] = decoderRes
             res['attn'] = attnRes
-
+            res['context'] = context.tolist()
             return res
 
 
 def main():
-    model = ONMTmodelAPI("data/ende.dot_acc_45.33_ppl_24.59_e13.pt")
+    model = ONMTmodelAPI("data/ende_acc_15.72_ppl_912.74_e9.pt")
 
     model.translate("This is a test")
 
