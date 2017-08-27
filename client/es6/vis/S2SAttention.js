@@ -39,7 +39,9 @@ class S2SAttention extends VComponent {
 
         // noinspection JSUnresolvedVariable
         data['inWords'] = data.encoder.map(w => toWord(w.token));
-        data['outWords'] = data.decoder[0].map(w => toWord(w.token));
+        data['outWords'] = data.decoder.map(topk => topk.map(w => toWord(w.token)));
+
+        // data['outWords'] = data.decoder[0].map(w => toWord(w.token));
 
         return data;
     }
@@ -88,10 +90,14 @@ class S2SAttention extends VComponent {
         };
 
         const inPositions = calcPos(renderData.inWords);
-        const outPositions = calcPos(renderData.outWords);
 
         this._renderWords(inPositions, renderData.inWords, 'inWord', 10, 'in');
-        this._renderWords(outPositions, renderData.outWords, 'outWord', 100, 'out');
+
+        renderData.outWords.forEach((wrd, wi) => {
+            console.log(wrd,"--- wrd");
+            const outPositions = calcPos(wrd);
+            this._renderWords(outPositions, wrd, 'outWord', wi * 15 + 100, 'out');
+        })
 
         // renderData.attn.forEach(atn => console.log(_.sum(atn), "--- "))
         // _.unzip(renderData.attn).forEach(atn => console.log(_.sum(atn), "-TTT-- "))
