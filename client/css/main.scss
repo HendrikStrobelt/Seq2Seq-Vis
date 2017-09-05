@@ -1,50 +1,51 @@
-$main-color: #3fb391;
-$abc: 12;
+@import "global";
+@import "vis";
 
-.small_line {
-  fill: none;
-  stroke: $main-color;
-  pointer-events: none;
-  stroke-width: 3px;
+body {
+  font-family: 'Source Sans Pro', sans-serif;
+  font-weight: 300;
+  font-size: 12pt;
 }
 
-.measureWord {
-  alignment-baseline: middle;
-  text-anchor: middle;
-  font-weight: bold;
-  pointer-events: none;
+input[type="text"] {
+  font-size: 12pt;
+  font-family: 'Source Sans Pro', sans-serif;
+  font-weight: 600;
+  margin: 3px 0;
+  display: inline-block;
+  border: 1px solid #ccc;
+  //box-shadow: inset 0 1px 3px #ddd;
+  border-radius: 4px;
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+  padding: 8px 6px;
 }
 
-.inWord {
-  text {
-    @extend .measureWord
-  }
-  rect {
-    fill: #0a99ff;
-    fill-opacity: .5;
-  }
+.full_width_input {
+    width: 100%;
 }
 
-
-.outWord {
-  text {
-    @extend .measureWord
-  }
-  rect {
-    fill: #ff9f23;
-    fill-opacity: .5;
-  }
+.header{
+  padding: 5px 0;
+  border-bottom: solid 1px lightgray;
 }
 
-.graph {
-  path {
-    fill: none;
-    stroke: grey;
-    opacity: .3;
-  }
-  path.highlight{
-    opacity: .7;
-    stroke: red;
-    transition: .5s;
-  }
+.mainPanel{
+  display: table;
+  width:100%;
+}
+
+.column{
+  display: table-cell;
+  vertical-align: top;
+  padding-top: 10px;
+}
+
+.setup{
+  text-align: right;
+}
+
+svg{
+  display: block;
 }

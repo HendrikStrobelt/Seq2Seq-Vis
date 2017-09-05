@@ -1,0 +1,88 @@
+@import "global";
+
+.small_line {
+  fill: none;
+  stroke: $main-color;
+  pointer-events: none;
+  stroke-width: 3px;
+}
+
+.measureWord {
+  alignment-baseline: middle;
+  text-anchor: middle;
+  font-weight: bold;
+  pointer-events: none;
+}
+
+.inWord {
+  text {
+    @extend .measureWord
+  }
+  rect {
+    fill: #0a99ff;
+    fill-opacity: .5;
+  }
+}
+
+.outWord {
+  text {
+    @extend .measureWord
+  }
+  rect {
+    fill: #ff9f23;
+    fill-opacity: .5;
+  }
+}
+
+.topKWord {
+  text {
+    @extend .measureWord
+  }
+  rect {
+    fill: #ff9f23;
+    fill-opacity: .2;
+  }
+}
+
+.attn_graph {
+  path {
+    fill: none;
+    stroke: grey;
+    opacity: .3;
+  }
+  path.highlight {
+    opacity: .7;
+    stroke: red;
+    transition: .5s;
+  }
+}
+
+.state_line {
+
+  fill: none;
+  stroke: grey;
+  opacity: .1;
+
+  &:hover {
+    opacity: .7;
+    stroke: blue;
+    transition: .5s;
+  }
+}
+
+.state_axis {
+  line, path {
+    stroke: lightgrey;
+  }
+  text{
+    fill: grey;
+  }
+}
+
+.setup{
+  .bar{
+    fill: #d4d4d4;
+  }
+
+
+}

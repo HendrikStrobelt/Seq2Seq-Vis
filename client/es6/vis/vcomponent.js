@@ -6,10 +6,12 @@ class VComponent {
 
     // STATIC FIELDS ============================================================
 
+    // noinspection JSUnusedGlobalSymbols
     /**
      * The static property that contains all class related events.
      * Should be overwritten and event strings have to be unique!!
      * @returns {{}} an key-value object for object to string
+     * @abstract
      */
     static get events() {
         console.error('static get events() --  not implemented');
@@ -20,8 +22,9 @@ class VComponent {
     /**
      * Should be overwritten to define the set of ALL options and their defaults
      * @returns {{}}  an key-value object for default options
+     * @abstract
      */
-    get defaultOptions() {
+    static get defaultOptions() {
         console.error('get defaultOptions() not implemented');
 
         return {
@@ -31,11 +34,15 @@ class VComponent {
         };
     }
 
-
-    get layout() {
+    /**
+     * Defines the layers in SVG  for bg,main,fg,...
+     * @return {[object]}
+     * @abstract
+     */
+    static get layout() {
         console.error('get layout() not implemented');
 
-        return [{name: 'main', pos: {x: 0, y: 0}}];
+        return [{name: 'main', pos: [0, 0]}];
     }
 
     // CONSTRUCTOR ============================================================
@@ -43,30 +50,29 @@ class VComponent {
 
     /**
      * Inits the class and creates static DOM elements
-     * @param {Element} parent  D3 selection of parent SVG DOM Element
-     * @param {Element} eventHandler a global event handler object or 'null' for local event handler
+     * @param {Object} d3parent  D3 selection of parent SVG DOM Element
+     * @param {*} eventHandler a global event handler object or 'null' for local event handler
      * @param {Object} options initial options
      */
-    constructor({parent, eventHandler = null, options = {}}) {
+    constructor({d3parent, eventHandler = null, options = {}}) {
         this.id = Util.simpleUId({});
 
-        this.parent = parent;
+        this.parent = d3parent;
 
         // Set default options if not specified in constructor call
-        const defaults = this.defaultOptions;
+        const defaults = this.constructor.defaultOptions;
         this.options = {};
-        const keys = new Set([...Object.keys(defaults), ...Object.keys(options)])
-        keys.forEach(key => this.options[key] = options[key] || defaults[key]);
+        const keys = new Set([...Object.keys(defaults), ...Object.keys(options)]);
+        keys.forEach(key => this.options[key] = (key in options) ? options[key] : defaults[key]);
 
         // Create the base group element
-        this.base = this._createBaseElement(parent);
+        this.base = this._createBaseElement(this.parent);
         this.layers = this._createLayoutLayers(this.base);
 
         // If not further specified - create a local event handler bound to the bas element
-        this.isLocalEventHandler = !eventHandler;
         this.eventHandler = eventHandler ||
           new SimpleEventHandler(this.base.node());
-        this._bindLocalEvents(this.eventHandler);
+        this._bindLocalEvents();
 
         // Object for storing internal states and variables
         this._states = {hidden: false};
@@ -95,8 +101,8 @@ class VComponent {
 
     _createLayoutLayers(base) {
         const res = {};
-        for (const lE of this.layout) {
-            res[lE.name] = SVG.group(base, lE.name, lE.pos);
+        for (const lE of this.constructor.layout) {
+            res[lE.name] = SVG.group(base, lE.name, {x: lE.pos[0], y: lE.pos[1]});
         }
 
         return res;
@@ -105,7 +111,7 @@ class VComponent {
 
     /**
      * Should be overwritten to create the static DOM elements
-     * @private
+     * @abstract
      * @return {*} ---
      */
     _init() {
@@ -114,6 +120,7 @@ class VComponent {
 
     // DATA UPDATE & RENDER ============================================================
 
+    // noinspection JSUnusedGlobalSymbols
     /**
      * Every time data has changed, update is called and
      * triggers wrangling and re-rendering
@@ -122,6 +129,7 @@ class VComponent {
      */
     update(data) {
         this.data = data;
+        if (this._states.hidden) return;
         this.renderData = this._wrangle(data);
         this._render(this.renderData);
     }
@@ -131,16 +139,17 @@ class VComponent {
      * Data wrangling method -- implement in subclass
      * @param {Object} data data
      * @returns {*} ---
-     * @private
+     * @abstract
      */
     _wrangle(data) {
         return data;
     }
 
+
     /**
      * Is responsible for mapping data to DOM elements
      * @param {Object} renderData pre-processed (wrangled) data
-     * @private
+     * @abstract
      * @returns {*} ---
      */
     _render(renderData) {
@@ -150,6 +159,7 @@ class VComponent {
 
     // UPDATE OPTIONS ============================================================
 
+    // noinspection JSUnusedGlobalSymbols
     /**
      * Updates instance options
      * @param {Object} options only the options that should be updated
@@ -163,6 +173,7 @@ class VComponent {
 
     // BIND LOCAL EVENTS ============================================================
 
+    // noinspection JSUnusedGlobalSymbols
     _bindEvent(eventHandler, name, func) {
         // Wrap in Set to handle 'undefinded' etc..
         const globalEvents = new Set(this.options.globalExclusiveEvents);
@@ -171,10 +182,12 @@ class VComponent {
         }
     }
 
-    _bindLocalEvents(eventHandler) {
-        eventHandler;
-        console.error('_bindLocalEvents() not implemented.')
-
+    /**
+     * Could be used to bind local event handling
+     * @abstract
+     */
+    _bindLocalEvents() {
+        //console.warn('_bindLocalEvents() not implemented.')
     }
 
     hideView() {
@@ -194,6 +207,8 @@ class VComponent {
                 'pointer-events': null
             });
             this._states.hidden = false;
+            this.update(this.data);
+
         }
     }
 

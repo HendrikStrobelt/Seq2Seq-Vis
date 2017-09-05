@@ -30,7 +30,8 @@ args = parser.parse_args()
 print(args)
 global model
 if args.api == "pytorch":
-    model = ONMTmodelAPI("model_api/data/ende_acc_15.72_ppl_912.74_e9.pt")
+    # model = ONMTmodelAPI("model_api/data/ende_acc_15.72_ppl_912.74_e9.pt")
+    model = ONMTmodelAPI("model_api/data/ende_acc_46.86_ppl_21.19_e12.pt")
 else:
     model = ONMTLuaModelAPI()
 
@@ -65,7 +66,7 @@ def send_static_dep(path):
 def get_translation(**request):
     in_sentence = request['in']
     translate = model.translate(in_text=in_sentence)
-
+    print("_".join(map(lambda x:x['token'], translate["decoder"][0])))
     # r = requests.post('http://127.0.0.1:7784/translator/translate', data=json.dumps([{"src": inSentence}]))
     #
     # # res: [[{'src': 'Hello World', 'tgt': 'Hallo Welt', 'pred_score': -0.1768690943718, 'attn': [[0.62342292070389,
