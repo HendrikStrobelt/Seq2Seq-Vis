@@ -241,7 +241,7 @@ class ONMTmodelAPI(AbstractModelAPI):
             decoderRes = []
             attnRes = []
             for ix, p in enumerate(predBatch[0]):
-                if p: 
+                if p:
                     topIx = []
                     topIxAttn = []
                     for t, a, s in zip(p, attn[0][ix], decStates[ix]):
