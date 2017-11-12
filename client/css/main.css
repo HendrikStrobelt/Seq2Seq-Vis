@@ -4,7 +4,7 @@
   pointer-events: none;
   stroke-width: 3px; }
 
-.measureWord, .inWord text, .outWord text {
+.measureWord, .inWord text, .outWord text, .topKWord text {
   alignment-baseline: middle;
   text-anchor: middle;
   font-weight: bold;
@@ -18,13 +18,74 @@
   fill: #ff9f23;
   fill-opacity: .5; }
 
-.graph path {
+.topKWord rect {
+  fill: #ff9f23;
+  fill-opacity: .2; }
+
+.attn_graph path {
   fill: none;
   stroke: grey;
   opacity: .3; }
-.graph path.highlight {
+.attn_graph path.highlight {
   opacity: .7;
   stroke: red;
   transition: .5s; }
+
+.state_line {
+  fill: none;
+  stroke: grey;
+  opacity: .1; }
+  .state_line:hover {
+    opacity: .7;
+    stroke: blue;
+    transition: .5s; }
+
+.state_axis line, .state_axis path {
+  stroke: lightgrey; }
+.state_axis text {
+  fill: grey; }
+
+.setup .bar {
+  fill: #d4d4d4; }
+
+body {
+  font-family: 'Source Sans Pro', sans-serif;
+  font-weight: 300;
+  font-size: 12pt; }
+
+input[type="text"] {
+  font-size: 12pt;
+  font-family: 'Source Sans Pro', sans-serif;
+  font-weight: 600;
+  margin: 3px 0;
+  display: inline-block;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+  padding: 8px 6px; }
+
+.full_width_input {
+  width: 100%; }
+
+.header {
+  padding: 5px 0;
+  border-bottom: solid 1px lightgray; }
+
+.mainPanel {
+  display: table;
+  width: 100%; }
+
+.column {
+  display: table-cell;
+  vertical-align: top;
+  padding-top: 10px; }
+
+.setup {
+  text-align: right; }
+
+svg {
+  display: block; }
 
 /*# sourceMappingURL=main.css.map */

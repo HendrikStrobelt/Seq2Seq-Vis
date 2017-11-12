@@ -1,0 +1,30 @@
+.small_line {
+  fill: none;
+  stroke: #3fb391;
+  pointer-events: none;
+  stroke-width: 3px; }
+
+.measureWord, .inWord text, .outWord text {
+  alignment-baseline: middle;
+  text-anchor: middle;
+  font-weight: bold;
+  pointer-events: none; }
+
+.inWord rect {
+  fill: #0a99ff;
+  fill-opacity: .5; }
+
+.outWord rect {
+  fill: #ff9f23;
+  fill-opacity: .5; }
+
+.graph path {
+  fill: none;
+  stroke: grey;
+  opacity: .3; }
+.graph path.highlight {
+  opacity: .7;
+  stroke: red;
+  transition: .5s; }
+
+/*# sourceMappingURL=vis.css.map */

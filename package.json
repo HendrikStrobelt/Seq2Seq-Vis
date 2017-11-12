@@ -13,7 +13,6 @@
   "author": "",
   "license": "Apache-2.0",
   "dependencies": {
-    "bootswatch": "^3.3.7",
     "d3": "^4.8.0",
     "d3-selection-multi": "^1.0.1",
     "font-awesome": "~4.7.0",

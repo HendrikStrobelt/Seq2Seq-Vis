@@ -54,7 +54,7 @@ def send_static_client(path):
 # send everything from client as static content
 @app.route('/node_modules/<path:path>')
 def send_static_dep(path):
-    """ serves all files from ./node_modules/ 
+    """ serves all files from ./node_modules/
 
     :param path: path from api call
     """
@@ -65,7 +65,7 @@ def send_static_dep(path):
 def get_translation(**request):
     in_sentence = request['in']
     translate = model.translate(in_text=in_sentence)
-
+    print("_".join(map(lambda x:x['token'], translate["decoder"][0])))
     # r = requests.post('http://127.0.0.1:7784/translator/translate', data=json.dumps([{"src": inSentence}]))
     #
     # # res: [[{'src': 'Hello World', 'tgt': 'Hallo Welt', 'pred_score': -0.1768690943718, 'attn': [[0.62342292070389,
@@ -75,22 +75,25 @@ def get_translation(**request):
     #
     a_f = []
 
+    # print(json.dumps(translate, indent=4))
+
     for attn_row in translate['attn']:
         attn = np.array(attn_row)
-        sorted_indices = np.argsort(attn, axis=1)
+        if attn.shape[0] > 0:  # TODO: hack until API is fixed
+            sorted_indices = np.argsort(attn, axis=1)
 
-        for row_i in range(len(attn)):
-            dec_order = sorted_indices[row_i][::-1]
-            values = attn[row_i, dec_order]
-            min_i = 0
-            acc = 0.
-            while acc < 0.75:
-                acc += values[min_i]
-                min_i += 1
-            if min_i < len(values):
-                attn[row_i, dec_order[min_i:]] = 0.
+            for row_i in range(len(attn)):
+                dec_order = sorted_indices[row_i][::-1]
+                values = attn[row_i, dec_order]
+                min_i = 0
+                acc = 0.
+                while acc < 0.75:
+                    acc += values[min_i]
+                    min_i += 1
+                if min_i < len(values):
+                    attn[row_i, dec_order[min_i:]] = 0.
 
-        a_f.append(attn.tolist())
+            a_f.append(attn.tolist())
 
     translate['attnFiltered'] = a_f
 
