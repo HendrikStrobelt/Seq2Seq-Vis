@@ -8,8 +8,8 @@ class WordProjector extends VComponent {
     // noinspection JSUnusedGlobalSymbols
     static get defaultOptions() {
         return {
-            height: 200,
-            width: 300,
+            height: 400,
+            width: 500,
             css_class_main: 'wp_vis',
             hidden: false,
             data_access: {pos: d => d.pos, scores: d => d.score, words: d => d.word}
@@ -79,10 +79,11 @@ class WordProjector extends VComponent {
 
         const xscale = d3.scaleLinear().range([30, op.width-30]);
         const yscale = d3.scaleLinear().range([10, op.height-10]);
+        const wordScale = d3.scalePow().exponent(.5).range([5, 9]);
         wordEnter.merge(word).attrs({
             x: d => xscale(d.pos[0]),
             y: d => yscale(d.pos[1])
-        }).text(d => d.word)
+        }).text(d => d.word).style('font-size',d => wordScale(d.score)+'pt')
 
 
         // const op = this.options;

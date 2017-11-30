@@ -51,8 +51,9 @@
 .wordprojector {
   alignment-baseline: middle;
   text-anchor: middle;
-  opacity: .5;
-  font-size: 8pt; }
+  opacity: .3;
+  font-size: 8pt;
+  font-weight: bold; }
 
 body {
   font-family: 'Source Sans Pro', sans-serif;
