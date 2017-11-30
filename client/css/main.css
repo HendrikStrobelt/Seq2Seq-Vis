@@ -48,6 +48,12 @@
 .setup .bar {
   fill: #d4d4d4; }
 
+.wordprojector {
+  alignment-baseline: middle;
+  text-anchor: middle;
+  opacity: .5;
+  font-size: 8pt; }
+
 body {
   font-family: 'Source Sans Pro', sans-serif;
   font-weight: 300;

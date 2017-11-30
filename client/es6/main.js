@@ -31,6 +31,7 @@ window.onload = () => {
     const updateDebounced = _.debounce(updateAllVis, 1000);
 
     d3.select('#query_button').on('click', updateAllVis);
+
     d3.select('#query_input').on('keypress', () => {
         const keycode = d3.event.keyCode;
         if (d3.event instanceof KeyboardEvent
@@ -42,6 +43,10 @@ window.onload = () => {
         }
     })
 
+
+
+
+
     // little eventHandling
     // globalEvents.bind('svg-resize', ({width, height}) => svg.attrs({width, height}));
 
@@ -50,6 +55,7 @@ window.onload = () => {
         const height = window.innerHeight - $("#title").height() - $("#ui").height() - 5;
         // globalEvents.trigger('svg-resize', {width, height})
     }
+
 
     $(window).resize(windowResize);
 

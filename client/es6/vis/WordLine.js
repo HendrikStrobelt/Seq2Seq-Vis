@@ -2,7 +2,8 @@ class WordLine extends VComponent {
 
     static get events() {
         return {
-            wordHovered: 'wordline_word_hovered'
+            wordHovered: 'wordline_word_hovered',
+            wordSelected: 'wordline_word_selected',
 
         }
     }
@@ -55,6 +56,7 @@ class WordLine extends VComponent {
         const renderData = {
             rows: []
         };
+        this._states.selectedWord = null;
         // calculate distances
 
 
@@ -93,7 +95,7 @@ class WordLine extends VComponent {
         // noinspection JSUnresolvedFunction
         this.parent.attrs({
             width: d3.max(allLengths) + 6,
-            height: renderData.rows.length * (op.box_height)-2
+            height: renderData.rows.length * (op.box_height) - 2
         });
         // todo: update SVG (parent) size
 
@@ -141,7 +143,7 @@ class WordLine extends VComponent {
           .attrs({
               x: -3,
               y: 0,
-              height: op.box_height-2,
+              height: op.box_height - 2,
               rx: 3,
               ry: 3
           })
@@ -154,7 +156,8 @@ class WordLine extends VComponent {
           .on('mouseout', (d, i) => {
               this.actionWordHovered({d, i, hovered: false})
               // this.layers.main.selectAll(`.${hoverPrefix + i}`).classed('highlight', null);
-          });
+          })
+          .on('click', (d, i) => this.actionWordClicked({d, i}))
 
         const wordText = words.selectAll('text').data(d => [d]);
         wordText.enter()
@@ -185,4 +188,18 @@ class WordLine extends VComponent {
     }
 
 
+    actionWordClicked({d, i}) {
+        let selected = !(this._states.selectedWord === i);
+        this._states.selectedWord = selected ? i : null;
+
+        this.eventHandler.trigger(
+          WordLine.events.wordSelected,
+          {
+              selected,
+              caller: this,
+              word: d,
+              index: i
+          })
+
+    }
 }

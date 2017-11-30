@@ -18,7 +18,7 @@ basePath: /api
 paths:
   /translate:
     get:
-      tags: [Translate]
+      tags: [Translate, All]
       operationId: server.get_translation
       summary: Get Translation and Data for sentence
       parameters:
@@ -28,6 +28,17 @@ paths:
           description: Return Translation and meta data
           schema:
             $ref: '#/definitions/Translation'
+  /close_words:
+    get:
+      tags: [Embedding, All]
+      operationId: server.get_close_words
+      summary: Get the closest words w.r.t word embedding
+      parameters:
+        - $ref: '#/parameters/inWord'
+        - $ref: '#/parameters/loc'
+      responses:
+        200:
+          description: Return list of closest words
 
 parameters:
   inSentence:
@@ -36,6 +47,22 @@ parameters:
     in: query
     type: string
     default:  ""
+  inWord:
+    name: in
+    description: the input word
+    in: query
+    type: string
+    default: "hello"
+  loc:
+    name: loc
+    description: location - src or tgt
+    in: query
+    type: string
+    enum:
+      - "src"
+      - "tgt"
+    default: "src"
+
 
 # These definitions are only needed for proper documentation
 # no functional purpose

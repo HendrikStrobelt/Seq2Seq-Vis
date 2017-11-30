@@ -8,11 +8,16 @@ import requests
 
 from flask import send_from_directory, redirect, json
 import numpy as np
+from sklearn.decomposition import PCA
+from sklearn.manifold import MDS, TSNE
 
 from model_api.onmt_lua_model_api import ONMTLuaModelAPI
 from model_api.opennmt_model import ONMTmodelAPI
+from s2s.project import S2SProject
 
 __author__ = 'Hendrik Strobelt'
+CONFIG_FILE_NAME = 's2s.yaml'
+projects = {}
 
 logging.basicConfig(level=logging.INFO)
 app = connexion.App(__name__)
@@ -21,19 +26,21 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--nodebug", default=False)
 parser.add_argument("--port", default="8080")
 parser.add_argument("--nocache", default=False)
-parser.add_argument("-dir", type=str, default=os.path.abspath('data'))
+parser.add_argument("-dir", type=str, default=os.path.abspath('model_api/data'))
 parser.add_argument('-api', type=str, default='pytorch',
                     choices=['pytorch', 'lua'],
                     help="""The API to use.""")
 args = parser.parse_args()
 
 print(args)
-global model
-if args.api == "pytorch":
-    # model = ONMTmodelAPI("model_api/data/ende_acc_15.72_ppl_912.74_e9.pt")
-    model = ONMTmodelAPI("model_api/data/ende_acc_46.86_ppl_21.19_e12.pt")
-else:
-    model = ONMTLuaModelAPI()
+
+
+# global model
+# if args.api == "pytorch":
+#     # model = ONMTmodelAPI("model_api/data/ende_acc_15.72_ppl_912.74_e9.pt")
+#     model = ONMTmodelAPI("model_api/data/ende_acc_46.86_ppl_21.19_e12.pt")
+# else:
+#     model = ONMTLuaModelAPI()
 
 
 # just a simple flask route
@@ -64,9 +71,12 @@ def send_static_dep(path):
 
 # ------ API routing as defined in swagger.yaml (connexion)
 def get_translation(**request):
+    current_project = list(projects.values())[0]
+    model = current_project.model
+
     in_sentence = request['in']
     translate = model.translate(in_text=in_sentence)
-    print("_".join(map(lambda x:x['token'], translate["decoder"][0])))
+    print("_".join(map(lambda x: x['token'], translate["decoder"][0])))
     # r = requests.post('http://127.0.0.1:7784/translator/translate', data=json.dumps([{"src": inSentence}]))
     #
     # # res: [[{'src': 'Hello World', 'tgt': 'Hallo Welt', 'pred_score': -0.1768690943718, 'attn': [[0.62342292070389,
@@ -111,7 +121,81 @@ def get_translation(**request):
     # }
 
 
+def get_close_words(**request):
+    current_project = list(projects.values())[0]
+    loc = request['loc']
+    t2i = current_project.dicts['t2i'][loc]
+    i2t = current_project.dicts['i2t'][loc]
+
+    if loc == 'src':
+        embeddings = current_project.embeddings['encoder']  # TODO: change !!
+    else:
+        embeddings = current_project.embeddings['decoder']
+
+    word = request['in']
+
+    myVec = embeddings[t2i[word]]
+    # print(myVec, myVec.shape, embeddings.shape)
+
+    matrix = embeddings[:]
+    matrix_norms = np.linalg.norm(matrix, axis=1)
+
+    dotted = matrix.dot(myVec)
+
+    vector_norm = np.linalg.norm(myVec)
+    matrix_vector_norms = np.multiply(matrix_norms, vector_norm)
+    neighbors = np.divide(dotted, matrix_vector_norms)
+
+    neighbour_ids = np.argsort(neighbors)[-50:].tolist()
+
+    names = [i2t[x] for x in neighbour_ids]
+
+    # print(neighbors.shape, np.argsort(neighbors)[-20:], t2i[word])
+
+    pca = PCA(n_components=2)
+    positions = pca.fit_transform(matrix[neighbour_ids, :])
+
+    # mds = MDS()
+    # positions = mds.fit_transform(matrix[neighbour_ids, :])
+
+    # tsne = TSNE()
+    # positions = tsne.fit_transform(matrix[neighbour_ids, :])
+
+    return {'word': names,
+            # 'word_vector': matrix[neighbour_ids, :].tolist(),
+            'score': neighbors[neighbour_ids].tolist(),
+            'pos': positions.tolist()
+            }
+
+
+def find_and_load_project(directory):
+    """
+    searches for CONFIG_FILE_NAME in all subdirectories of directory
+    and creates data handlers for all of them
+
+    :param directory: scan directory
+    :return: null
+    """
+    project_dirs = []
+    for root, dirs, files in os.walk(directory):
+        if CONFIG_FILE_NAME in files:
+            project_dirs.append(os.path.abspath(root))
+
+    i = 0
+    for p_dir in project_dirs:
+        dh_id = os.path.split(p_dir)[1]
+        cf = os.path.join(p_dir, CONFIG_FILE_NAME)
+        p = S2SProject(directory=p_dir, config_file=cf)
+        projects[dh_id] = p
+
+        i += 1
+
+
 app.add_api('swagger.yaml')
 
 if __name__ == '__main__':
-    app.run(port=int(args.port), debug=not args.nodebug)
+    args = parser.parse_args()
+    app.run(port=int(args.port), debug=not args.nodebug, host="0.0.0.0")
+else:
+    args, _ = parser.parse_known_args()
+    find_and_load_project(args.dir)

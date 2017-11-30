@@ -74,15 +74,23 @@
   line, path {
     stroke: lightgrey;
   }
-  text{
+  text {
     fill: grey;
   }
 }
 
-.setup{
-  .bar{
+.setup {
+  .bar {
     fill: #d4d4d4;
   }
-
-
 }
+
+.wordprojector {
+  //text {
+    alignment-baseline: middle;
+    text-anchor: middle;
+    opacity: .5;
+  font-size: 8pt;
+  //}
+}
+

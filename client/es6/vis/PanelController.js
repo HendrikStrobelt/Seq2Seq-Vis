@@ -38,13 +38,16 @@ class PanelController {
             inWords: [],
             outWords: [],
             hideStates: false,
-            box_width: 50
+            box_width: 50,
+            wordProjector: null
         };
 
 
         this.eventHandler = new SimpleEventHandler(d3.select('body').node());
 
         this._init()
+
+        this._bindEvents();
 
     }
 
@@ -122,7 +125,7 @@ class PanelController {
             col: this._columns.zero,
             className: "encoder_states_setup",
             addSVG: false,
-            title:'Enc states: ',
+            title: 'Enc states: ',
             divStyles: {height: '100px', width: '100px', 'padding-top': '5px'}
         }));
 
@@ -130,7 +133,7 @@ class PanelController {
             col: this._columns.zero,
             className: "encoder_words_setup",
             addSVG: false,
-            title:'Enc words: ',
+            title: 'Enc words: ',
             divStyles: {height: '21px', width: '100px', 'padding-top': '5px'}
         })
 
@@ -138,7 +141,7 @@ class PanelController {
             col: this._columns.zero,
             className: "attn_setup",
             addSVG: false,
-            title:'Attention: ',
+            title: 'Attention: ',
             divStyles: {height: '50px', width: '100px'}
         })
 
@@ -158,7 +161,7 @@ class PanelController {
             col: this._columns.zero,
             className: "decoder_states_setup",
             addSVG: false,
-            title:'Dec states: ',
+            title: 'Dec states: ',
             divStyles: {height: '100px', width: '100px', 'padding-bottom': '5px'}
         }))
 
@@ -218,7 +221,7 @@ class PanelController {
     static _setupPanel({col, className, divStyles, addSVG = true, title = null}) {
         const div = col
           .append('div').attr('class', 'setup ' + className).styles(divStyles)
-          // .style('background', 'lightgray');
+        // .style('background', 'lightgray');
         if (title) {div.html(title);}
         if (addSVG) return div.append('svg').attrs({width: 100, height: 30})
           .styles({
@@ -276,5 +279,61 @@ class PanelController {
         })
     }
 
+    _createWordProjector({col, className, options, divStyles}) {
+        const svg = PanelController._standardSVGPanel({col, className, divStyles});
 
+        return new WordProjector({
+            d3parent: svg,
+            eventHandler: this.eventHandler,
+            options
+        })
+    }
+
+
+    updateAndShowWordProjector(data) {
+        if (this._current.wordProjector === null) {
+            this._current.wordProjector = this._createWordProjector({
+                col: this._columns.middle,
+                className: "word_projector",
+                divStyles: {'padding-top': '105px'},
+                options: {}
+            })
+        }
+        console.log(this._current.wordProjector,"--- this._current.wordProjector");
+        this._current.wordProjector.update(data);
+    }
+
+    closeWordProjector() {
+        if (this._current.wordProjector) {
+            this._current.wordProjector.destroy();
+            this._current.wordProjector = null;
+        }
+    }
+
+    _bindEvents() {
+        this.eventHandler.bind(WordLine.events.wordSelected, (d, e) => {
+            if (d.caller === this._vis.left.encoder_words) {
+
+                const request = Networking.ajax_request('/api/close_words');
+                const payload = new Map([['in', d.word.word.text], ['loc', 'src']]);
+
+                request
+                  .get(payload)
+                  .then(data => {
+                      // console.log(JSON.parse(data), "--- data");
+
+                      const word_data = JSON.parse(data);
+                      this.updateAndShowWordProjector(word_data);
+
+                  })
+                  .catch(error => console.log(error, "--- error"));
+
+
+                console.log(d.word.word.text, " enc--- ");
+            }
+
+
+        })
+
+    }
 }
