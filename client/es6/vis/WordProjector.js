@@ -27,6 +27,8 @@ class WordProjector extends VComponent {
 
     _init() {
         const op = this.options;
+        this.options.text_measurer = this.options.text_measurer
+          || new SVGMeasurements(this.parent, 'measureWord');
 
         this.parent.attrs({
             width: op.width,
@@ -77,13 +79,43 @@ class WordProjector extends VComponent {
 
         const wordEnter = word.enter().append('text').attr('class', 'word');
 
-        const xscale = d3.scaleLinear().range([30, op.width-30]);
-        const yscale = d3.scaleLinear().range([10, op.height-10]);
-        const wordScale = d3.scalePow().exponent(.5).range([5, 9]);
+        const xscale = d3.scaleLinear().range([30, op.width - 30]);
+        const yscale = d3.scaleLinear().range([10, op.height - 10]);
+        const wordScale = d3.scalePow().exponent(.9).range([6, 14]);
+
+
+        const ofree = []
+        
+        for (const rd of renderData){
+            const w = rd.word;
+            const height = wordScale(rd.score);
+            const x = xscale(rd.pos[0])
+            const y = yscale(rd.pos[1])
+            
+            const width = op.text_measurer.textLength(w,'font-size:' +height+ 'px;')
+            console.log(w,height,x,y,width,"--- w,height,x,y,width");
+
+            ofree.push(new cola.Rectangle(x-width/2, x+width/2, y-height/2, y+height/2))
+            
+        }
+
+
+        cola.removeOverlaps(ofree);
+
+        console.log(ofree,"--- ofree");
+
+
+
         wordEnter.merge(word).attrs({
-            x: d => xscale(d.pos[0]),
-            y: d => yscale(d.pos[1])
-        }).text(d => d.word).style('font-size',d => wordScale(d.score)+'pt')
+            x: (d,i) => (ofree[i].X-ofree[i].x)/2+ofree[i].x,
+            y: (d,i) => (ofree[i].Y-ofree[i].y)/2+ofree[i].y,
+        }).text(d => d.word).style('font-size', d => wordScale(d.score) + 'px')
+
+
+        // wordEnter.merge(word).attrs({
+        //     x: d => xscale(d.pos[0]),
+        //     y: d => yscale(d.pos[1])
+        // }).text(d => d.word).style('font-size', d => wordScale(d.score) + 'px')
 
 
         // const op = this.options;

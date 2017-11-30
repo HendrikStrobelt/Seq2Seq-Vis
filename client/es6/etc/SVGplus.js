@@ -20,7 +20,8 @@ class SVGMeasurements {
 
     }
 
-    textLength(text) {
+    textLength(text, style=null) {
+        this.measureElement.attr('style', style);
         this.measureElement.text(text);
         const tl = this.measureElement.node().getComputedTextLength();
         this.measureElement.text('');
