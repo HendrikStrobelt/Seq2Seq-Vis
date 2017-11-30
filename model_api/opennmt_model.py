@@ -1,4 +1,5 @@
 import argparse
+import h5py
 import json
 import onmt
 import torch
@@ -212,6 +213,17 @@ class ONMTmodelAPI(AbstractModelAPI):
                               self.translator.fields,
                               None)
 
+        # Code to extract the source and target dict
+        # with open("src.dict", 'w') as f:
+        #     for w, ix in self.translator.fields['src'].vocab.stoi.items():
+        #         f.write(str(ix) + " " + w + "\n")
+        # with open("tgt.dict", 'w') as f:
+        #     for w, ix in self.translator.fields['tgt'].vocab.stoi.items():
+        #         f.write(str(ix) + " " + w + "\n")
+        # with h5py.File("embs.h5", 'w') as f:
+        #     f.create_dataset("encoder", data=self.translator.model.encoder.embeddings.emb_luts[0].weight.data.numpy())
+        #     f.create_dataset("decoder", data=self.translator.model.decoder.embeddings.emb_luts[0].weight.data.numpy())
+
         # initialize Iterator to access batch
         testData = onmt.IO.OrderedIterator(
             dataset=data,
@@ -241,7 +253,7 @@ class ONMTmodelAPI(AbstractModelAPI):
             decoderRes = []
             attnRes = []
             for ix, p in enumerate(predBatch[0]):
-                if p: 
+                if p:
                     topIx = []
                     topIxAttn = []
                     for t, a, s in zip(p, attn[0][ix], decStates[ix]):
