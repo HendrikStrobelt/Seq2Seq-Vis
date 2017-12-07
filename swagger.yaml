@@ -28,6 +28,19 @@ paths:
           description: Return Translation and meta data
           schema:
             $ref: '#/definitions/Translation'
+  /compare_translation:
+    get:
+      tags: [Translate, All]
+      operationId: server.compare_translation
+      summary: Compare Translation and Data for sentences
+      parameters:
+        - $ref: '#/parameters/inSentence'
+        - $ref: '#/parameters/compareSentences'
+      responses:
+        200:
+          description: Return Translations and distances
+#          schema:
+#            $ref: '#/definitions/Translation'
   /close_words:
     get:
       tags: [Embedding, All]
@@ -36,6 +49,8 @@ paths:
       parameters:
         - $ref: '#/parameters/inWord'
         - $ref: '#/parameters/loc'
+        - $ref: '#/parameters/p_method'
+        - $ref: '#/parameters/limit'
       responses:
         200:
           description: Return list of closest words
@@ -46,7 +61,15 @@ parameters:
     description: the input sentence
     in: query
     type: string
-    default:  ""
+    default:  "world"
+  compareSentences:
+    name: compare
+    description: list of sentences to compare against
+    in: query
+    type: array
+    required: true
+    items:
+      type: string
   inWord:
     name: in
     description: the input word
@@ -62,6 +85,23 @@ parameters:
       - "src"
       - "tgt"
     default: "src"
+  limit:
+    name: limit
+    description: limit of results
+    in: query
+    type: integer
+    default: 100
+  p_method:
+    name: p_method
+    description: projection method to use
+    in: query
+    type: string
+    enum:
+      - "mds"
+      - "pca"
+      - "tsne"
+      - "none"
+    default: "pca"
 
 
 # These definitions are only needed for proper documentation

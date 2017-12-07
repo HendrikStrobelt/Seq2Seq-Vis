@@ -132,23 +132,22 @@ class WordLine extends VComponent {
         let words = rows.selectAll(`.${op.css_class_main}`)
           .data((row, rowID) => row.map(word => ({row: rowID, word})));
         words.exit().remove();
-        words = words.enter()
+
+        const wordsEnter = words.enter()
           .append('g').attr('class', `${op.css_class_main} ${op.css_class_add}`)
-          .merge(words)
-          .attrs({'transform': (w, i) => `translate(${this.positions[w.row][i]},0)`,});
+        wordsEnter.append('rect').attrs({
+            x: -3,
+            y: 0,
+            height: op.box_height - 2,
+            rx: 3,
+            ry: 3
+        });
+        wordsEnter.append('text');
 
 
-        const wordRects = words.selectAll('rect').data(d => [d]);
-        wordRects.enter().append('rect')
-          .attrs({
-              x: -3,
-              y: 0,
-              height: op.box_height - 2,
-              rx: 3,
-              ry: 3
-          })
-          .merge(wordRects)
-          .attr('width', d => d.word.width + 6)
+        /**** UPDATE ***/
+        const allWords = wordsEnter.merge(words)
+          .attrs({'transform': (w, i) => `translate(${this.positions[w.row][i]},0)`,})
           .on('mouseenter', (d, i) => {
               this.actionWordHovered({d, i, hovered: true})
               // this.layers.main.selectAll(`.${hoverPrefix + i}`).raise().classed('highlight', true);
@@ -159,21 +158,17 @@ class WordLine extends VComponent {
           })
           .on('click', (d, i) => this.actionWordClicked({d, i}))
 
-        const wordText = words.selectAll('text').data(d => [d]);
-        wordText.enter()
-          .append('text')
-          // .attr('y', 11)
-          .merge(wordText)
-          // .attr('x', d => d.word.width * .5)
-          .attr('transform', d => {
-              const w = d.word;
-              if (op.box_type === WordLine.BoxType.fixed
-                && w.width < w.realWidth && w.realWidth > 0)
-                  return `translate(${d.word.width * .5},11)scale(${w.width / w.realWidth},1)`
-              else
-                  return `translate(${d.word.width * .5},11)`
-          })
-          .text(d => d.word.text);
+
+        allWords.select('rect').attr('width', d => d.word.width + 6);
+
+        allWords.select('text').attr('transform', d => {
+            const w = d.word;
+            if (op.box_type === WordLine.BoxType.fixed
+              && w.width < w.realWidth && w.realWidth > 0)
+                return `translate(${d.word.width * .5},11)scale(${w.width / w.realWidth},1)`
+            else
+                return `translate(${d.word.width * .5},11)`
+        }).text(d => d.word.text);
 
 
     }
@@ -185,6 +180,10 @@ class WordLine extends VComponent {
 
     get rows() {
         return this.renderData.rows;
+    }
+
+    get firstRowPlainWords() {
+        return this.renderData.rows[0].map(word => word.text)
     }
 
 

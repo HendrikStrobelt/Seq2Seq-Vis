@@ -87,11 +87,48 @@
 
 .wordprojector {
   //text {
-    alignment-baseline: middle;
-    text-anchor: middle;
-    opacity: .3;
+  alignment-baseline: middle;
+  text-anchor: middle;
+  opacity: .8;
   font-size: 8pt;
   font-weight: bold;
   //}
 }
 
+.close_word_list {
+  alignment-baseline: middle;
+  font-size: 15px;
+  font-weight: bold;
+  .word {
+    opacity: .6;
+    &:hover {
+      opacity: 1
+    }
+
+  }
+
+  .scoreBar {
+    rect {
+      fill: #6d859c;
+    }
+
+  }
+
+  .distBar {
+    rect {
+      fill: #ffc466;
+    }
+
+  }
+  .barText {
+    fill: #4a4a4a;
+    opacity: 1;
+    font-size: 9px;
+    font-weight: bold;
+    alignment-baseline: middle;
+  }
+
+  .wordComp {
+    font-weight: 200;
+  }
+}

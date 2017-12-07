@@ -51,9 +51,30 @@
 .wordprojector {
   alignment-baseline: middle;
   text-anchor: middle;
-  opacity: .3;
+  opacity: .8;
   font-size: 8pt;
   font-weight: bold; }
+
+.close_word_list {
+  alignment-baseline: middle;
+  font-size: 15px;
+  font-weight: bold; }
+  .close_word_list .word {
+    opacity: .6; }
+    .close_word_list .word:hover {
+      opacity: 1; }
+  .close_word_list .scoreBar rect {
+    fill: #6d859c; }
+  .close_word_list .distBar rect {
+    fill: #ffc466; }
+  .close_word_list .barText {
+    fill: #4a4a4a;
+    opacity: 1;
+    font-size: 9px;
+    font-weight: bold;
+    alignment-baseline: middle; }
+  .close_word_list .wordComp {
+    font-weight: 200; }
 
 body {
   font-family: 'Source Sans Pro', sans-serif;

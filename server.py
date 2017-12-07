@@ -15,7 +15,7 @@ from model_api.onmt_lua_model_api import ONMTLuaModelAPI
 from model_api.opennmt_model import ONMTmodelAPI
 from s2s.project import S2SProject
 
-__author__ = 'Hendrik Strobelt'
+__author__ = 'Hendrik Strobelt, Sebastian Gehrmann'
 CONFIG_FILE_NAME = 's2s.yaml'
 projects = {}
 
@@ -121,9 +121,66 @@ def get_translation(**request):
     # }
 
 
-def get_close_words(**request):
+def extract_sentence(x): return ' '.join(map(lambda y: y['token'], x['decoder'][0]))
+
+
+def extract_attn(x): return np.array(x['attn'][0])
+
+
+def compare_translation(**request):
+    pivot = request["in"]
+    compare = request["compare"]
+
     current_project = list(projects.values())[0]
-    loc = request['loc']
+    model = current_project.model
+
+    pivot_res = model.translate(in_text=pivot)
+    pivot_attn = extract_attn(pivot_res)
+    pivot_attn_l = pivot_attn.shape[0]
+
+    # compare.append(pivot)
+    res = []
+    for cc in compare:
+        cc_t = model.translate(in_text=cc)
+
+        cc_attn = extract_attn(cc_t)
+        dist = 10
+        if cc_attn.shape[0] > 0:
+            max_0 = max(cc_attn.shape[0], pivot_attn.shape[0])
+            max_1 = max(cc_attn.shape[1], pivot_attn.shape[1])
+
+            cc__a = np.zeros(shape=(max_0, max_1))
+            cc__a[:cc_attn.shape[0], :cc_attn.shape[1]] = cc_attn
+
+            cc__b = np.zeros(shape=(max_0, max_1))
+            cc__b[:pivot_attn.shape[0], :pivot_attn.shape[1]] = pivot_attn
+
+            dist = np.linalg.norm(cc__a - cc__b)
+
+        res.append({
+            "sentence": extract_sentence(cc_t),
+            "attn": extract_attn(cc_t).tolist(),
+            "attn_padding": (cc__a - cc__b).tolist(),
+            "orig": cc,
+            "dist": dist
+        })
+
+    return {"compare": res, "pivot": extract_sentence(pivot_res)}
+
+
+P_METHODS = {
+    "pca": PCA(n_components=2),
+    "mds": MDS(),
+    "tsne": TSNE(),
+    "none": lambda x: x
+}
+
+
+def get_close_words(**request):
+    current_project = list(projects.values())[0]  # type: S2SProject
+    loc = request['loc']  # "src" or "tgt"
+    limit = request['limit']
+    p_method = request["p_method"]
     t2i = current_project.dicts['t2i'][loc]
     i2t = current_project.dicts['i2t'][loc]
 
@@ -134,32 +191,26 @@ def get_close_words(**request):
 
     word = request['in']
 
-    myVec = embeddings[t2i[word]]
+    my_vec = embeddings[t2i[word]]
     # print(myVec, myVec.shape, embeddings.shape)
 
     matrix = embeddings[:]
-    matrix_norms = np.linalg.norm(matrix, axis=1)
+    matrix_norms = current_project.cached_norm(loc, matrix)
 
-    dotted = matrix.dot(myVec)
+    dotted = matrix.dot(my_vec)
 
-    vector_norm = np.linalg.norm(myVec)
+    vector_norm = np.linalg.norm(my_vec)
     matrix_vector_norms = np.multiply(matrix_norms, vector_norm)
     neighbors = np.divide(dotted, matrix_vector_norms)
 
-    neighbour_ids = np.argsort(neighbors)[-50:].tolist()
+    neighbour_ids = np.argsort(neighbors)[-limit:].tolist()
 
     names = [i2t[x] for x in neighbour_ids]
 
-    # print(neighbors.shape, np.argsort(neighbors)[-20:], t2i[word])
-
-    pca = PCA(n_components=2)
-    positions = pca.fit_transform(matrix[neighbour_ids, :])
-
-    # mds = MDS()
-    # positions = mds.fit_transform(matrix[neighbour_ids, :])
-
-    # tsne = TSNE()
-    # positions = tsne.fit_transform(matrix[neighbour_ids, :])
+    # projection methods: MDS, PCA, tSNE -- all with standard params
+    positions = []
+    if p_method != "none":
+        positions = P_METHODS[p_method].fit_transform(matrix[neighbour_ids, :])
 
     return {'word': names,
             # 'word_vector': matrix[neighbour_ids, :].tolist(),

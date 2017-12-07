@@ -93,7 +93,7 @@ class WordProjector extends VComponent {
             const y = yscale(rd.pos[1])
             
             const width = op.text_measurer.textLength(w,'font-size:' +height+ 'px;')
-            console.log(w,height,x,y,width,"--- w,height,x,y,width");
+            // console.log(w,height,x,y,width,"--- w,height,x,y,width");
 
             ofree.push(new cola.Rectangle(x-width/2, x+width/2, y-height/2, y+height/2))
             
@@ -102,9 +102,10 @@ class WordProjector extends VComponent {
 
         cola.removeOverlaps(ofree);
 
-        console.log(ofree,"--- ofree");
+        // console.log(ofree,"--- ofree");
 
 
+        //TODO: BAD HACK - -should not be using indices
 
         wordEnter.merge(word).attrs({
             x: (d,i) => (ofree[i].X-ofree[i].x)/2+ofree[i].x,

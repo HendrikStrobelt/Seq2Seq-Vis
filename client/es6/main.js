@@ -15,11 +15,7 @@ window.onload = () => {
         const value = d3.select('#query_input').node().value;
 
 
-        const request = Networking.ajax_request('/api/translate');
-        const payload = new Map([['in', value.trim()]]);
-
-        request
-          .get(payload)
+        S2SApi.translate({input: value.trim()})
           .then(data => {
               // console.log(data, "--- data");
               panelCtrl.update(JSON.parse(data));
@@ -42,9 +38,6 @@ window.onload = () => {
             // updateAllVis();
         }
     })
-
-
-
 
 
     // little eventHandling

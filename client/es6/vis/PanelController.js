@@ -39,7 +39,8 @@ class PanelController {
             outWords: [],
             hideStates: false,
             box_width: 50,
-            wordProjector: null
+            wordProjector: null,
+            closeWordsList: null
         };
 
 
@@ -289,6 +290,16 @@ class PanelController {
         })
     }
 
+    _createCloseWordList({col, className, options, divStyles}) {
+        const svg = PanelController._standardSVGPanel({col, className, divStyles});
+
+        return new CloseWordList({
+            d3parent: svg,
+            eventHandler: this.eventHandler,
+            options
+        })
+    }
+
 
     updateAndShowWordProjector(data) {
         if (this._current.wordProjector === null) {
@@ -299,7 +310,7 @@ class PanelController {
                 options: {}
             })
         }
-        console.log(this._current.wordProjector,"--- this._current.wordProjector");
+        console.log(this._current.wordProjector, "--- this._current.wordProjector");
         this._current.wordProjector.update(data);
     }
 
@@ -310,26 +321,65 @@ class PanelController {
         }
     }
 
+
+    updateAndShowWordList(data) {
+        if (this._current.closeWordsList === null) {
+            this._current.closeWordsList = this._createCloseWordList({
+                col: this._columns.middle,
+                className: "close_word_list",
+                divStyles: {'padding-top': '10px'},
+                options: {}
+            })
+        }
+        console.log(this._current, "--- this._current");
+        this._current.closeWordsList.update(data);
+    }
+
+
     _bindEvents() {
         this.eventHandler.bind(WordLine.events.wordSelected, (d, e) => {
-            if (d.caller === this._vis.left.encoder_words) {
+            if (d.caller === this._vis.left.encoder_words
+              || d.caller === this._vis.left.decoder_words) {
 
-                const request = Networking.ajax_request('/api/close_words');
-                const payload = new Map([['in', d.word.word.text], ['loc', 'src']]);
+                let loc = 'src';
+                if (d.caller === this._vis.left.decoder_words) {
+                    loc = 'tgt'
+                }
 
-                request
-                  .get(payload)
+                const allWords = d.caller.firstRowPlainWords;
+
+                S2SApi.closeWords({input: d.word.word.text, loc, limit: 20})
                   .then(data => {
                       // console.log(JSON.parse(data), "--- data");
 
                       const word_data = JSON.parse(data);
-                      this.updateAndShowWordProjector(word_data);
+                      // this.updateAndShowWordProjector(word_data);
+                      const replaceIndex = d.index;
+                      if (loc === 'src') {
+                          const pivot = allWords.join(' ');
+
+                          const compare = word_data.word.map(wd => {
+                              return allWords.map((aw, wi) =>
+                                (wi === replaceIndex) ? wd : aw).join(' ');
+                          })
+                          console.log(pivot, compare, "--- pivot, compare");
+                          S2SApi.compareTranslation({pivot, compare})
+                            .then(data => {
+                                word_data["compare"] = JSON.parse(data)["compare"];
+                                this.updateAndShowWordList(word_data);
+                            })
+
+                      } else {
+                          this.updateAndShowWordList(word_data);
+
+                      }
+
 
                   })
                   .catch(error => console.log(error, "--- error"));
 
 
-                console.log(d.word.word.text, " enc--- ");
+                console.log(d.word.word.text, d, " enc--- ");
             }
 
 
