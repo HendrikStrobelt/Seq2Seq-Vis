@@ -1,14 +1,22 @@
+# from model_api.abstract_model_api import AbstractModelAPI
+from __future__ import division, unicode_literals
 import argparse
+import codecs
 import h5py
-import json
-import onmt
+import math
+import numpy as np
+import os
 import torch
 import torchtext
-import os
 
-from model_api.abstract_model_api import AbstractModelAPI
-from collections import Counter
-from onmt.IO import extractFeatures
+from itertools import count
+
+import onmt.io
+import onmt.translate
+import onmt
+import onmt.ModelConstructor
+import onmt.modules
+#import opts
 
 PAD_WORD = '<blank>'
 UNK = 0
@@ -16,177 +24,206 @@ BOS_WORD = '<s>'
 EOS_WORD = '</s>'
 
 
-def add_model_arguments(parser):
+def translate_opts(parser):
+    group = parser.add_argument_group('Model')
+    group.add_argument('-model', required=False,
+                       help='Path to model .pt file')
+
+    group = parser.add_argument_group('Data')
+    group.add_argument('-data_type', default="text",
+                       help="Type of the source input. Options: [text|img].")
+
+    group.add_argument('-src_dir',   default="",
+                       help='Source directory for image or audio files')
+    group.add_argument('-tgt',
+                       help='True target sequence (optional)')
+    group.add_argument('-output', default='pred.txt',
+                       help="""Path to output the predictions (each line will
+                       be the decoded sequence""")
+
+    # Options most relevant to summarization.
+    group.add_argument('-dynamic_dict', action='store_true',
+                       help="Create dynamic dictionaries")
+    group.add_argument('-share_vocab', action='store_true',
+                       help="Share source and target vocabulary")
+
+    group = parser.add_argument_group('Beam')
+    group.add_argument('-beam_size',  type=int, default=5,
+                       help='Beam size')
+
+    # Alpha and Beta values for Google Length + Coverage penalty
+    # Described here: https://arxiv.org/pdf/1609.08144.pdf, Section 7
+    group.add_argument('-alpha', type=float, default=0.,
+                       help="""Google NMT length penalty parameter
+                        (higher = longer generation)""")
+    group.add_argument('-beta', type=float, default=-0.,
+                       help="""Coverage penalty parameter""")
+    group.add_argument('-max_sent_length', type=int, default=100,
+                       help='Maximum sentence length.')
+    group.add_argument('-replace_unk', action="store_true",
+                       help="""Replace the generated UNK tokens with the
+                       source token that had highest attention weight. If
+                       phrase_table is provided, it will lookup the
+                       identified source token and give the corresponding
+                       target token. If it is not provided(or the identified
+                       source token does not exist in the table) then it
+                       will copy the source token""")
+
+    group = parser.add_argument_group('Logging')
+    group.add_argument('-verbose', action="store_true",
+                       help='Print scores and predictions for each sentence')
+    group.add_argument('-attn_debug', action="store_true",
+                       help='Print best attn for each word')
+    group.add_argument('-dump_beam', type=str, default="",
+                       help='File to dump beam information to.')
+    group.add_argument('-n_best', type=int, default=1,
+                       help="""If verbose is set, will output the n_best
+                       decoded sentences""")
+
+    group = parser.add_argument_group('Efficiency')
+    group.add_argument('-batch_size', type=int, default=30,
+                       help='Batch size')
+    group.add_argument('-gpu', type=int, default=-1,
+                       help="Device to run on")
+
+    # Options most relevant to speech.
+    group = parser.add_argument_group('Speech')
+    group.add_argument('-sample_rate', type=int, default=16000,
+                       help="Sample rate.")
+    group.add_argument('-window_size', type=float, default=.02,
+                       help='Window size for spectrogram in seconds')
+    group.add_argument('-window_stride', type=float, default=.01,
+                       help='Window stride for spectrogram in seconds')
+    group.add_argument('-window', default='hamming',
+                       help='Window type for spectrogram generation')
+
+def model_opts(parser):
     """
     These options are passed to the construction of the model.
     Be careful with these as they will be used during translation.
     """
-    # Model options
-    parser.add_argument('-model_type', default='text',
-                        help="Type of encoder to use. Options are [text|img].")
+
     # Embedding Options
-    parser.add_argument('-word_vec_size', type=int, default=-1,
-                        help='Word embedding for both.')
-    parser.add_argument('-src_word_vec_size', type=int, default=500,
-                        help='Src word embedding sizes')
-    parser.add_argument('-tgt_word_vec_size', type=int, default=500,
-                        help='Tgt word embedding sizes')
+    group = parser.add_argument_group('Model-Embeddings')
+    group.add_argument('-src_word_vec_size', type=int, default=500,
+                       help='Word embedding size for src.')
+    group.add_argument('-tgt_word_vec_size', type=int, default=500,
+                       help='Word embedding size for tgt.')
+    group.add_argument('-word_vec_size', type=int, default=-1,
+                       help='Word embedding size for src and tgt.')
 
-    parser.add_argument('-feat_vec_size', type=int, default=20,
-                        help="""When using -feat_merge mlp, feature embedding
-                        sizes will be set to this.""")
-    parser.add_argument('-feat_merge', type=str, default='concat',
-                        choices=['concat', 'sum', 'mlp'],
-                        help='Merge action for the features embeddings')
-    parser.add_argument('-feat_vec_exponent', type=float, default=0.7,
-                        help="""When using -feat_merge concat, feature embedding
-                        sizes will be set to N^feat_vec_exponent where N is the
-                        number of values the feature takes.""")
-    parser.add_argument('-position_encoding', action='store_true',
-                        help='Use a sin to mark relative words positions.')
-    parser.add_argument('-share_decoder_embeddings', action='store_true',
-                        help='Share the word and out embeddings for decoder.')
+    group.add_argument('-share_decoder_embeddings', action='store_true',
+                       help="""Use a shared weight matrix for the input and
+                       output word  embeddings in the decoder.""")
+    group.add_argument('-share_embeddings', action='store_true',
+                       help="""Share the word embeddings between encoder
+                       and decoder. Need to use shared dictionary for this
+                       option.""")
+    group.add_argument('-position_encoding', action='store_true',
+                       help="""Use a sin to mark relative words positions.
+                       Necessary for non-RNN style models.
+                       """)
 
-    # RNN Options
-    parser.add_argument('-encoder_type', type=str, default='rnn',
-                        choices=['rnn', 'brnn', 'mean', 'transformer'],
-                        help="""Type of encoder layer to use.""")
-    parser.add_argument('-decoder_type', type=str, default='rnn',
-                        choices=['rnn', 'transformer'],
-                        help='Type of decoder layer to use.')
+    group = parser.add_argument_group('Model-Embedding Features')
+    group.add_argument('-feat_merge', type=str, default='concat',
+                       choices=['concat', 'sum', 'mlp'],
+                       help="""Merge action for incorporating features embeddings.
+                       Options [concat|sum|mlp].""")
+    group.add_argument('-feat_vec_size', type=int, default=-1,
+                       help="""If specified, feature embedding sizes
+                       will be set to this. Otherwise, feat_vec_exponent
+                       will be used.""")
+    group.add_argument('-feat_vec_exponent', type=float, default=0.7,
+                       help="""If -feat_merge_size is not set, feature
+                       embedding sizes will be set to N^feat_vec_exponent
+                       where N is the number of values the feature takes.""")
 
-    parser.add_argument('-layers', type=int, default=-1,
-                        help='Number of layers in enc/dec.')
-    parser.add_argument('-enc_layers', type=int, default=2,
-                        help='Number of layers in the encoder')
-    parser.add_argument('-dec_layers', type=int, default=2,
-                        help='Number of layers in the decoder')
+    # Encoder-Deocder Options
+    group = parser.add_argument_group('Model- Encoder-Decoder')
+    group.add_argument('-model_type', default='text',
+                       help="""Type of source model to use. Allows
+                       the system to incorporate non-text inputs.
+                       Options are [text|img|audio].""")
 
-    parser.add_argument('-rnn_size', type=int, default=500,
-                        help='Size of LSTM hidden states')
-    parser.add_argument('-input_feed', type=int, default=1,
-                        help="""Feed the context vector at each time step as
-                        additional input (via concatenation with the word
-                        embeddings) to the decoder.""")
-    parser.add_argument('-rnn_type', type=str, default='LSTM',
-                        choices=['LSTM', 'GRU'],
-                        help="""The gate type to use in the RNNs""")
-    # parser.add_argument('-residual',   action="store_true",
+    group.add_argument('-encoder_type', type=str, default='rnn',
+                       choices=['rnn', 'brnn', 'mean', 'transformer', 'cnn'],
+                       help="""Type of encoder layer to use. Non-RNN layers
+                       are experimental. Options are
+                       [rnn|brnn|mean|transformer|cnn].""")
+    group.add_argument('-decoder_type', type=str, default='rnn',
+                       choices=['rnn', 'transformer', 'cnn'],
+                       help="""Type of decoder layer to use. Non-RNN layers
+                       are experimental. Options are
+                       [rnn|transformer|cnn].""")
+
+    group.add_argument('-layers', type=int, default=-1,
+                       help='Number of layers in enc/dec.')
+    group.add_argument('-enc_layers', type=int, default=2,
+                       help='Number of layers in the encoder')
+    group.add_argument('-dec_layers', type=int, default=2,
+                       help='Number of layers in the decoder')
+    group.add_argument('-rnn_size', type=int, default=500,
+                       help='Size of rnn hidden states')
+    group.add_argument('-cnn_kernel_width', type=int, default=3,
+                       help="""Size of windows in the cnn, the kernel_size is
+                       (cnn_kernel_width, 1) in conv layer""")
+
+    group.add_argument('-input_feed', type=int, default=1,
+                       help="""Feed the context vector at each time step as
+                       additional input (via concatenation with the word
+                       embeddings) to the decoder.""")
+
+    group.add_argument('-rnn_type', type=str, default='LSTM',
+                       choices=['LSTM', 'GRU'],
+                       help="""The gate type to use in the RNNs""")
+    # group.add_argument('-residual',   action="store_true",
     #                     help="Add residual connections between RNN layers.")
+    group.add_argument('-brnn_merge', default='concat',
+                       choices=['concat', 'sum'],
+                       help="Merge action for the bidir hidden states")
 
-    parser.add_argument('-brnn',   action="store_true",
-                        help="Deprecated, use `encoder_type`.")
-    parser.add_argument('-brnn_merge', default='concat',
-                        choices=['concat', 'sum'],
-                        help="Merge action for the bidir hidden states")
-
-    parser.add_argument('-context_gate', type=str, default=None,
-                        choices=['source', 'target', 'both'],
-                        help="""Type of context gate to use.
-                        Do not select for no context gate.""")
+    group.add_argument('-context_gate', type=str, default=None,
+                       choices=['source', 'target', 'both'],
+                       help="""Type of context gate to use.
+                       Do not select for no context gate.""")
 
     # Attention options
-    parser.add_argument('-global_attention', type=str, default='general',
-                        choices=['dot', 'general', 'mlp'],
-                        help="""The attention type to use:
-                        dotprot or general (Luong) or MLP (Bahdanau)""")
+    group = parser.add_argument_group('Model- Attention')
+    group.add_argument('-global_attention', type=str, default='general',
+                       choices=['dot', 'general', 'mlp'],
+                       help="""The attention type to use:
+                       dotprod or general (Luong) or MLP (Bahdanau)""")
 
     # Genenerator and loss options.
-    parser.add_argument('-copy_attn', action="store_true",
-                        help='Train copy attention layer.')
-    parser.add_argument('-copy_attn_force', action="store_true",
-                        help='When available, train to copy.')
-    parser.add_argument('-coverage_attn', action="store_true",
-                        help='Train a coverage attention layer.')
-    parser.add_argument('-lambda_coverage', type=float, default=1,
-                        help='Lambda value for coverage.')
+    group.add_argument('-copy_attn', action="store_true",
+                       help='Train copy attention layer.')
+    group.add_argument('-copy_attn_force', action="store_true",
+                       help='When available, train to copy.')
+    group.add_argument('-coverage_attn', action="store_true",
+                       help='Train a coverage attention layer.')
+    group.add_argument('-lambda_coverage', type=float, default=1,
+                       help='Lambda value for coverage.')
 
-
-def add_translate_arguments(parser):
-    # Add Translation Arguments
-    parser.add_argument('-src_img_dir', default="",
-                        help='Source image directory')
-    parser.add_argument('-tgt',
-                        help='True target sequence (optional)')
-    parser.add_argument('-output', default='pred.txt',
-                        help="""Path to output the predictions (each line will
-                        be the decoded sequence""")
-    parser.add_argument('-beam_size',  type=int, default=5,
-                        help='Beam size')
-    parser.add_argument('-batch_size', type=int, default=30,
-                        help='Batch size')
-    parser.add_argument('-max_sent_length', type=int, default=100,
-                        help='Maximum sentence length.')
-    parser.add_argument('-replace_unk', action="store_true",
-                        help="""Replace the generated UNK tokens with the source
-                        token that had highest attention weight. If phrase_table
-                        is provided, it will lookup the identified source token and
-                        give the corresponding target token. If it is not provided
-                        (or the identified source token does not exist in the
-                        table) then it will copy the source token""")
-    parser.add_argument('-verbose', action="store_true",
-                        help='Print scores and predictions for each sentence')
-    parser.add_argument('-attn_debug', action="store_true",
-                        help='Print best attn for each word')
-
-    parser.add_argument('-dump_beam', type=str, default="",
-                        help='File to dump beam information to.')
-
-    parser.add_argument('-n_best', type=int, default=1,
-                        help="""If verbose is set, will output the n_best
-                        decoded sentences""")
-
-    parser.add_argument('-gpu', type=int, default=-1,
-                        help="Device to run on")
-    # options most relevant to summarization
-    parser.add_argument('-dynamic_dict', action='store_true',
-                        help="Create dynamic dictionaries")
-    parser.add_argument('-share_vocab', action='store_true',
-                        help="Share source and target vocabulary")
-
-
-class ONMTStringData(torchtext.data.Dataset):
-    def __init__(self, srcline, tgt, fields, opt):
-        src = srcline.split()
-        d = {"src": src, "indices": 0}
-
-        examples = [d]
-        # src_words = [src]
-
-        # a temp vocab of a single source example
-        src_vocab = torchtext.vocab.Vocab(Counter(src))
-
-        # mapping source tokens to indices in the dynamic dict
-        src_map = torch.LongTensor(len(src)).fill_(0)
-        for j, w in enumerate(src):
-            src_map[j] = src_vocab.stoi[w]
-
-        self.src_vocabs = [src_vocab]
-        examples[0]["src_map"] = src_map
-
-        # TODO: same for tgt
-        if tgt is not None:
-            pass
-
-        keys = examples[0].keys()
-        fields = [(k, fields[k]) for k in keys]
-
-        examples = list([torchtext.data.Example.fromlist([ex[k] for k in keys],
-                                                         fields)
-                         for ex in examples])
-
-        super(ONMTStringData, self).__init__(examples, fields, None)
-
-
-class ONMTmodelAPI(AbstractModelAPI):
-    def __init__(self, model_loc, gpu=-1, beam_size=5):
+class ONMTmodelAPI():
+    def __init__(self, model_loc, gpu=-1, beam_size=5, k=5):
         # Simulate all commandline args
-        parser = argparse.ArgumentParser(description='translate.py')
-        add_translate_arguments(parser)
+        parser = argparse.ArgumentParser(
+            description='translate.py',
+            formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+        translate_opts(parser)
         self.opt = parser.parse_known_args()[0]
         self.opt.model = model_loc
         self.opt.beam_size = beam_size
         self.opt.batch_size = 1
+        self.opt.n_best = k
+
+        dummy_parser = argparse.ArgumentParser(description='train.py')
+        model_opts(dummy_parser)
+        self.dummy_opt = dummy_parser.parse_known_args([])[0]
+
+        # Load the model.
+        self.fields, self.model, self.model_opt = \
+            onmt.ModelConstructor.load_test_model(self.opt, self.dummy_opt.__dict__)
 
         # Make GPU decoding possible
         self.opt.gpu = gpu
@@ -194,90 +231,104 @@ class ONMTmodelAPI(AbstractModelAPI):
         if self.opt.cuda:
             torch.cuda.set_device(self.opt.gpu)
 
-        parser2 = argparse.ArgumentParser(description='train.py')
-        add_model_arguments(parser2)
-        self.opt2 = parser2.parse_known_args()[0]
+        # Translator
+        self.scorer = onmt.translate.GNMTGlobalScorer(self.opt.alpha,
+                                                      self.opt.beta)
+        self.translator = onmt.translate.Translator(
+            self.model, self.fields,
+            beam_size=self.opt.beam_size,
+            n_best=self.opt.n_best,
+            global_scorer=self.scorer,
+            max_length=self.opt.max_sent_length,
+            copy_attn=self.model_opt.copy_attn,
+            cuda=self.opt.cuda,
+            beam_trace=self.opt.dump_beam != "")
 
-        self.translator = onmt.Translator(self.opt, self.opt2.__dict__)
 
-    def translate(self, in_text, partial_decode=None, k=5, attn=None):
-        # set n_best in translator
-        self.translator.opt.n_best = k
-        # Increase Beam size if asked for large k
-        if self.translator.opt.beam_size < k:
-            self.translator.opt.beam_size = k
+    def translate(self, in_text, partial_decode=None, k=5, attn=None, dump_data=False):
+        # Workaround until we have API that does not require files
+        with codecs.open("tmp.txt", "w", "utf-8") as f:
+            f.write(in_text)
 
-        # initialize Data Object
-        data = ONMTStringData(in_text,
-                              partial_decode,
-                              self.translator.fields,
-                              None)
+        data = onmt.io.build_dataset(self.fields, self.opt.data_type,
+                                     "tmp.txt", self.opt.tgt,
+                                     src_dir=self.opt.src_dir,
+                                     sample_rate=self.opt.sample_rate,
+                                     window_size=self.opt.window_size,
+                                     window_stride=self.opt.window_stride,
+                                     window=self.opt.window,
+                                     use_filter_pred=False)
 
-        # Code to extract the source and target dict
-        # with open("src.dict", 'w') as f:
-        #     for w, ix in self.translator.fields['src'].vocab.stoi.items():
-        #         f.write(str(ix) + " " + w + "\n")
-        # with open("tgt.dict", 'w') as f:
-        #     for w, ix in self.translator.fields['tgt'].vocab.stoi.items():
-        #         f.write(str(ix) + " " + w + "\n")
-        # with h5py.File("embs.h5", 'w') as f:
-        #     f.create_dataset("encoder", data=self.translator.model.encoder.embeddings.emb_luts[0].weight.data.numpy())
-        #     f.create_dataset("decoder", data=self.translator.model.decoder.embeddings.emb_luts[0].weight.data.numpy())
+        if dump_data:
+            # Code to extract the source and target dict
+            with open("data/src.dict", 'w') as f:
+                for w, ix in self.translator.fields['src'].vocab.stoi.items():
+                    f.write(str(ix) + " " + w + "\n")
+            with open("data/tgt.dict", 'w') as f:
+                for w, ix in self.translator.fields['tgt'].vocab.stoi.items():
+                    f.write(str(ix) + " " + w + "\n")
+            with h5py.File("data/embs.h5", 'w') as f:
+                f.create_dataset("encoder", data=self.translator.model.encoder.embeddings.emb_luts[0].weight.data.numpy())
+                f.create_dataset("decoder", data=self.translator.model.decoder.embeddings.emb_luts[0].weight.data.numpy())
 
-        # initialize Iterator to access batch
-        testData = onmt.IO.OrderedIterator(
-            dataset=data,
-            device=self.opt.gpu if self.opt.gpu else -1,
-            batch_size=1,
-            train=False,
-            sort=False,
+        test_data = onmt.io.OrderedIterator(
+            dataset=data, device=self.opt.gpu,
+            batch_size=self.opt.batch_size, train=False, sort=False,
             shuffle=False)
 
+        # set n_best in translator
+        self.translator.n_best = k
+        # Increase Beam size if asked for large k
+        if self.translator.beam_size < k:
+            self.translator.beam_size = k
+
+        builder = onmt.translate.TranslationBuilder(
+            data, self.translator.fields,
+            self.opt.n_best, self.opt.replace_unk, self.opt.tgt)
+
         # Only has one batch, but indexing does not work
-        for batch in testData:
-            predBatch, predScore, goldScore, attn, src, context, decStates\
-                = self.translator.translate(batch, data, states=True)
-            res = {}
-            # Fill encoder Result
-            encoderRes = []
-            for ix, t in enumerate(in_text.split()):
-                encoderRes.append({'token': t,
-                                   'state': context[ix].tolist(),
-                                   'embed': []})
-            res['encoder'] = encoderRes
+        for batch in test_data:
+            batch_data = self.translator.translate_batch(batch, data)
+            translations = builder.from_batch(batch_data)
+            # iteratres over items in batch - only one for now
+            for trans in translations:
+                res = {}
+                # Fill encoder Result
+                encoderRes = []
+                for ix, t in enumerate(in_text.split()):
+                    encoderRes.append({'token': t,
+                                       'state': [], #context[ix],
+                                       'embed': []})
+                res['encoder'] = encoderRes
 
-            os.write(1, bytes('\n PRED %d: %s\n' %
-                              (1, " ".join(predBatch[0][0])), 'UTF-8'))
-
-            # Fill decoder Result
-            decoderRes = []
-            attnRes = []
-            for ix, p in enumerate(predBatch[0]):
-                if p:
-                    topIx = []
-                    topIxAttn = []
-                    for t, a, s in zip(p, attn[0][ix], decStates[ix]):
-                        currentDec = {}
-                        currentDec['token'] = t
-                        currentDec['state'] = s.tolist()
-                        currentDec['embed'] = []
-                        topIx.append(currentDec)
-                        topIxAttn.append(list(a))
-                        # if t in ['.', '!', '?']:
-                        #     break
-                    decoderRes.append(topIx)
-                    attnRes.append(topIxAttn)
-            res['scores'] = predScore[0].numpy().tolist()
-            res['decoder'] = decoderRes
-            res['attn'] = attnRes
-            res['context'] = context.tolist()
-            return res
+                # # Fill decoder Result
+                decoderRes = []
+                attnRes = []
+                for ix, p in enumerate(trans.pred_sents[:k]):
+                    if p:
+                        topIx = []
+                        topIxAttn = []
+                        for t, a in zip(p, trans.attns[ix]):
+                            currentDec = {}
+                            currentDec['token'] = t
+                            currentDec['state'] = []
+                            topIx.append(currentDec)
+                            topIxAttn.append(list(a))
+                            # if t in ['.', '!', '?']:
+                            #     break
+                        decoderRes.append(topIx)
+                        attnRes.append(topIxAttn)
+                res['scores'] = trans.pred_scores[:k]
+                res['decoder'] = decoderRes
+                res['attn'] = attnRes
+                #res['context'] = list(context)
+                return res
 
 
 def main():
-    model = ONMTmodelAPI("data/ende_acc_15.72_ppl_912.74_e9.pt")
+    model = ONMTmodelAPI("data/demo-model_acc_41.38_ppl_28.26_e13.pt")
 
-    model.translate("This is a test")
+    print(model.translate("This is a test .", dump_data=True))
 
 
 if __name__ == "__main__":
