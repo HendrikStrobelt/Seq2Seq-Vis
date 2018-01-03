@@ -75,13 +75,13 @@ class CloseWordList extends VComponent {
         const compare = op.data_access.compare(data);
         this._states.has_compare = compare !== null;
 
-        if (this._states.has_compare) {
+        // if (this._states.has_compare) {
             return _.sortBy(_.zipWith(words, scores, wordWidth, compare,
               (word, score, width, compare) => ({word, score, width, compare})), d => -d.score);
-        } else {
-            return _.sortBy(_.zipWith(words, scores, wordWidth,
-              (word, score, width) => ({word, score, width})), d => -d.score);
-        }
+        // } else {
+        //     return _.sortBy(_.zipWith(words, scores, wordWidth,
+        //       (word, score, width) => ({word, score, width})), d => -d.score);
+        // }
 
     }
 

@@ -49,11 +49,13 @@
   fill: #d4d4d4; }
 
 .wordprojector {
-  alignment-baseline: middle;
+  dominant-baseline: middle;
   text-anchor: middle;
   opacity: .8;
   font-size: 8pt;
   font-weight: bold; }
+  .wordprojector rect {
+    fill: lightgray; }
 
 .close_word_list {
   alignment-baseline: middle;

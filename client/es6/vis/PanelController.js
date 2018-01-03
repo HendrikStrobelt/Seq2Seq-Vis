@@ -366,12 +366,13 @@ class PanelController {
                           S2SApi.compareTranslation({pivot, compare})
                             .then(data => {
                                 word_data["compare"] = JSON.parse(data)["compare"];
-                                this.updateAndShowWordList(word_data);
+                                // this.updateAndShowWordList(word_data);
+                                this.updateAndShowWordProjector(word_data);
                             })
 
                       } else {
-                          this.updateAndShowWordList(word_data);
-
+                          // this.updateAndShowWordList(word_data);
+                          this.updateAndShowWordProjector(word_data);
                       }
 
 

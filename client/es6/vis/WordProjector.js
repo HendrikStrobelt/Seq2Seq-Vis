@@ -12,7 +12,12 @@ class WordProjector extends VComponent {
             width: 500,
             css_class_main: 'wp_vis',
             hidden: false,
-            data_access: {pos: d => d.pos, scores: d => d.score, words: d => d.word}
+            data_access: {
+                pos: d => d.pos,
+                scores: d => d.score,
+                words: d => d.word,
+                compare: d => d.compare
+            }
 
         }
     }
@@ -64,9 +69,15 @@ class WordProjector extends VComponent {
 
         const words = op.data_access.words(data);
         const scores = op.data_access.scores(data);
+        const compare = op.data_access.compare(data);
+        this._states.has_compare = compare !== null;
 
-        return _.zipWith(words, scores, norm_pos,
-          (word, score, pos) => ({word, score, pos}));
+        return _.sortBy(_.zipWith(words, scores, norm_pos, compare,
+          (word, score, pos, compare) => ({word, score, pos, compare})), d => -d.score);
+
+
+        // return _.zipWith(words, scores, norm_pos,
+        //   (word, score, pos) => ({word, score, pos}));
     }
 
     _render(renderData) {
@@ -77,80 +88,73 @@ class WordProjector extends VComponent {
         const word = this.layers.main.selectAll(".word").data(renderData);
         word.exit().remove();
 
-        const wordEnter = word.enter().append('text').attr('class', 'word');
+        const wordEnter = word.enter().append('g').attr('class', 'word');
+        wordEnter.append('rect');
+        wordEnter.append('text');
 
         const xscale = d3.scaleLinear().range([30, op.width - 30]);
         const yscale = d3.scaleLinear().range([10, op.height - 10]);
-        const wordScale = d3.scalePow().exponent(.9).range([6, 14]);
+        const scoreExtent = d3.extent(renderData.map(d => d.score))
+        const wordScale = d3.scaleLinear().domain(scoreExtent).range([6, 14]);
 
 
         const ofree = []
-        
-        for (const rd of renderData){
+
+        for (const rd of renderData) {
             const w = rd.word;
             const height = wordScale(rd.score);
             const x = xscale(rd.pos[0])
             const y = yscale(rd.pos[1])
-            
-            const width = op.text_measurer.textLength(w,'font-size:' +height+ 'px;')
+
+            const width = op.text_measurer.textLength(w, 'font-size:' + height + 'px;')
             // console.log(w,height,x,y,width,"--- w,height,x,y,width");
 
-            ofree.push(new cola.Rectangle(x-width/2, x+width/2, y-height/2, y+height/2))
-            
+            ofree.push(new cola.Rectangle(x - width / 2 - 4, x + width / 2 + 4, y - height / 2 - 3, y + height / 2 + 3))
+
         }
 
 
         cola.removeOverlaps(ofree);
+
+        const newPos = {};
+        ofree.forEach((d, i) => {
+            newPos[renderData[i].word] = {
+                cx: (d.X + d.x) * .5,
+                cy: (d.Y + d.y) * .5,
+                w: (d.X - d.x),
+                h: (d.Y - d.y)
+            }
+        });
+
 
         // console.log(ofree,"--- ofree");
 
 
         //TODO: BAD HACK - -should not be using indices
 
-        wordEnter.merge(word).attrs({
-            x: (d,i) => (ofree[i].X-ofree[i].x)/2+ofree[i].x,
-            y: (d,i) => (ofree[i].Y-ofree[i].y)/2+ofree[i].y,
-        }).text(d => d.word).style('font-size', d => wordScale(d.score) + 'px')
+        const allWords = wordEnter.merge(word);
+        allWords.attr('transform',
+          (d, i) => `translate(${newPos[d.word].cx}, ${newPos[d.word].cy})`)
+        allWords.select('rect').attrs({
+            width: (d, i) => newPos[d.word].w,
+            height: (d, i) => newPos[d.word].h - 2,
+            x: (d, i) => -newPos[d.word].w * .5,
+            y: (d, i) => -newPos[d.word].h * .5 + 1,
+        });
+        allWords.select('text')
+          .text(d => d.word)
+          .style('font-size', d => wordScale(d.score) + 'px')
 
+        if (this._states.has_compare) {
+            const bd_max = _.max(renderData.map(d => d.compare.dist));
+            const bd_scale = d3.scaleLinear().domain([0, bd_max])
+              .range(['#ffffff', '#3f6f9e']);
+            allWords.select('rect').style('fill', d => {
+                // console.log(d,"--- d");
+                return bd_scale(d.compare.dist)
+            })
 
-        // wordEnter.merge(word).attrs({
-        //     x: d => xscale(d.pos[0]),
-        //     y: d => yscale(d.pos[1])
-        // }).text(d => d.word).style('font-size', d => wordScale(d.score) + 'px')
-
-
-        // const op = this.options;
-        //
-        // const x = (i) => op.x_offset + Math.round((i + .5) * op.cell_width);
-        //
-        // const y = d3.scalePow().exponent(.5).domain(renderData.yDomain).range([op.height, 0]);
-        //
-        // const line = d3.line()
-        //   .x((_, i) => x(i))
-        //   .y(d => y(d));
-        //
-        //
-        // const stateLine = this.layers.main.selectAll(`.${op.css_line}`).data(renderData.states);
-        // stateLine.exit().remove();
-        //
-        // const stateLineEnter = stateLine.enter().append('path').attr('class', op.css_line);
-        //
-        // stateLineEnter.merge(stateLine).attrs({
-        //     'd': line
-        // });
-        //
-        //
-        // if (renderData.states.length > 0) {
-        //     const yAxis = d3.axisLeft(y).ticks(7);
-        //     this.layers.axis.classed("axis state_axis", true)
-        //       .call(yAxis).selectAll('*');
-        //     this.layers.axis.attrs({
-        //         // transform: `translate(${x(renderData.states[0].length - 1) + 3},0)`
-        //         transform: `translate(${op.x_offset + op.cell_width * .5 - 3},0)`
-        //     })
-        // } else {
-        //     this.layers.axis.selectAll("*").remove();
-        // }
+        }
 
 
     }
