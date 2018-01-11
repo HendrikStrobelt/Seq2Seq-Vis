@@ -326,7 +326,7 @@ class ONMTmodelAPI():
 
 
 def main():
-    model = ONMTmodelAPI("data/demo-model_acc_41.38_ppl_28.26_e13.pt")
+    model = ONMTmodelAPI("data/model_acc_45.21_ppl_22.92_e13.pt")
 
     print(model.translate("This is a test .", dump_data=True))
 

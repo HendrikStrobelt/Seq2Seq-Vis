@@ -23,7 +23,7 @@ logging.basicConfig(level=logging.INFO)
 app = connexion.App(__name__)
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--nodebug", default=False)
+parser.add_argument("--nodebug", default=True)
 parser.add_argument("--port", default="8080")
 parser.add_argument("--nocache", default=False)
 parser.add_argument("-dir", type=str, default=os.path.abspath('model_api/data'))
@@ -192,14 +192,13 @@ def get_close_words(**request):
     word = request['in']
 
     my_vec = embeddings[t2i[word]]
-    # print(myVec, myVec.shape, embeddings.shape)
 
     matrix = embeddings[:]
     matrix_norms = current_project.cached_norm(loc, matrix)
 
     dotted = matrix.dot(my_vec)
 
-    vector_norm = np.linalg.norm(my_vec)
+    vector_norm = np.sqrt(np.sum(my_vec * my_vec))
     matrix_vector_norms = np.multiply(matrix_norms, vector_norm)
     neighbors = np.divide(dotted, matrix_vector_norms)
 
