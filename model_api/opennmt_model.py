@@ -2,6 +2,7 @@
 from __future__ import division, unicode_literals
 import argparse
 import codecs
+import json
 import torch
 
 import numpy as np
@@ -241,10 +242,21 @@ class ONMTmodelAPI():
             beam_trace=self.opt.dump_beam != "")
 
     def translate(self, in_text, partial_decode=None, k=5, attn=None):
+        """
+        in_text: list of strings
+        partial_decode: list of strings, not implemented yet
+        k: int, number of top translations to return
+        attn: list, not implemented yet
+        """
+
+        # Set batch size to number of requested translations
+        self.opt.batch_size = len(in_text)
         # Workaround until we have API that does not require files
         with codecs.open("tmp.txt", "w", "utf-8") as f:
-            f.write(in_text)
+            for line in in_text:
+                f.write(line + "\n")
 
+        # Use written file as input to dataset builder
         data = onmt.io.build_dataset(
             self.fields, self.opt.data_type,
             "tmp.txt", self.opt.tgt,
@@ -255,6 +267,7 @@ class ONMTmodelAPI():
             window=self.opt.window,
             use_filter_pred=False)
 
+        # Iterating over the single batch... torchtext requirement
         test_data = onmt.io.OrderedIterator(
             dataset=data, device=self.opt.gpu,
             batch_size=self.opt.batch_size, train=False, sort=False,
@@ -262,14 +275,17 @@ class ONMTmodelAPI():
 
         # set n_best in translator
         self.translator.n_best = k
+
         # Increase Beam size if asked for large k
         if self.translator.beam_size < k:
             self.translator.beam_size = k
 
+        # Builder used to convert translation to text
         builder = onmt.translate.TranslationBuilder(
             data, self.translator.fields,
             self.opt.n_best, self.opt.replace_unk, self.opt.tgt)
 
+        reply = {}
         # Only has one batch, but indexing does not work
         for batch in test_data:
             batch_data = self.translator.translate_batch(
@@ -277,13 +293,13 @@ class ONMTmodelAPI():
             context = batch_data['context'][:, 0, :]
             translations = builder.from_batch(batch_data)
             # iteratres over items in batch - only one for now
-            for trans in translations:
+            for transIx, trans in enumerate(translations):
                 res = {}
                 # Fill encoder Result
                 encoderRes = []
-                for token, state in zip(in_text.split(), context):
+                for token, state in zip(in_text[transIx].split(), context):
                     encoderRes.append({'token': token,
-                                       'state': list(state.data),
+                                       'state': list(state.data)
                                        })
                 res['encoder'] = encoderRes
 
@@ -296,26 +312,28 @@ class ONMTmodelAPI():
                         topIxAttn = []
                         for token, attn, state in zip(p,
                                                       trans.attns[ix],
-                                                      batch_data["target_states"][ix]):
+                                                      batch_data["target_states"][transIx][ix]):
                             currentDec = {}
                             currentDec['token'] = token
                             currentDec['state'] = list(state.data)
                             topIx.append(currentDec)
                             topIxAttn.append(list(attn))
+                            # if t in ['.', '!', '?']:
+                            #     break
                         decoderRes.append(topIx)
                         attnRes.append(topIxAttn)
                 res['scores'] = list(np.array(trans.pred_scores))[:k]
                 res['decoder'] = decoderRes
                 res['attn'] = attnRes
-                print(res)
-                return res
+                reply[transIx] = res
+        return reply
 
 
 def main():
     model = ONMTmodelAPI("demo-model_acc_41.38_ppl_28.26_e13.pt")
-    # model.translate("This is a test .")
-    print(model.translate("This is a test ."))
-
+    reply = model.translate(["This is a test .", "this is a second test ."])
+    print(json.dumps(reply, indent=2, sort_keys=True))
+    print(reply.keys())
 
 if __name__ == "__main__":
     main()
