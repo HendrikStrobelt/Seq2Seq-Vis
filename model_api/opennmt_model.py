@@ -2,21 +2,15 @@
 from __future__ import division, unicode_literals
 import argparse
 import codecs
-import h5py
-import math
-import numpy as np
-import os
 import torch
-import torchtext
 
-from itertools import count
-
+import numpy as np
 import onmt.io
 import onmt.translate
 import onmt
 import onmt.ModelConstructor
 import onmt.modules
-#import opts
+
 
 PAD_WORD = '<blank>'
 UNK = 0
@@ -32,8 +26,7 @@ def translate_opts(parser):
     group = parser.add_argument_group('Data')
     group.add_argument('-data_type', default="text",
                        help="Type of the source input. Options: [text|img].")
-
-    group.add_argument('-src_dir',   default="",
+    group.add_argument('-src_dir', default="",
                        help='Source directory for image or audio files')
     group.add_argument('-tgt',
                        help='True target sequence (optional)')
@@ -48,7 +41,7 @@ def translate_opts(parser):
                        help="Share source and target vocabulary")
 
     group = parser.add_argument_group('Beam')
-    group.add_argument('-beam_size',  type=int, default=5,
+    group.add_argument('-beam_size', type=int, default=5,
                        help='Beam size')
 
     # Alpha and Beta values for Google Length + Coverage penalty
@@ -204,6 +197,7 @@ def model_opts(parser):
     group.add_argument('-lambda_coverage', type=float, default=1,
                        help='Lambda value for coverage.')
 
+
 class ONMTmodelAPI():
     def __init__(self, model_loc, gpu=-1, beam_size=5, k=5):
         # Simulate all commandline args
@@ -223,7 +217,8 @@ class ONMTmodelAPI():
 
         # Load the model.
         self.fields, self.model, self.model_opt = \
-            onmt.ModelConstructor.load_test_model(self.opt, self.dummy_opt.__dict__)
+            onmt.ModelConstructor.load_test_model(
+                self.opt, self.dummy_opt.__dict__)
 
         # Make GPU decoding possible
         self.opt.gpu = gpu
@@ -232,8 +227,9 @@ class ONMTmodelAPI():
             torch.cuda.set_device(self.opt.gpu)
 
         # Translator
-        self.scorer = onmt.translate.GNMTGlobalScorer(self.opt.alpha,
-                                                      self.opt.beta)
+        self.scorer = onmt.translate.GNMTGlobalScorer(
+            self.opt.alpha,
+            self.opt.beta)
         self.translator = onmt.translate.Translator(
             self.model, self.fields,
             beam_size=self.opt.beam_size,
@@ -244,32 +240,20 @@ class ONMTmodelAPI():
             cuda=self.opt.cuda,
             beam_trace=self.opt.dump_beam != "")
 
-
-    def translate(self, in_text, partial_decode=None, k=5, attn=None, dump_data=False):
+    def translate(self, in_text, partial_decode=None, k=5, attn=None):
         # Workaround until we have API that does not require files
         with codecs.open("tmp.txt", "w", "utf-8") as f:
             f.write(in_text)
 
-        data = onmt.io.build_dataset(self.fields, self.opt.data_type,
-                                     "tmp.txt", self.opt.tgt,
-                                     src_dir=self.opt.src_dir,
-                                     sample_rate=self.opt.sample_rate,
-                                     window_size=self.opt.window_size,
-                                     window_stride=self.opt.window_stride,
-                                     window=self.opt.window,
-                                     use_filter_pred=False)
-
-        if dump_data:
-            # Code to extract the source and target dict
-            with open("data/src.dict", 'w') as f:
-                for w, ix in self.translator.fields['src'].vocab.stoi.items():
-                    f.write(str(ix) + " " + w + "\n")
-            with open("data/tgt.dict", 'w') as f:
-                for w, ix in self.translator.fields['tgt'].vocab.stoi.items():
-                    f.write(str(ix) + " " + w + "\n")
-            with h5py.File("data/embs.h5", 'w') as f:
-                f.create_dataset("encoder", data=self.translator.model.encoder.embeddings.emb_luts[0].weight.data.numpy())
-                f.create_dataset("decoder", data=self.translator.model.decoder.embeddings.emb_luts[0].weight.data.numpy())
+        data = onmt.io.build_dataset(
+            self.fields, self.opt.data_type,
+            "tmp.txt", self.opt.tgt,
+            src_dir=self.opt.src_dir,
+            sample_rate=self.opt.sample_rate,
+            window_size=self.opt.window_size,
+            window_stride=self.opt.window_stride,
+            window=self.opt.window,
+            use_filter_pred=False)
 
         test_data = onmt.io.OrderedIterator(
             dataset=data, device=self.opt.gpu,
@@ -288,17 +272,19 @@ class ONMTmodelAPI():
 
         # Only has one batch, but indexing does not work
         for batch in test_data:
-            batch_data = self.translator.translate_batch(batch, data)
+            batch_data = self.translator.translate_batch(
+                batch, data, return_states=True)
+            context = batch_data['context'][:, 0, :]
             translations = builder.from_batch(batch_data)
             # iteratres over items in batch - only one for now
             for trans in translations:
                 res = {}
                 # Fill encoder Result
                 encoderRes = []
-                for ix, t in enumerate(in_text.split()):
-                    encoderRes.append({'token': t,
-                                       'state': [], #context[ix],
-                                       'embed': []})
+                for token, state in zip(in_text.split(), context):
+                    encoderRes.append({'token': token,
+                                       'state': list(state.data),
+                                       })
                 res['encoder'] = encoderRes
 
                 # # Fill decoder Result
@@ -308,27 +294,27 @@ class ONMTmodelAPI():
                     if p:
                         topIx = []
                         topIxAttn = []
-                        for t, a in zip(p, trans.attns[ix]):
+                        for token, attn, state in zip(p,
+                                                      trans.attns[ix],
+                                                      batch_data["target_states"][ix]):
                             currentDec = {}
-                            currentDec['token'] = t
-                            currentDec['state'] = []
+                            currentDec['token'] = token
+                            currentDec['state'] = list(state.data)
                             topIx.append(currentDec)
-                            topIxAttn.append(list(a))
-                            # if t in ['.', '!', '?']:
-                            #     break
+                            topIxAttn.append(list(attn))
                         decoderRes.append(topIx)
                         attnRes.append(topIxAttn)
-                res['scores'] = trans.pred_scores[:k]
+                res['scores'] = list(np.array(trans.pred_scores))[:k]
                 res['decoder'] = decoderRes
                 res['attn'] = attnRes
-                #res['context'] = list(context)
+                print(res)
                 return res
 
 
 def main():
-    model = ONMTmodelAPI("data/demo-model_acc_41.38_ppl_28.26_e13.pt")
-
-    print(model.translate("This is a test .", dump_data=True))
+    model = ONMTmodelAPI("demo-model_acc_41.38_ppl_28.26_e13.pt")
+    # model.translate("This is a test .")
+    print(model.translate("This is a test ."))
 
 
 if __name__ == "__main__":
