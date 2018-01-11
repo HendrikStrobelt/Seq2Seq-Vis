@@ -62,7 +62,7 @@ def send_static_client(path):
 # send everything from client as static content
 @app.route('/node_modules/<path:path>')
 def send_static_dep(path):
-    """ serves all files from ./node_modules/ 
+    """ serves all files from ./node_modules/
 
     :param path: path from api call
     """
@@ -75,7 +75,7 @@ def get_translation(**request):
     model = current_project.model
 
     in_sentence = request['in']
-    translate = model.translate(in_text=in_sentence)
+    translate = model.translate(in_text=[in_sentence])[0]
     print("_".join(map(lambda x: x['token'], translate["decoder"][0])))
     # r = requests.post('http://127.0.0.1:7784/translator/translate', data=json.dumps([{"src": inSentence}]))
     #
