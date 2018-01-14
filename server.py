@@ -134,15 +134,20 @@ def compare_translation(**request):
     current_project = list(projects.values())[0]
     model = current_project.model
 
-    pivot_res = model.translate(in_text=pivot)
+    # trans_all = model.translate(in_text=[pivot]+compare)
+
+    pivot_res = model.translate(in_text=[pivot])[0]
     pivot_attn = extract_attn(pivot_res)
     pivot_attn_l = pivot_attn.shape[0]
 
     # compare.append(pivot)
-    res = []
-    for cc in compare:
-        cc_t = model.translate(in_text=cc)
+    compare_t = model.translate(in_text=compare)
 
+    res = []
+    index_orig = 0
+    for cc_t_key in compare_t:
+        # cc_t = model.translate(in_text=[cc])[0]
+        cc_t = compare_t[cc_t_key]
         cc_attn = extract_attn(cc_t)
         dist = 10
         if cc_attn.shape[0] > 0:
@@ -161,9 +166,10 @@ def compare_translation(**request):
             "sentence": extract_sentence(cc_t),
             "attn": extract_attn(cc_t).tolist(),
             "attn_padding": (cc__a - cc__b).tolist(),
-            "orig": cc,
+            "orig": compare[index_orig],
             "dist": dist
         })
+        index_orig += 1
 
     return {"compare": res, "pivot": extract_sentence(pivot_res)}
 
