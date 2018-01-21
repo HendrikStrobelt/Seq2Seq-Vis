@@ -1,29 +1,30 @@
-class BarList extends VComponent {
+import {VComponent} from "./VisualComponent";
+import * as d3 from "d3";
+
+export class BarList extends VComponent {
+
+
+    static events = {};
+
+    readonly defaultOptions = {
+        width: 90,
+        bar_height: 20,
+        css_class_main: 'bar_list_vis',
+        css_bar: 'bar',
+        xScale: d3.scaleLinear(),
+        data_access: d => d.encoder.map(e => e.state),
+        data_access_all: null
+    };
 
     // noinspection JSUnusedGlobalSymbols
-    static get events() {
-        return {}
-    }
+    readonly layout = [
+        // {name: 'axis', pos: [0, 0]},
+        {name: 'main', pos: [0, 0]},
+    ];
 
-    // noinspection JSUnusedGlobalSymbols
-    static get defaultOptions() {
-        return {
-            width: 90,
-            bar_height: 20,
-            css_class_main: 'bar_list_vis',
-            css_bar: 'bar',
-            xScale: d3.scaleLinear(),
-            data_access: d => d.encoder.map(e => e.state),
-            data_access_all: null
-        }
-    }
-
-    // noinspection JSUnusedGlobalSymbols
-    static get layout() {
-        return [
-            // {name: 'axis', pos: [0, 0]},
-            {name: 'main', pos: [0, 0]},
-        ]
+    constructor(d3Parent, eventHandler, options: {} = {}) {
+        super(d3Parent, eventHandler);
+        this.superInit(options)
     }
 
     _init() {
@@ -34,9 +35,7 @@ class BarList extends VComponent {
         const op = this.options;
 
         if (op.data_access_all) {
-            const ex = d3.extent(op.data_access_all(data));
-
-            console.log(ex, "--- ex");
+            const ex = <number[]>d3.extent(op.data_access_all(data));
 
             if (ex[0] * ex[1] > 0) {
                 if (ex[0] > 0) ex[0] = ex[1];
@@ -45,9 +44,9 @@ class BarList extends VComponent {
 
 
             op.xScale =
-              d3.scaleLinear()
-                .domain(ex)
-                .range([op.width, 0])
+                d3.scaleLinear()
+                    .domain(ex)
+                    .range([op.width, 0])
         }
 
         const barValues = op.data_access(data);

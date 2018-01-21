@@ -1,13 +1,13 @@
 /**
  * Created by hen on 5/15/17.
  */
-class SimpleEventHandler {
+export class SimpleEventHandler {
 
-    element: HTMLElement;
+    element: Element;
     eventListeners: object[];
 
 
-    constructor(element: HTMLElement) {
+    constructor(element: Element) {
         this.element = element;
         this.eventListeners = []
     }

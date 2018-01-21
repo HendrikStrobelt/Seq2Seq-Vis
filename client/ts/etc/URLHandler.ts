@@ -2,7 +2,7 @@
  * Created by hen on 5/15/17.
  */
 
-class URLHandler {
+export class URLHandler {
 
     static basicURL() {
         const url_path = window.location.pathname.split('/').slice(0, -2).join('/');

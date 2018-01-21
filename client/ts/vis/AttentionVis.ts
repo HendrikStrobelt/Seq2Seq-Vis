@@ -1,38 +1,37 @@
-class AttentionVis extends VComponent {
+import {D3Sel, VComponent} from "./VisualComponent";
+import * as d3 from "d3";
+import * as _ from "lodash";
+import {SimpleEventHandler} from "../etc/SimpleEventHandler";
 
+export class AttentionVis extends VComponent {
 
-    // noinspection JSUnusedGlobalSymbols
-    static get events() {
-        return {}
-    }
+    static events = {};
 
-    // noinspection JSUnusedGlobalSymbols
-    static get defaultOptions() {
-        return {
-            max_bundle_width: 15,
-            height: 50,
-            css_class_main: 'attn_graph',
-            css_edge: 'attn_edge',
-            x_offset: 3
-        }
-    }
+    readonly defaultOptions = {
+        max_bundle_width: 15,
+        height: 50,
+        css_class_main: 'attn_graph',
+        css_edge: 'attn_edge',
+        x_offset: 3
+    };
 
-    // noinspection JSUnusedGlobalSymbols
-    static get layout() {
-        return []
+    readonly layout = [];
+
+    constructor(d3Parent: D3Sel, eventHandler?: SimpleEventHandler, options: {} = {}) {
+        super(d3Parent, eventHandler);
+        this.superInit(options);
     }
 
     _init() {
-
     }
 
-    _createGraph({attnWeights, maxBundleWidth, inWords, outWords, inPos, outPos}) {
+    _createGraph(attnWeights: number[][], maxBundleWidth, inWords, outWords, inPos, outPos) {
 
         const attnPerInWord = _.unzip(attnWeights);
         const attnPerInWordSum = attnPerInWord.map(a => _.sum(a));
         const maxAttnPerAllWords = Math.max(1, _.max(attnPerInWordSum));
         const lineWidthScale = d3.scaleLinear()
-          .domain([0, maxAttnPerAllWords]).range([0, maxBundleWidth]);
+            .domain([0, maxAttnPerAllWords]).range([0, maxBundleWidth]);
 
         let maxPos = 0;
 
@@ -64,15 +63,10 @@ class AttentionVis extends VComponent {
 
     _wrangle(data) {
 
-        // noinspection JSUnresolvedVariable
-        const {edges, maxPos} = this._createGraph({
-            attnWeights: data.attnFiltered[data._current.topN],
-            maxBundleWidth: this.options.max_bundle_width,
-            inWords: data._current.inWords,
-            outWords: data._current.outWords,
-            inPos: data._current.inWordPos,
-            outPos: data._current.outWordPos,
-        });
+        const {edges, maxPos} = this._createGraph(data.attnFiltered[data._current.topN],
+            this.options.max_bundle_width,
+            data._current.inWords, data._current.outWords,
+            data._current.inWordPos, data._current.outWordPos);
 
         this.parent.attrs({
             width: maxPos + 5 + this.options.x_offset, //reserve
@@ -87,7 +81,8 @@ class AttentionVis extends VComponent {
 
         const op = this.options;
 
-        const graph = this.base.selectAll(`.${op.css_class_main}`).data(renderData.edges);
+        const graph = this.base.selectAll(`.${op.css_class_main}`)
+            .data(<{ inPos, outPos, width, edge, classes }[]> renderData.edges);
         graph.exit().remove();
 
         const linkGen = d3.linkVertical();

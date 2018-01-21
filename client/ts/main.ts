@@ -1,3 +1,9 @@
+import * as d3 from "d3"
+import * as _ from "lodash";
+
+import {PanelController} from "./vis/PanelController";
+import {S2SApi} from "./api/S2SApi";
+
 window.onload = () => {
     // let svg = d3.selectAll('#vis');
     //
@@ -12,16 +18,16 @@ window.onload = () => {
 
     const updateAllVis = () => {
         $('#spinner').show();
-        const value = d3.select('#query_input').node().value;
+        const value = (<HTMLInputElement> d3.select('#query_input').node()).value;
 
 
         S2SApi.translate({input: value.trim()})
-          .then(data => {
-              // console.log(data, "--- data");
-              panelCtrl.update(JSON.parse(data));
-              $('#spinner').hide();
-          })
-          .catch(error => console.log(error, "--- error"));
+            .then((data: string) => {
+                // console.log(data, "--- data");
+                panelCtrl.update(JSON.parse(data));
+                $('#spinner').hide();
+            })
+            .catch((error: Error) => console.log(error, "--- error"));
     };
 
     const updateDebounced = _.debounce(updateAllVis, 1000);
@@ -56,8 +62,3 @@ window.onload = () => {
 
 
 };
-
-
-
-
-

@@ -1,4 +1,6 @@
-class S2SApi {
+import {Networking} from "../etc/Networking";
+
+export class S2SApi {
 
 
     static translate({input}) {

@@ -1,7 +1,7 @@
 /**
  * Created by hen on 5/15/17.
  */
-class Networking {
+export class Networking {
 
     /**
      * Generates a Ajax Request object.
@@ -9,7 +9,7 @@ class Networking {
      * @returns {{get: (function(*=)), post: (function(*=)), put: (function(*=)), delete: (function(*=))}}
      *  the ajax object that can call get, post, put, delete on the url
      */
-    static ajax_request(url): object {
+    static ajax_request(url): { get, post, put, delete } {
 
         /* Adapted from: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise
          * EXAMPLE:

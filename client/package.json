@@ -1,0 +1,32 @@
+{
+  "name": "S2SVis",
+  "version": "0.0.1",
+  "description": "",
+  "main": "webpack.config.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "wp": "webpack",
+    "ww": "webpack --watch"
+  },
+  "author": "",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@ryancavanaugh/webcola": "^3.1.12-alpha",
+    "@types/d3": "^4.8.0",
+    "@types/d3-selection-multi": "^1.0.1",
+    "@types/jquery": "^3.2.1",
+    "@types/lodash": "^4.14.92",
+    "d3": "^4.8.0",
+    "d3-selection-multi": "^1.0.1",
+    "font-awesome": "~4.7.0",
+    "jquery": "^3.2.1",
+    "lodash": "^4.17.4",
+    "webcola": "^3.3.6"
+  },
+  "devDependencies": {
+    "ts-loader": "^3.2.0",
+    "typescript": "^2.6.2",
+    "webpack": "^3.10.0",
+    "webpack-node-externals": "^1.6.0"
+  }
+}

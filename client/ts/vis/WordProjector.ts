@@ -1,39 +1,41 @@
-class WordProjector extends VComponent {
+import {D3Sel, VComponent} from "./VisualComponent";
+import * as _ from "lodash";
+import * as d3 from "d3"
+import * as cola from "../../node_modules/webcola/dist/index"
+import {SimpleEventHandler} from "../etc/SimpleEventHandler";
+import {SVGMeasurements} from "../etc/SVGplus";
 
-    // noinspection JSUnusedGlobalSymbols
-    static get events() {
-        return {}
-    }
+export class WordProjector extends VComponent {
 
-    // noinspection JSUnusedGlobalSymbols
-    static get defaultOptions() {
-        return {
-            height: 400,
-            width: 500,
-            css_class_main: 'wp_vis',
-            hidden: false,
-            data_access: {
-                pos: d => d.pos,
-                scores: d => d.score,
-                words: d => d.word,
-                compare: d => d.compare
-            }
-
+    readonly defaultOptions = {
+        height: 400,
+        width: 500,
+        css_class_main: 'wp_vis',
+        hidden: false,
+        data_access: {
+            pos: d => d.pos,
+            scores: d => d.score,
+            words: d => d.word,
+            compare: d => d.compare
         }
-    }
+    };
 
-    // noinspection JSUnusedGlobalSymbols
-    static get layout() {
-        return [
-            {name: 'bg', pos: [0, 0]},
-            {name: 'main', pos: [0, 0]},
-        ]
+
+    readonly layout = [
+        {name: 'bg', pos: [0, 0]},
+        {name: 'main', pos: [0, 0]},
+    ];
+
+    //-- default constructor --
+    constructor(d3Parent: D3Sel, eventHandler?: SimpleEventHandler, options: {} = {}) {
+        super(d3Parent, eventHandler);
+        this.superInit(options);
     }
 
     _init() {
         const op = this.options;
         this.options.text_measurer = this.options.text_measurer
-          || new SVGMeasurements(this.parent, 'measureWord');
+            || new SVGMeasurements(this.parent, 'measureWord');
 
         this.parent.attrs({
             width: op.width,
@@ -49,14 +51,14 @@ class WordProjector extends VComponent {
         const op = this.options;
 
         const raw_pos = op.data_access.pos(data);
-        const x_values = raw_pos.map(d => d[0]);
-        const y_values = raw_pos.map(d => d[1]);
+        const x_values = <number[]>raw_pos.map(d => d[0]);
+        const y_values = <number[]>raw_pos.map(d => d[1]);
 
-        const p0_min = _.minBy(x_values);
-        const p1_min = _.minBy(y_values);
+        const p0_min = _.min(x_values);
+        const p1_min = _.min(y_values);
 
-        const diff0 = _.maxBy(x_values) - p0_min;
-        const diff1 = _.maxBy(y_values) - p1_min;
+        const diff0 = _.max(x_values) - p0_min;
+        const diff1 = _.max(y_values) - p1_min;
 
 
         let norm_pos = [];
@@ -73,7 +75,8 @@ class WordProjector extends VComponent {
         this._states.has_compare = compare !== null;
 
         return _.sortBy(_.zipWith(words, scores, norm_pos, compare,
-          (word, score, pos, compare) => ({word, score, pos, compare})), d => -d.score);
+            (word, score, pos, compare) => ({word, score, pos, compare})),
+            (d:{word, score, pos, compare}) => -d.score);
 
 
         // return _.zipWith(words, scores, norm_pos,
@@ -94,7 +97,7 @@ class WordProjector extends VComponent {
 
         const xscale = d3.scaleLinear().range([30, op.width - 30]);
         const yscale = d3.scaleLinear().range([10, op.height - 10]);
-        const scoreExtent = d3.extent(renderData.map(d => d.score))
+        const scoreExtent = d3.extent(<number[]>renderData.map(d => d.score))
         const wordScale = d3.scaleLinear().domain(scoreExtent).range([6, 14]);
 
 
@@ -134,7 +137,7 @@ class WordProjector extends VComponent {
 
         const allWords = wordEnter.merge(word);
         allWords.attr('transform',
-          (d, i) => `translate(${newPos[d.word].cx}, ${newPos[d.word].cy})`)
+            (d, i) => `translate(${newPos[d.word].cx}, ${newPos[d.word].cy})`)
         allWords.select('rect').attrs({
             width: (d, i) => newPos[d.word].w,
             height: (d, i) => newPos[d.word].h - 2,
@@ -142,13 +145,13 @@ class WordProjector extends VComponent {
             y: (d, i) => -newPos[d.word].h * .5 + 1,
         });
         allWords.select('text')
-          .text(d => d.word)
-          .style('font-size', d => wordScale(d.score) + 'px')
+            .text(d => d.word)
+            .style('font-size', d => wordScale(d.score) + 'px')
 
         if (this._states.has_compare) {
-            const bd_max = _.max(renderData.map(d => d.compare.dist));
-            const bd_scale = d3.scaleLinear().domain([0, bd_max])
-              .range(['#ffffff', '#3f6f9e']);
+            const bd_max = _.max(<number[]>renderData.map(d => d.compare.dist));
+            const bd_scale = d3.scaleLinear<string,string>().domain([0, bd_max])
+                .range(['#ffffff', '#3f6f9e']);
             allWords.select('rect').style('fill', d => {
                 // console.log(d,"--- d");
                 return bd_scale(d.compare.dist)

@@ -1,4 +1,24 @@
-class PanelController {
+import * as d3 from 'd3'
+import * as _ from 'lodash';
+
+import {SimpleEventHandler} from "../etc/SimpleEventHandler";
+import {WordLine} from "./WordLine"
+import {BarList} from "./BarList";
+import {StateVis} from "./StateVis";
+import {AttentionVis} from "./AttentionVis";
+import {WordProjector} from "./WordProjector";
+import {CloseWordList} from "./CloseWordList";
+import {S2SApi} from "../api/S2SApi";
+
+
+type dObj = { [k: string]: any };
+
+
+export class PanelController {
+    private _columns: dObj;
+    private _vis: dObj;
+    private _current: dObj;
+    private eventHandler: SimpleEventHandler;
 
     constructor() {
         this._columns = {
@@ -44,7 +64,7 @@ class PanelController {
         };
 
 
-        this.eventHandler = new SimpleEventHandler(d3.select('body').node());
+        this.eventHandler = new SimpleEventHandler(<Element> d3.select('body').node());
 
         this._init()
 
@@ -100,8 +120,8 @@ class PanelController {
             divStyles: {'padding-bottom': '5px'},
             options: {
                 data_access: d =>
-                  (d.decoder.length > this._current.topN) ?
-                    d.decoder[this._current.topN].map(e => _.isArray(e.state) ? e.state : []) : [[]], // TODO: fix hack !!!
+                    (d.decoder.length > this._current.topN) ?
+                        d.decoder[this._current.topN].map(e => _.isArray(e.state) ? e.state : []) : [[]], // TODO: fix hack !!!
                 hidden: this._current.hideStates,
                 height: 100,
                 cell_width: this._current.box_width
@@ -219,85 +239,63 @@ class PanelController {
     }
 
 
-    static _setupPanel({col, className, divStyles, addSVG = true, title = null}) {
+    static _setupPanel({col, className, divStyles, addSVG = true, title = <string> null}) {
         const div = col
-          .append('div').attr('class', 'setup ' + className).styles(divStyles)
+            .append('div').attr('class', 'setup ' + className).styles(divStyles)
         // .style('background', 'lightgray');
-        if (title) {div.html(title);}
+        if (title) {
+            div.html(title);
+        }
         if (addSVG) return div.append('svg').attrs({width: 100, height: 30})
-          .styles({
-              display: 'inline-block'
-          });
+            .styles({
+                display: 'inline-block'
+            });
         else return div;
     }
 
     _createScoreVis({col, className, options, divStyles}) {
         const svg = PanelController._setupPanel({col, className, divStyles, addSVG: true});
 
-        return new BarList({
-            d3parent: svg,
-            eventHandler: this.eventHandler,
-            options
-        })
+        return new BarList(svg, this.eventHandler, options)
     }
 
 
     static _standardSVGPanel({col, className, divStyles}) {
         return col
-          .append('div').attr('class', className).styles(divStyles)
-          .append('svg').attrs({width: 500, height: 30});
+            .append('div').attr('class', className).styles(divStyles)
+            .append('svg').attrs({width: 500, height: 30});
     }
 
 
     _createStatesVis({col, className, options, divStyles}) {
         const svg = PanelController._standardSVGPanel({col, className, divStyles});
 
-        return new StateVis({
-            d3parent: svg,
-            eventHandler: this.eventHandler,
-            options
-        })
+        return new StateVis(svg, this.eventHandler, options);
     }
 
 
-    _createAttention({col, className, options, divStyles}) {
+    _createAttention({col, className, options, divStyles = null}) {
         const svg = PanelController._standardSVGPanel({col, className, divStyles});
 
-        return new AttentionVis({
-            d3parent: svg,
-            eventHandler: this.eventHandler,
-            options
-        })
+        return new AttentionVis(svg, this.eventHandler, options)
     }
 
     _createWordLine({col, className, options, divStyles}) {
         const svg = PanelController._standardSVGPanel({col, className, divStyles});
 
-        return new WordLine({
-            d3parent: svg,
-            eventHandler: this.eventHandler,
-            options
-        })
+        return new WordLine(svg, this.eventHandler, options)
     }
 
     _createWordProjector({col, className, options, divStyles}) {
         const svg = PanelController._standardSVGPanel({col, className, divStyles});
 
-        return new WordProjector({
-            d3parent: svg,
-            eventHandler: this.eventHandler,
-            options
-        })
+        return new WordProjector(svg, this.eventHandler, options)
     }
 
     _createCloseWordList({col, className, options, divStyles}) {
         const svg = PanelController._standardSVGPanel({col, className, divStyles});
 
-        return new CloseWordList({
-            d3parent: svg,
-            eventHandler: this.eventHandler,
-            options
-        })
+        return new CloseWordList(svg, this.eventHandler, options)
     }
 
 
@@ -339,7 +337,7 @@ class PanelController {
     _bindEvents() {
         this.eventHandler.bind(WordLine.events.wordSelected, (d, e) => {
             if (d.caller === this._vis.left.encoder_words
-              || d.caller === this._vis.left.decoder_words) {
+                || d.caller === this._vis.left.decoder_words) {
 
                 let loc = 'src';
                 if (d.caller === this._vis.left.decoder_words) {
@@ -349,35 +347,35 @@ class PanelController {
                 const allWords = d.caller.firstRowPlainWords;
 
                 S2SApi.closeWords({input: d.word.word.text, loc, limit: 20})
-                  .then(data => {
-                      // console.log(JSON.parse(data), "--- data");
+                    .then(data => {
+                        // console.log(JSON.parse(data), "--- data");
 
-                      const word_data = JSON.parse(data);
-                      // this.updateAndShowWordProjector(word_data);
-                      const replaceIndex = d.index;
-                      if (loc === 'src') {
-                          const pivot = allWords.join(' ');
+                        const word_data = JSON.parse(data);
+                        // this.updateAndShowWordProjector(word_data);
+                        const replaceIndex = d.index;
+                        if (loc === 'src') {
+                            const pivot = allWords.join(' ');
 
-                          const compare = word_data.word.map(wd => {
-                              return allWords.map((aw, wi) =>
-                                (wi === replaceIndex) ? wd : aw).join(' ');
-                          })
-                          console.log(pivot, compare, "--- pivot, compare");
-                          S2SApi.compareTranslation({pivot, compare})
-                            .then(data => {
-                                word_data["compare"] = JSON.parse(data)["compare"];
-                                // this.updateAndShowWordList(word_data);
-                                this.updateAndShowWordProjector(word_data);
+                            const compare = word_data.word.map(wd => {
+                                return allWords.map((aw, wi) =>
+                                    (wi === replaceIndex) ? wd : aw).join(' ');
                             })
+                            console.log(pivot, compare, "--- pivot, compare");
+                            S2SApi.compareTranslation({pivot, compare})
+                                .then(data => {
+                                    word_data["compare"] = JSON.parse(data)["compare"];
+                                    // this.updateAndShowWordList(word_data);
+                                    this.updateAndShowWordProjector(word_data);
+                                })
 
-                      } else {
-                          // this.updateAndShowWordList(word_data);
-                          this.updateAndShowWordProjector(word_data);
-                      }
+                        } else {
+                            // this.updateAndShowWordList(word_data);
+                            this.updateAndShowWordProjector(word_data);
+                        }
 
 
-                  })
-                  .catch(error => console.log(error, "--- error"));
+                    })
+                    .catch(error => console.log(error, "--- error"));
 
 
                 console.log(d.word.word.text, d, " enc--- ");

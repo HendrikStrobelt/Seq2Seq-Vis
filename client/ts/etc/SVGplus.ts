@@ -1,8 +1,12 @@
+import * as d3 from "d3"
+
 /**
  * Created by hen on 5/15/17.
  */
-class SVG {
-    static translate({x, y}) {return "translate(" + x + "," + y + ")"}
+export class SVG {
+    static translate({x, y}) {
+        return "translate(" + x + "," + y + ")"
+    }
 
     static group(parent, classes, pos) {
         return parent.append('g').attrs({
@@ -13,15 +17,17 @@ class SVG {
 
 }
 
-class SVGMeasurements {
-    private measureElement: d3.Selection;
+export class SVGMeasurements {
+
+    private measureElement: d3.Selection<any, any, any, any>;
+
     constructor(baseElement, classes = '') {
         this.measureElement = baseElement.append('text')
-          .attrs({x: 0, y: -20, class: classes})
+            .attrs({x: 0, y: -20, class: classes})
 
     }
 
-    textLength(text, style=null) {
+    textLength(text, style = null) {
         this.measureElement.attr('style', style);
         this.measureElement.text(text);
         const tl = (<SVGTextElement> this.measureElement.node()).getComputedTextLength();

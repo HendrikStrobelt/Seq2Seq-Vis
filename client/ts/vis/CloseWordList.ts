@@ -1,41 +1,44 @@
-class CloseWordList extends VComponent {
+import {D3Sel, LooseObject, VComponent} from "./VisualComponent";
+import * as d3 from "d3";
+import * as _ from "lodash";
+import {SimpleEventHandler} from "../etc/SimpleEventHandler";
+import {SVGMeasurements} from "../etc/SVGplus";
 
-    // noinspection JSUnusedGlobalSymbols
-    static get events() {
-        return {}
-    }
 
-    // noinspection JSUnusedGlobalSymbols
-    static get defaultOptions() {
-        return {
-            height: 400,
-            width: 1000,
-            lineSpacing: 20,
-            scoreWidth: 100,
-            css_class_main: 'close_words',
-            hidden: false,
-            data_access: {
-                pos: d => d.pos,
-                scores: d => d.score,
-                words: d => d.word,
-                compare: d => d.compare
-            }
+export class CloseWordList extends VComponent {
 
+    readonly defaultOptions = {
+        height: 400,
+        width: 1000,
+        lineSpacing: 20,
+        scoreWidth: 100,
+        css_class_main: 'close_words',
+        hidden: false,
+        data_access: {
+            pos: d => d.pos,
+            scores: d => d.score,
+            words: d => d.word,
+            compare: d => d.compare
         }
+    };
+
+
+    readonly layout = [
+        {name: 'bg', pos: [0, 0]},
+        {name: 'main', pos: [0, 0]},
+    ];
+
+
+    constructor(d3Parent: D3Sel, eventHandler?: SimpleEventHandler, options: {} = {}) {
+        super(d3Parent, eventHandler);
+        this.superInit(options);
     }
 
-    // noinspection JSUnusedGlobalSymbols
-    static get layout() {
-        return [
-            {name: 'bg', pos: [0, 0]},
-            {name: 'main', pos: [0, 0]},
-        ]
-    }
 
     _init() {
         const op = this.options;
         this.options.text_measurer = this.options.text_measurer
-          || new SVGMeasurements(this.parent, 'close_word_list');
+            || new SVGMeasurements(this.parent, 'close_word_list');
 
         this.parent.attrs({
             width: op.width,
@@ -76,8 +79,8 @@ class CloseWordList extends VComponent {
         this._states.has_compare = compare !== null;
 
         // if (this._states.has_compare) {
-            return _.sortBy(_.zipWith(words, scores, wordWidth, compare,
-              (word, score, width, compare) => ({word, score, width, compare})), d => -d.score);
+        return _.sortBy(_.zipWith(words, scores, wordWidth, compare,
+            (word, score, width, compare) => ({word, score, width, compare})), d => -d.score);
         // } else {
         //     return _.sortBy(_.zipWith(words, scores, wordWidth,
         //       (word, score, width) => ({word, score, width})), d => -d.score);
@@ -85,7 +88,7 @@ class CloseWordList extends VComponent {
 
     }
 
-    _render(renderData) {
+    _render(renderData: LooseObject[]) {
 
         const op = this.options;
         const noItems = renderData.length;
@@ -102,13 +105,13 @@ class CloseWordList extends VComponent {
         const wordEnter = word.enter().append('text').attr('class', 'word');
 
         const yscale = d3.scaleLinear().domain([0, noItems - 1])
-          .range([ls / 2, (noItems - .5) * ls]);
+            .range([ls / 2, (noItems - .5) * ls]);
 
 
         //TODO: BAD HACK - -should not be using indices
 
         wordEnter.merge(word).attrs({
-            x: (d, i) => 10,
+            x: () => 10,
             y: (d, i) => yscale(i),
         }).text(d => d.word);
         // .style('font-size', d => wordScale(d.score) + 'px')
@@ -118,14 +121,14 @@ class CloseWordList extends VComponent {
         const maxScore = _.maxBy(renderData, 'score').score;
 
         const barScale = d3.scaleLinear().domain([0, maxScore])
-          .range([0, op.scoreWidth]);
+            .range([0, op.scoreWidth]);
 
         const scoreBars = this.layers.main.selectAll(".scoreBar").data(renderData);
         scoreBars.exit().remove();
 
         const scoreBarsEnter = scoreBars.enter().append('g').attr('class', 'scoreBar');
         scoreBarsEnter.append('rect');
-        scoreBarsEnter.append('text').attrs({x: 2, y: ls / 2-2, 'class':'barText'});
+        scoreBarsEnter.append('text').attrs({x: 2, y: ls / 2 - 2, 'class': 'barText'});
 
         const allScoreBars = scoreBarsEnter.merge(scoreBars).attrs({
             transform: (d, i) => `translate(${wordEnd + 10 + 10},${yscale(i) - ls / 2 })`
@@ -135,33 +138,33 @@ class CloseWordList extends VComponent {
             width: d => barScale(d.score),
             height: ls - 4
         });
-        allScoreBars.select('text').text(d => f2f(d.score))
+        allScoreBars.select('text').text(d => f2f(d.score));
 
 
         if (this._states.has_compare) {
 
             const bd_max = _.max(renderData.map(d => d.compare.dist));
             const bd_scale = d3.scaleLinear().domain([0, bd_max])
-              .range([1, 100]);
+                .range([1, 100]);
 
 
             const barDist = this.layers.main.selectAll(".distBar").data(renderData);
             barDist.exit().remove();
             const barDistEnter = barDist.enter().append('g').attr('class', 'distBar');
             barDistEnter.append('rect');
-            barDistEnter.append('text').attrs({x: 2, y: ls / 2-2, 'class':'barText'});
+            barDistEnter.append('text').attrs({x: 2, y: ls / 2 - 2, 'class': 'barText'});
 
 
             const all_barDist = barDistEnter.merge(barDist).attrs({
                 transform: (d, i) => `translate(${wordEnd + 10 + 10 + op.scoreWidth + 10},${yscale(i) - ls / 2 })`
-            })
+            });
             all_barDist.select('rect')
-              .attrs({
-                  width: d => bd_scale(d.compare.dist),
-                  height: ls - 4
-              })
+                .attrs({
+                    width: d => bd_scale(d.compare.dist),
+                    height: ls - 4
+                });
 
-            all_barDist.select('text').text(d => f2f(d.compare.dist))
+            all_barDist.select('text').text(d => f2f(d.compare.dist));
 
 
             const wordComp = this.layers.main.selectAll(".wordComp").data(renderData);
