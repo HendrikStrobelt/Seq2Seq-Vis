@@ -6,79 +6,37 @@ import {WordLine, WordLineHoverEvent} from "../vis/WordLine"
 import {BarList} from "../vis/BarList";
 import {StateVis} from "../vis/StateVis";
 import {AttentionVis} from "../vis/AttentionVis";
-import {WordProjector} from "../vis/WordProjector";
+import {WordProjector, WordProjectorClickedEvent} from "../vis/WordProjector";
 import {CloseWordList} from "../vis/CloseWordList";
 import {S2SApi, Translation} from "../api/S2SApi";
 import {LooseObject} from "../etc/LocalTypes";
 import {VComponent} from "../vis/VisualComponent";
-
-
-type VisColumn<DW=WordLine> = {
-    encoder_extra: VComponent[],
-    encoder_words: WordLine,
-    attention: AttentionVis,
-    decoder_words: DW,
-    decoder_extra: VComponent[]
-}
-
-type VisAll = {
-    zero: VisColumn<BarList>,
-    left: VisColumn,
-    middle: VisColumn,
-    right: VisColumn,
-    setup_left: VisColumn,
-    setup_right: VisColumn,
-}
+import {PanelManager} from "./PanelManager";
 
 
 export class PanelController {
-    private _columns: LooseObject;
-    private _vis: VisAll;
-    private _current: LooseObject;
+    // private _columns: LooseObject;
+
+
     private eventHandler: SimpleEventHandler;
+    private pm: PanelManager;
+    private _current = {
+        topN: 0,
+        inWordPos: [],
+        outWordPos: [],
+        inWords: [],
+        outWords: [],
+    }
 
     constructor() {
-        this._columns = {
-            zero: d3.select('.col0'),
-            left: d3.select('.col1'),
-            middle: d3.select('.col3'),
-            right: d3.select('.col5'),
-            setup_left: d3.select('.col2'),
-            setup_right: d3.select('.col4'),
-        };
-
-        const initPanel = () => ({
-            encoder_extra: [],
-            encoder_words: null,
-            attention: null,
-            decoder_words: null,
-            decoder_extra: []
-        });
-        this._vis = {
-            zero: initPanel(),
-            left: initPanel(),
-            middle: initPanel(),
-            right: initPanel(),
-            setup_left: initPanel(),
-            setup_right: initPanel()
-        };
-
-        this._current = {
-            topN: 0,
-            inWordPos: [],
-            outWordPos: [],
-            inWords: [],
-            outWords: [],
-            hideStates: false,
-            box_width: 50,
-            wordProjector: null,
-            closeWordsList: null
-        };
 
 
         this.eventHandler = new SimpleEventHandler(<Element> d3.select('body').node());
 
-        this._init()
+        this.pm = new PanelManager(this.eventHandler);
+
+
+        this._init();
 
         this._bindEvents();
 
@@ -86,143 +44,19 @@ export class PanelController {
 
     _init() {
 
-        this._vis.left.encoder_extra.push(this._createStatesVis({
-            col: this._columns.left,
-            className: 'states_encoder',
-            divStyles: {'padding-top': '5px'},
-            options: {
-                data_access: d => d.encoder.map(e => _.isArray(e.state) ? e.state : []),// TODO: fix hack !!!
-                hidden: this._current.hideStates,
-                height: 100,
-                cell_width: this._current.box_width
-            }
-        }));
-
-        this._vis.left.encoder_words = this._createWordLine({
-            col: this._columns.left,
-            className: 'encoder_words',
-            divStyles: {'padding-top': '5px'},
-            options: {
-                box_type: this._current.hideStates ? WordLine.BoxType.flow : WordLine.BoxType.fixed,
-                box_width: this._current.box_width
-            }
-        });
-
-        this._vis.left.attention = this._createAttention({
-            col: this._columns.left,
-            className: 'attn_vis',
-            options: {}
-        });
-
-        this._vis.left.decoder_words = this._createWordLine({
-            col: this._columns.left,
-            className: 'decoder_words',
-            divStyles: {'padding-bottom': '5px'},
-            options: {
-                box_width: this._current.box_width,
-                box_type: this._current.hideStates ? WordLine.BoxType.flow : WordLine.BoxType.fixed,
-                css_class_main: 'outWord',
-                data_access: d => d.decoder.length ? [d.decoder[this._current.topN]] : []
-            }
-        });
-
-        this._vis.left.decoder_extra.push(this._createStatesVis({
-            col: this._columns.left,
-            className: 'states_decoder',
-            divStyles: {'padding-bottom': '5px'},
-            options: {
-                data_access: d =>
-                    (d.decoder.length > this._current.topN) ?
-                        d.decoder[this._current.topN].map(e => _.isArray(e.state) ? e.state : []) : [[]], // TODO: fix hack !!!
-                hidden: this._current.hideStates,
-                height: 100,
-                cell_width: this._current.box_width
-            }
-        }));
-
-        this._vis.left.decoder_extra.push(this._createWordLine({
-            col: this._columns.left,
-            className: 'decoder_topK',
-            divStyles: {'padding-top': '5px'},
-            options: {
-                css_class_main: 'topKWord',
-                data_access: d => d.decoder.filter((_, i) => i !== this._current.topN)
-            }
-        }))
-
-
-        // Zero
-
-
-        this._vis.zero.encoder_extra.push(PanelController._setupPanel({
-            col: this._columns.zero,
-            className: "encoder_states_setup",
-            addSVG: false,
-            title: 'Enc states: ',
-            divStyles: {height: '100px', width: '100px', 'padding-top': '5px'}
-        }));
-
-        this._vis.zero.encoder_words = PanelController._setupPanel({
-            col: this._columns.zero,
-            className: "encoder_words_setup",
-            addSVG: false,
-            title: 'Enc words: ',
-            divStyles: {height: '21px', width: '100px', 'padding-top': '5px'}
-        })
-
-        this._vis.zero.attention = PanelController._setupPanel({
-            col: this._columns.zero,
-            className: "attn_setup",
-            addSVG: false,
-            title: 'Attention: ',
-            divStyles: {height: '50px', width: '100px'}
-        })
-
-        // noinspection JSUnresolvedVariable
-        this._vis.zero.decoder_words = this._createScoreVis({
-            col: this._columns.zero,
-            className: "decoder_words_setup",
-            divStyles: {height: '21px', width: '100px', 'padding-bottom': '5px'},
-            options: {
-                bar_height: 20,
-                data_access: d => [d.scores[this._current.topN]],
-                data_access_all: d => d.scores
-            }
-        })
-
-        this._vis.zero.decoder_extra.push(PanelController._setupPanel({
-            col: this._columns.zero,
-            className: "decoder_states_setup",
-            addSVG: false,
-            title: 'Dec states: ',
-            divStyles: {height: '100px', width: '100px', 'padding-bottom': '5px'}
-        }))
-
-        this._vis.zero.decoder_extra.push(this._createScoreVis({
-            col: this._columns.zero,
-            className: "decoder_words_setup",
-            divStyles: {width: '100px', 'padding-top': '5px'},
-            options: {
-                bar_height: 23,
-                data_access: d => d.scores.filter((_, i) => i !== this._current.topN),
-                data_access_all: null
-            }
-        }))
 
     }
 
-    update(raw_data) {
+    update(raw_data, main = this.pm.vis.left, extra = this.pm.vis.zero) {
 
         const cur = this._current;
+        // const vis = this.pm.vis;
+
+
         const data = new Translation(raw_data, cur);
+        const enc = main.encoder_words;
+        const dec = main.decoder_words;
 
-        console.log(data, "--- data");
-
-
-        const enc = <WordLine> this._vis.left.encoder_words;
-        const dec = <WordLine> this._vis.left.decoder_words;
-
-        console.log(this._vis, "--- this._vis");
         enc.update(data);
         dec.update(data);
 
@@ -232,139 +66,65 @@ export class PanelController {
         cur.outWords = dec.rows[0];
         data._current = cur;
 
-        const attn = <AttentionVis> this._vis.left.attention;
+        const attn = main.attention;
         attn.update(data);
 
-        this._vis.left.encoder_extra.forEach(e => e.update(data));
-        this._vis.left.decoder_extra.forEach(e => e.update(data));
+        main.encoder_extra.forEach(e => e.update(data));
+        main.decoder_extra.forEach(e => e.update(data));
 
 
         //==== setup column
 
-        this._vis.zero.decoder_words.update(data);
-        console.log(this._vis.zero.decoder_words.xScale, "--- this._vis.zero.decoder_words.xScale");
+        if (extra) {
+            extra.decoder_words.update(data);
 
-        this._vis.zero.decoder_extra.forEach(d => {
-            if ('updateOptions' in d) {
-                d.updateOptions({options: {xScale: this._vis.zero.decoder_words.xScale}});
-                d.update(data);
-            }
+            extra.decoder_extra.forEach(d => {
+                if ('updateOptions' in d) {
+                    d.updateOptions({options: {xScale: extra.decoder_words.xScale}});
+                    d.update(data);
+                }
 
-        })
+            })
 
-
-    }
-
-
-    static _setupPanel({col, className, divStyles, addSVG = true, title = <string> null}) {
-        const div = col
-            .append('div').attr('class', 'setup ' + className).styles(divStyles)
-        // .style('background', 'lightgray');
-        if (title) {
-            div.html(title);
         }
-        if (addSVG) return div.append('svg').attrs({width: 100, height: 30})
-            .styles({
-                display: 'inline-block'
-            });
-        else return div;
-    }
-
-    _createScoreVis({col, className, options, divStyles}) {
-        const svg = PanelController._setupPanel({col, className, divStyles, addSVG: true});
-
-        return new BarList(svg, this.eventHandler, options)
-    }
 
 
-    static _standardSVGPanel({col, className, divStyles}) {
-        return col
-            .append('div').attr('class', className).styles(divStyles)
-            .append('svg').attrs({width: 500, height: 30});
-    }
-
-
-    _createStatesVis({col, className, options, divStyles}) {
-        const svg = PanelController._standardSVGPanel({col, className, divStyles});
-
-        return new StateVis(svg, this.eventHandler, options);
-    }
-
-
-    _createAttention({col, className, options, divStyles = null}) {
-        const svg = PanelController._standardSVGPanel({col, className, divStyles});
-
-        return new AttentionVis(svg, this.eventHandler, options)
-    }
-
-    _createWordLine({col, className, options, divStyles}) {
-        const svg = PanelController._standardSVGPanel({col, className, divStyles});
-
-        return new WordLine(svg, this.eventHandler, options)
-    }
-
-    _createWordProjector({col, className, options, divStyles}) {
-        const svg = PanelController._standardSVGPanel({col, className, divStyles});
-
-        return new WordProjector(svg, this.eventHandler, options)
-    }
-
-    _createCloseWordList({col, className, options, divStyles}) {
-        const svg = PanelController._standardSVGPanel({col, className, divStyles});
-
-        return new CloseWordList(svg, this.eventHandler, options)
     }
 
 
     updateAndShowWordProjector(data) {
-        if (this._current.wordProjector === null) {
-            this._current.wordProjector = this._createWordProjector({
-                col: this._columns.middle,
-                className: "word_projector",
-                divStyles: {'padding-top': '105px'},
-                options: {}
-            })
-        }
-        console.log(this._current.wordProjector, "--- this._current.wordProjector");
-        this._current.wordProjector.update(data);
-    }
-
-    closeWordProjector() {
-        if (this._current.wordProjector) {
-            this._current.wordProjector.destroy();
-            this._current.wordProjector = null;
-        }
+        const wp = this.pm.getWordProjector();
+        wp.update(data);
     }
 
 
     updateAndShowWordList(data) {
-        if (this._current.closeWordsList === null) {
-            this._current.closeWordsList = this._createCloseWordList({
-                col: this._columns.middle,
-                className: "close_word_list",
-                divStyles: {'padding-top': '10px'},
-                options: {}
-            })
-        }
-        console.log(this._current, "--- this._current");
-        this._current.closeWordsList.update(data);
+        const wl = this.pm.getWordList();
+        wl.update(data);
     }
 
 
     _bindEvents() {
+
+
+        const vis = this.pm.vis;
+
         const determinePanelType = caller => {
-            if ((caller === this._vis.left.encoder_words) || _.includes(this._vis.left.encoder_extra, caller))
-                return {vType: AttentionVis.VERTEX_TYPE.Encoder, col: this._vis.left};
-            else return {vType: AttentionVis.VERTEX_TYPE.Decoder, col: this._vis.left};
+            if ((caller === vis.left.encoder_words) || _.includes(vis.left.encoder_extra, caller))
+                return {vType: AttentionVis.VERTEX_TYPE.Encoder, col: vis.left};
+            else return {
+                vType: AttentionVis.VERTEX_TYPE.Decoder,
+                col: vis.left
+            };
         };
 
 
         this.eventHandler.bind(WordLine.events.wordSelected, (d, e) => {
-            if (d.caller === this._vis.left.encoder_words
-                || d.caller === this._vis.left.decoder_words) {
+            if (d.caller === vis.left.encoder_words
+                || d.caller === vis.left.decoder_words) {
 
                 let loc = 'src';
-                if (d.caller === this._vis.left.decoder_words) {
+                if (d.caller === vis.left.decoder_words) {
                     loc = 'tgt'
                 }
 
@@ -408,15 +168,37 @@ export class PanelController {
 
         })
 
-        this.eventHandler.bind(WordLine.events.wordHovered, (d: WordLineHoverEvent) => {
+        const actionWordHovered = (d: WordLineHoverEvent) => {
             d.caller.highlightWord(d.row, d.index, d.hovered);
 
             const {vType, col} = determinePanelType(d.caller);
             col.attention.highlightAllEdges(d.index, vType, d.hovered);
+        }
 
 
-        })
+        this.eventHandler.bind(WordLine.events.wordHovered, actionWordHovered)
+
+
+        this.eventHandler.bind(WordProjector.events.wordClicked,
+            (d: WordProjectorClickedEvent) => {
+
+                S2SApi.translate({input: d.sentence}).then(data => {
+
+                        const {main, extra} = this.pm.getMediumPanel();
+
+                        const d = JSON.parse(data);
+
+                        this.update(d, main, extra);
+
+
+                    }
+                )
+
+
+            })
 
 
     }
+
+
 }

@@ -6,7 +6,32 @@ import {SimpleEventHandler} from "../etc/SimpleEventHandler";
 import {SVGMeasurements} from "../etc/SVGplus";
 import {D3Sel} from "../etc/LocalTypes";
 
+
+type wordObj = {
+    word: string;
+    score: number;
+    pos: number[];
+    compare: {
+        attn: number[][];
+        attn_padding: number[][];
+        dist: number;
+        orig: string;
+        sentence: string
+    }
+}
+
+export type WordProjectorClickedEvent = {
+    caller: WordProjector,
+    word: string,
+    sentence: string,
+    [key: string]: any
+}
+
 export class WordProjector extends VComponent {
+
+    static events = {
+        wordClicked: "WordProjector_word_clicked"
+    }
 
     defaultOptions = {
         height: 400,
@@ -47,8 +72,6 @@ export class WordProjector extends VComponent {
 
     _wrangle(data) {
 
-        console.log("wrnagle--- ");
-
         const op = this.options;
 
         const raw_pos = op.data_access.pos(data);
@@ -77,14 +100,14 @@ export class WordProjector extends VComponent {
 
         return _.sortBy(_.zipWith(words, scores, norm_pos, compare,
             (word, score, pos, compare) => ({word, score, pos, compare})),
-            (d:{word, score, pos, compare}) => -d.score);
+            (d: { word, score, pos, compare }) => -d.score);
 
 
         // return _.zipWith(words, scores, norm_pos,
         //   (word, score, pos) => ({word, score, pos}));
     }
 
-    _render(renderData) {
+    _render(renderData: wordObj[]) {
 
         console.log(renderData, "--- renderData");
         const op = this.options;
@@ -98,7 +121,7 @@ export class WordProjector extends VComponent {
 
         const xscale = d3.scaleLinear().range([30, op.width - 30]);
         const yscale = d3.scaleLinear().range([10, op.height - 10]);
-        const scoreExtent = d3.extent(<number[]>renderData.map(d => d.score))
+        const scoreExtent = d3.extent(renderData.map(d => d.score))
         const wordScale = d3.scaleLinear().domain(scoreExtent).range([6, 14]);
 
 
@@ -138,7 +161,10 @@ export class WordProjector extends VComponent {
 
         const allWords = wordEnter.merge(word);
         allWords.attr('transform',
-            (d, i) => `translate(${newPos[d.word].cx}, ${newPos[d.word].cy})`)
+            (d, i) => `translate(${newPos[d.word].cx}, ${newPos[d.word].cy})`);
+        allWords.on('click', d => this.actionClickWord(d));
+
+
         allWords.select('rect').attrs({
             width: (d, i) => newPos[d.word].w,
             height: (d, i) => newPos[d.word].h - 2,
@@ -151,7 +177,7 @@ export class WordProjector extends VComponent {
 
         if (this._current.has_compare) {
             const bd_max = _.max(<number[]>renderData.map(d => d.compare.dist));
-            const bd_scale = d3.scaleLinear<string,string>().domain([0, bd_max])
+            const bd_scale = d3.scaleLinear<string, string>().domain([0, bd_max])
                 .range(['#ffffff', '#3f6f9e']);
             allWords.select('rect').style('fill', d => {
                 // console.log(d,"--- d");
@@ -162,5 +188,18 @@ export class WordProjector extends VComponent {
 
 
     }
+
+
+    actionClickWord(d: wordObj) {
+        this.eventHandler.trigger(WordProjector.events.wordClicked, {
+            caller: this,
+            wordObj: d,
+            sentence: d.compare.orig,
+            word: d.word
+        })
+
+
+    }
+
 
 }

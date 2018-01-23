@@ -6,7 +6,7 @@ export class BarList extends VComponent {
 
     static events = {};
 
-    readonly defaultOptions = {
+    defaultOptions = {
         width: 90,
         bar_height: 20,
         css_class_main: 'bar_list_vis',
@@ -16,8 +16,8 @@ export class BarList extends VComponent {
         data_access_all: null
     };
 
-    // noinspection JSUnusedGlobalSymbols
-    readonly layout = [
+
+    layout = [
         // {name: 'axis', pos: [0, 0]},
         {name: 'main', pos: [0, 0]},
     ];
