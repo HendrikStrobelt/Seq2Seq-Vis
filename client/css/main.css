@@ -1,3 +1,7 @@
+.rect_highlight, .inWord.highlight rect, .outWord.highlight rect {
+  stroke: red;
+  stroke-width: 2px; }
+
 .small_line {
   fill: none;
   stroke: #3fb391;
@@ -25,8 +29,9 @@
 .attn_graph path {
   fill: none;
   stroke: grey;
-  opacity: .3; }
-.attn_graph path.highlight {
+  opacity: .3;
+  transition: .5s; }
+.attn_graph.highlight path {
   opacity: .7;
   stroke: red;
   transition: .5s; }

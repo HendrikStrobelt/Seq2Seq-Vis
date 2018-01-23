@@ -1,8 +1,8 @@
 import * as d3 from "d3"
 import * as _ from "lodash";
 
-import {PanelController} from "./vis/PanelController";
-import {S2SApi} from "./api/S2SApi";
+import {PanelController} from "./controller/PanelController";
+import {S2SApi, Translation} from "./api/S2SApi";
 
 window.onload = () => {
     // let svg = d3.selectAll('#vis');
@@ -24,7 +24,10 @@ window.onload = () => {
         S2SApi.translate({input: value.trim()})
             .then((data: string) => {
                 // console.log(data, "--- data");
-                panelCtrl.update(JSON.parse(data));
+                const raw_data = JSON.parse(data);
+                panelCtrl.update(raw_data);
+
+
                 $('#spinner').hide();
             })
             .catch((error: Error) => console.log(error, "--- error"));

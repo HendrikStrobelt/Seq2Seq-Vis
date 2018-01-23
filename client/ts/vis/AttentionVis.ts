@@ -1,13 +1,29 @@
-import {D3Sel, VComponent} from "./VisualComponent";
+import {VComponent} from "./VisualComponent";
 import * as d3 from "d3";
 import * as _ from "lodash";
 import {SimpleEventHandler} from "../etc/SimpleEventHandler";
+import {D3Sel} from "../etc/LocalTypes";
+import {Translation} from "../api/S2SApi";
+
+
+type Edge = {
+    classes: string,
+    inPos: number,
+    outPos: number,
+    width: number,
+    edge: [number, number]
+}
+
+
+enum VertexType {Encoder = 0, Decoder = 1}
 
 export class AttentionVis extends VComponent {
 
+    static VERTEX_TYPE = VertexType;
+
     static events = {};
 
-    readonly defaultOptions = {
+    defaultOptions = {
         max_bundle_width: 15,
         height: 50,
         css_class_main: 'attn_graph',
@@ -15,7 +31,7 @@ export class AttentionVis extends VComponent {
         x_offset: 3
     };
 
-    readonly layout = [];
+    layout = [];
 
     constructor(d3Parent: D3Sel, eventHandler?: SimpleEventHandler, options: {} = {}) {
         super(d3Parent, eventHandler);
@@ -61,7 +77,8 @@ export class AttentionVis extends VComponent {
     }
 
 
-    _wrangle(data) {
+    _wrangle(data: Translation) {
+
 
         const {edges, maxPos} = this._createGraph(data.attnFiltered[data._current.topN],
             this.options.max_bundle_width,
@@ -77,12 +94,14 @@ export class AttentionVis extends VComponent {
 
     }
 
-    _render(renderData) {
+    _render(renderData: { edges: Edge[], maxPos: number }) {
+
+        console.log(renderData, "--- renderData");
 
         const op = this.options;
 
         const graph = this.base.selectAll(`.${op.css_class_main}`)
-            .data(<{ inPos, outPos, width, edge, classes }[]> renderData.edges);
+            .data(renderData.edges);
         graph.exit().remove();
 
         const linkGen = d3.linkVertical();
@@ -102,6 +121,22 @@ export class AttentionVis extends VComponent {
     }
 
     _bindLocalEvents() {
+
+    }
+
+
+    highlightAllEdges(index: number, type: VertexType, highlight: boolean) {
+
+        if (highlight) {
+            this.base.selectAll(`.${this.options.css_class_main}`)
+                .classed('highlight', d => {
+                    return (<Edge>d).edge[type] === index;
+                })
+        } else {
+            this.base.selectAll(`.${this.options.css_class_main}`)
+                .classed('highlight', false)
+
+        }
 
     }
 

@@ -1,4 +1,5 @@
 import {Networking} from "../etc/Networking";
+import {LooseObject} from "../etc/LocalTypes";
 
 export class S2SApi {
 
@@ -19,7 +20,7 @@ export class S2SApi {
             ['limit', limit]]);
 
         return request
-          .get(payload)
+            .get(payload)
     }
 
     static compareTranslation({pivot, compare}) {
@@ -29,8 +30,53 @@ export class S2SApi {
             ['compare', compare]]);
 
         return request
-          .get(payload)
+            .get(payload)
     }
 
+
+}
+
+
+export class Translation {
+
+    private readonly _result: {
+        attn:number[][][],
+        attnFiltered:number[][][],
+        scores:number[],
+        decoder: {state:number[], token:string}[][],
+        encoder: {state:number[], token:string}[],
+        [key: string]: any
+    } = null;
+
+    public _current:LooseObject;
+
+    constructor(result, current) {
+        this._result = result;
+        this._current = current;
+    }
+
+    get result() {
+        return this._result;
+    }
+
+    get attn(){
+        return this._result.attn;
+    }
+
+    get attnFiltered() {
+        return this._result.attnFiltered;
+    }
+
+    get encoder() {
+        return this._result.encoder;
+    }
+
+    get decoder() {
+        return this._result.decoder;
+    }
+
+    get scores(){
+        return this._result.scores;
+    }
 
 }

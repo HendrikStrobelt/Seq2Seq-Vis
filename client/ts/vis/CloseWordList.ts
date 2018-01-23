@@ -1,8 +1,9 @@
-import {D3Sel, LooseObject, VComponent} from "./VisualComponent";
+import {VComponent} from "./VisualComponent";
 import * as d3 from "d3";
 import * as _ from "lodash";
 import {SimpleEventHandler} from "../etc/SimpleEventHandler";
 import {SVGMeasurements} from "../etc/SVGplus";
+import {D3Sel, LooseObject} from "../etc/LocalTypes";
 
 
 export class CloseWordList extends VComponent {
@@ -76,7 +77,7 @@ export class CloseWordList extends VComponent {
         const wordWidth = words.map(w => op.text_measurer.textLength(w));
         const scores = op.data_access.scores(data);
         const compare = op.data_access.compare(data);
-        this._states.has_compare = compare !== null;
+        this._current.has_compare = compare !== null;
 
         // if (this._states.has_compare) {
         return _.sortBy(_.zipWith(words, scores, wordWidth, compare,
@@ -141,7 +142,7 @@ export class CloseWordList extends VComponent {
         allScoreBars.select('text').text(d => f2f(d.score));
 
 
-        if (this._states.has_compare) {
+        if (this._current.has_compare) {
 
             const bd_max = _.max(renderData.map(d => d.compare.dist));
             const bd_scale = d3.scaleLinear().domain([0, bd_max])

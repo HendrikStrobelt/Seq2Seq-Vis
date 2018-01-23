@@ -1,7 +1,8 @@
-import {VComponent, D3Sel} from "./VisualComponent";
+import {VComponent} from "./VisualComponent";
 import * as d3 from "d3";
 import * as _ from "lodash";
 import {SimpleEventHandler} from "../etc/SimpleEventHandler";
+import {D3Sel} from "../etc/LocalTypes";
 
 export class StateVis extends VComponent {
 

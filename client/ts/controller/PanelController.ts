@@ -2,22 +2,39 @@ import * as d3 from 'd3'
 import * as _ from 'lodash';
 
 import {SimpleEventHandler} from "../etc/SimpleEventHandler";
-import {WordLine} from "./WordLine"
-import {BarList} from "./BarList";
-import {StateVis} from "./StateVis";
-import {AttentionVis} from "./AttentionVis";
-import {WordProjector} from "./WordProjector";
-import {CloseWordList} from "./CloseWordList";
-import {S2SApi} from "../api/S2SApi";
+import {WordLine, WordLineHoverEvent} from "../vis/WordLine"
+import {BarList} from "../vis/BarList";
+import {StateVis} from "../vis/StateVis";
+import {AttentionVis} from "../vis/AttentionVis";
+import {WordProjector} from "../vis/WordProjector";
+import {CloseWordList} from "../vis/CloseWordList";
+import {S2SApi, Translation} from "../api/S2SApi";
+import {LooseObject} from "../etc/LocalTypes";
+import {VComponent} from "../vis/VisualComponent";
 
 
-type dObj = { [k: string]: any };
+type VisColumn<DW=WordLine> = {
+    encoder_extra: VComponent[],
+    encoder_words: WordLine,
+    attention: AttentionVis,
+    decoder_words: DW,
+    decoder_extra: VComponent[]
+}
+
+type VisAll = {
+    zero: VisColumn<BarList>,
+    left: VisColumn,
+    middle: VisColumn,
+    right: VisColumn,
+    setup_left: VisColumn,
+    setup_right: VisColumn,
+}
 
 
 export class PanelController {
-    private _columns: dObj;
-    private _vis: dObj;
-    private _current: dObj;
+    private _columns: LooseObject;
+    private _vis: VisAll;
+    private _current: LooseObject;
     private eventHandler: SimpleEventHandler;
 
     constructor() {
@@ -30,25 +47,20 @@ export class PanelController {
             setup_right: d3.select('.col4'),
         };
 
+        const initPanel = () => ({
+            encoder_extra: [],
+            encoder_words: null,
+            attention: null,
+            decoder_words: null,
+            decoder_extra: []
+        });
         this._vis = {
-            zero: {
-                encoder_extra: [],
-                encoder_words: null,
-                attention: null,
-                decoder_words: null,
-                decoder_extra: []
-            },
-            left: {
-                encoder_extra: [],
-                encoder_words: null,
-                attention: null,
-                decoder_words: null,
-                decoder_extra: []
-            },
-            middle: [],
-            right: [],
-            setup_left: [],
-            setup_right: []
+            zero: initPanel(),
+            left: initPanel(),
+            middle: initPanel(),
+            right: initPanel(),
+            setup_left: initPanel(),
+            setup_right: initPanel()
         };
 
         this._current = {
@@ -199,14 +211,18 @@ export class PanelController {
 
     }
 
-    update(data) {
+    update(raw_data) {
+
+        const cur = this._current;
+        const data = new Translation(raw_data, cur);
+
         console.log(data, "--- data");
 
-        const enc = this._vis.left.encoder_words;
-        const dec = this._vis.left.decoder_words;
-        const attn = this._vis.left.attention;
-        const cur = this._current;
 
+        const enc = <WordLine> this._vis.left.encoder_words;
+        const dec = <WordLine> this._vis.left.decoder_words;
+
+        console.log(this._vis, "--- this._vis");
         enc.update(data);
         dec.update(data);
 
@@ -216,6 +232,7 @@ export class PanelController {
         cur.outWords = dec.rows[0];
         data._current = cur;
 
+        const attn = <AttentionVis> this._vis.left.attention;
         attn.update(data);
 
         this._vis.left.encoder_extra.forEach(e => e.update(data));
@@ -335,6 +352,13 @@ export class PanelController {
 
 
     _bindEvents() {
+        const determinePanelType = caller => {
+            if ((caller === this._vis.left.encoder_words) || _.includes(this._vis.left.encoder_extra, caller))
+                return {vType: AttentionVis.VERTEX_TYPE.Encoder, col: this._vis.left};
+            else return {vType: AttentionVis.VERTEX_TYPE.Decoder, col: this._vis.left};
+        };
+
+
         this.eventHandler.bind(WordLine.events.wordSelected, (d, e) => {
             if (d.caller === this._vis.left.encoder_words
                 || d.caller === this._vis.left.decoder_words) {
@@ -383,6 +407,16 @@ export class PanelController {
 
 
         })
+
+        this.eventHandler.bind(WordLine.events.wordHovered, (d: WordLineHoverEvent) => {
+            d.caller.highlightWord(d.row, d.index, d.hovered);
+
+            const {vType, col} = determinePanelType(d.caller);
+            col.attention.highlightAllEdges(d.index, vType, d.hovered);
+
+
+        })
+
 
     }
 }

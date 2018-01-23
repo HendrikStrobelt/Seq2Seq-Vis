@@ -1,9 +1,20 @@
 import * as d3 from 'd3';
-import {D3Sel, VComponent} from "./VisualComponent";
+import {VComponent} from "./VisualComponent";
 import {SVGMeasurements} from "../etc/SVGplus";
 import {SimpleEventHandler} from "../etc/SimpleEventHandler";
+import {D3Sel, LooseObject} from "../etc/LocalTypes";
+import {Translation} from "../api/S2SApi";
 
 enum BoxType {fixed, flow}
+
+export type  WordLineHoverEvent = {
+    hovered: boolean,
+    caller: WordLine,
+    word: LooseObject,
+    row: number,
+    index: number,
+    css_class_main: string
+}
 
 export class WordLine extends VComponent {
 
@@ -47,14 +58,14 @@ export class WordLine extends VComponent {
     }
 
 
-    _wrangle(data) {
+    _wrangle(data: Translation) {
         const op = this.options;
         console.log(op, this, "--- op");
 
         const renderData = {
             rows: []
         };
-        this._states.selectedWord = null;
+        this._current.selectedWord = null;
         // calculate distances
 
 
@@ -108,9 +119,25 @@ export class WordLine extends VComponent {
                 hovered,
                 caller: this,
                 word: d,
+                row: d.row,
                 index: i,
                 css_class_main: this.options.css_class_main
             })
+    }
+
+
+    highlightWord(row: number, index: number, highlight: boolean, exclusive = false): void {
+
+        this.base.selectAll(`.${this.options.css_class_main}`)
+            .classed('highlight', function (d: LooseObject, i: number) {
+                if ((d.row === row) && (i === index)) {
+                    return highlight;
+                } else {
+                    if (exclusive) return false;
+                    else return d3.select(this).classed('highlight')
+                }
+            })
+
     }
 
     // noinspection JSUnusedGlobalSymbols
@@ -163,9 +190,9 @@ export class WordLine extends VComponent {
             const w = d.word;
             if (op.box_type === WordLine.BoxType.fixed
                 && w.width < w.realWidth && w.realWidth > 0)
-                return `translate(${d.word.width * .5},11)scale(${w.width / w.realWidth},1)`
+                return `translate(${d.word.width * .5},${Math.floor(op.box_height / 2)})scale(${w.width / w.realWidth},1)`
             else
-                return `translate(${d.word.width * .5},11)`
+                return `translate(${d.word.width * .5},${Math.floor(op.box_height / 2)})`
         }).text((d: any) => d.word.text);
 
 
@@ -186,8 +213,8 @@ export class WordLine extends VComponent {
 
 
     actionWordClicked({d, i}) {
-        let selected = !(this._states.selectedWord === i);
-        this._states.selectedWord = selected ? i : null;
+        let selected = !(this._current.selectedWord === i);
+        this._current.selectedWord = selected ? i : null;
 
         this.eventHandler.trigger(
             WordLine.events.wordSelected,

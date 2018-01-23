@@ -1,5 +1,11 @@
 @import "global";
 
+.rect_highlight {
+  stroke: red;
+  stroke-width: 2px;
+  //stroke-dasharray: 1,1;
+}
+
 .small_line {
   fill: none;
   stroke: $main-color;
@@ -14,6 +20,8 @@
   pointer-events: none;
 }
 
+
+
 .inWord {
   text {
     @extend .measureWord
@@ -21,6 +29,10 @@
   rect {
     fill: #0a99ff;
     fill-opacity: .5;
+  }
+
+  &.highlight rect {
+    @extend .rect_highlight
   }
 }
 
@@ -31,6 +43,10 @@
   rect {
     fill: #ff9f23;
     fill-opacity: .5;
+  }
+
+  &.highlight rect {
+    @extend .rect_highlight
   }
 }
 
@@ -49,8 +65,9 @@
     fill: none;
     stroke: grey;
     opacity: .3;
+    transition: .5s;
   }
-  path.highlight {
+  &.highlight path{
     opacity: .7;
     stroke: red;
     transition: .5s;

@@ -5,12 +5,9 @@ import {Util} from "../etc/Util";
 import * as d3 from 'd3'
 import {SimpleEventHandler} from "../etc/SimpleEventHandler";
 import {SVG} from "../etc/SVGplus";
+import {D3Sel, LooseObject} from "../etc/LocalTypes";
 
-export type D3Sel = d3.Selection<any, any, any, any>;
-// type dObj = { [k: string]: any };
-export interface LooseObject {
-    [key: string]: any
-}
+
 
 export abstract class VComponent {
 
@@ -19,16 +16,14 @@ export abstract class VComponent {
     /**
      * The static property that contains all class related events.
      * Should be overwritten and event strings have to be unique!!
-     * @returns {{}} an key-value object for object to string
-     * @abstract
      */
 
     static events: {} = {noEvent: 'VComponent_noEvent'};
 
     /**
-     * Should be overwritten to define the set of ALL options and their defaults
+     * set of ALL options and their defaults
      */
-    abstract readonly defaultOptions: {} = {
+    protected abstract readonly defaultOptions: {} = {
         pos: {x: 10, y: 10},
         // List of Events that are ONLY handled globally:
         globalExclusiveEvents: []
@@ -38,7 +33,7 @@ export abstract class VComponent {
     /**
      * Defines the layers in SVG  for bg,main,fg,...
      */
-    abstract readonly layout: { name: string, pos: number[] }[] = [{name: 'main', pos: [0, 0]}];
+    protected abstract readonly layout: { name: string, pos: number[] }[] = [{name: 'main', pos: [0, 0]}];
 
 
     protected id: string;
@@ -47,7 +42,7 @@ export abstract class VComponent {
     protected base: D3Sel;
     protected layers: LooseObject;
     protected eventHandler: SimpleEventHandler;
-    protected _states: LooseObject;
+    protected _current: LooseObject;
     protected data: any;
     protected renderData: any;
 
@@ -79,7 +74,7 @@ export abstract class VComponent {
             new SimpleEventHandler(this.base.node());
 
         // Object for storing internal states and variables
-        this._states = {hidden: false};
+        this._current = {hidden: false};
 
     }
 
@@ -152,7 +147,7 @@ export abstract class VComponent {
      */
     update(data) {
         this.data = data;
-        if (this._states.hidden) return;
+        if (this._current.hidden) return;
         this.renderData = this._wrangle(data);
         this._render(this.renderData);
     }
@@ -206,22 +201,22 @@ export abstract class VComponent {
     }
 
     hideView() {
-        if (!this._states.hidden) {
+        if (!this._current.hidden) {
             this.base.styles({
                 'opacity': 0,
                 'pointer-events': 'none'
             });
-            this._states.hidden = true;
+            this._current.hidden = true;
         }
     }
 
     unhideView() {
-        if (this._states.hidden) {
+        if (this._current.hidden) {
             this.base.styles({
                 'opacity': 1,
                 'pointer-events': null
             });
-            this._states.hidden = false;
+            this._current.hidden = false;
             this.update(this.data);
 
         }

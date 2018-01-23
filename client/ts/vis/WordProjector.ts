@@ -1,13 +1,14 @@
-import {D3Sel, VComponent} from "./VisualComponent";
+import {VComponent} from "./VisualComponent";
 import * as _ from "lodash";
 import * as d3 from "d3"
 import * as cola from "../../node_modules/webcola/dist/index"
 import {SimpleEventHandler} from "../etc/SimpleEventHandler";
 import {SVGMeasurements} from "../etc/SVGplus";
+import {D3Sel} from "../etc/LocalTypes";
 
 export class WordProjector extends VComponent {
 
-    readonly defaultOptions = {
+    defaultOptions = {
         height: 400,
         width: 500,
         css_class_main: 'wp_vis',
@@ -21,7 +22,7 @@ export class WordProjector extends VComponent {
     };
 
 
-    readonly layout = [
+    layout = [
         {name: 'bg', pos: [0, 0]},
         {name: 'main', pos: [0, 0]},
     ];
@@ -72,7 +73,7 @@ export class WordProjector extends VComponent {
         const words = op.data_access.words(data);
         const scores = op.data_access.scores(data);
         const compare = op.data_access.compare(data);
-        this._states.has_compare = compare !== null;
+        this._current.has_compare = compare !== null;
 
         return _.sortBy(_.zipWith(words, scores, norm_pos, compare,
             (word, score, pos, compare) => ({word, score, pos, compare})),
@@ -148,7 +149,7 @@ export class WordProjector extends VComponent {
             .text(d => d.word)
             .style('font-size', d => wordScale(d.score) + 'px')
 
-        if (this._states.has_compare) {
+        if (this._current.has_compare) {
             const bd_max = _.max(<number[]>renderData.map(d => d.compare.dist));
             const bd_scale = d3.scaleLinear<string,string>().domain([0, bd_max])
                 .range(['#ffffff', '#3f6f9e']);
