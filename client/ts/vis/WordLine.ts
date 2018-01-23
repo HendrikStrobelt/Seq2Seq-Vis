@@ -4,6 +4,7 @@ import {SVGMeasurements} from "../etc/SVGplus";
 import {SimpleEventHandler} from "../etc/SimpleEventHandler";
 import {D3Sel, LooseObject} from "../etc/LocalTypes";
 import {Translation} from "../api/S2SApi";
+import {lab} from "d3-color";
 
 enum BoxType {fixed, flow}
 
@@ -60,7 +61,7 @@ export class WordLine extends VComponent {
 
     _wrangle(data: Translation) {
         const op = this.options;
-        console.log(op, this, "--- op");
+
 
         const renderData = {
             rows: []
@@ -125,20 +126,38 @@ export class WordLine extends VComponent {
             })
     }
 
+    actionWordClicked({d, i}) {
+        let selected = !(this._current.selectedWord === i);
+        this._current.selectedWord = selected ? i : null;
 
-    highlightWord(row: number, index: number, highlight: boolean, exclusive = false): void {
+        this.eventHandler.trigger(
+            WordLine.events.wordSelected,
+            {
+                selected,
+                caller: this,
+                row: d.row,
+                word: d,
+                index: i,
+                css_class_main: this.options.css_class_main
+            })
+
+    }
+
+
+    highlightWord(row: number, index: number, highlight: boolean, exclusive = false, label = 'highlight'): void {
 
         this.base.selectAll(`.${this.options.css_class_main}`)
-            .classed('highlight', function (d: LooseObject, i: number) {
+            .classed(label, function (d: LooseObject, i: number) {
                 if ((d.row === row) && (i === index)) {
                     return highlight;
                 } else {
                     if (exclusive) return false;
-                    else return d3.select(this).classed('highlight')
+                    else return d3.select(this).classed(label)
                 }
             })
 
     }
+
 
     // noinspection JSUnusedGlobalSymbols
     _render(renderData) {
@@ -212,18 +231,4 @@ export class WordLine extends VComponent {
     }
 
 
-    actionWordClicked({d, i}) {
-        let selected = !(this._current.selectedWord === i);
-        this._current.selectedWord = selected ? i : null;
-
-        this.eventHandler.trigger(
-            WordLine.events.wordSelected,
-            {
-                selected,
-                caller: this,
-                word: d,
-                index: i
-            })
-
-    }
 }

@@ -45,7 +45,7 @@ export class StateVis extends VComponent {
             height: op.height
         });
 
-        console.log(states, op.data_access(data), "--- states,op.data_access(data)");
+
 
         return {states, yDomain}
     }

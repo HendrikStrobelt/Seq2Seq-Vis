@@ -77,7 +77,7 @@ export class PanelManager {
     public getMediumPanel() {
         if (!this._current.hasMediumPanel) {
             this.buildFullStack(this._vis.middle);
-            this.buildDecorators(this._vis.middle_extra);
+            // this.buildDecorators(this._vis.middle_extra);
             this._current.hasMediumPanel=true;
         }
 

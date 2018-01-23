@@ -40,26 +40,59 @@ export class S2SApi {
 export class Translation {
 
     private readonly _result: {
-        attn:number[][][],
-        attnFiltered:number[][][],
-        scores:number[],
-        decoder: {state:number[], token:string}[][],
-        encoder: {state:number[], token:string}[],
+        attn: number[][][],
+        attnFiltered: number[][][],
+        scores: number[],
+        decoder: { state: number[], token: string }[][],
+        encoder: { state: number[], token: string }[],
         [key: string]: any
     } = null;
 
-    public _current:LooseObject;
+    public _current: LooseObject;
 
     constructor(result, current) {
         this._result = result;
         this._current = current;
     }
 
+
+    public filterAttention(threshold = .75) {
+
+        if (this._result.attn.length > 0) {
+
+            const res = [];
+
+            for (const topSentence of this._result.attn) {
+                const newSentence = [];
+                for (const row of topSentence) {
+                    const sortedValues = row.map((v, i) => [v, i])
+                        .sort((a, b) => b[0] - a[0]);
+                    const newRow = new Array(row.length).fill(0);
+                    let acc = 0;
+                    let index = 0;
+                    while (acc < threshold && index < row.length) {
+                        const v = sortedValues[index][0];
+                        newRow[sortedValues[index][1]] = v;
+                        acc += v;
+                        index++;
+                    }
+                    newSentence.push(newRow)
+                }
+                res.push(newSentence)
+            }
+            this._result.attnFiltered = res;
+            return true;
+
+        } else return false;
+
+    }
+
+
     get result() {
         return this._result;
     }
 
-    get attn(){
+    get attn() {
         return this._result.attn;
     }
 
@@ -75,7 +108,7 @@ export class Translation {
         return this._result.decoder;
     }
 
-    get scores(){
+    get scores() {
         return this._result.scores;
     }
 

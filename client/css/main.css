@@ -17,6 +17,9 @@
 .inWord rect {
   fill: #0a99ff;
   fill-opacity: .5; }
+.inWord.selected rect {
+  fill: #0a99ff;
+  fill-opacity: .9; }
 
 .outWord rect {
   fill: #ff9f23;

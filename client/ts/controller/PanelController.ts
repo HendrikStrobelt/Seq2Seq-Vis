@@ -54,6 +54,7 @@ export class PanelController {
 
 
         const data = new Translation(raw_data, cur);
+        data.filterAttention();
         const enc = main.encoder_words;
         const dec = main.decoder_words;
 
@@ -128,11 +129,13 @@ export class PanelController {
                     loc = 'tgt'
                 }
 
+                d.caller.highlightWord(d.row, d.index, d.selected, true,'selected');
+
                 const allWords = d.caller.firstRowPlainWords;
 
                 S2SApi.closeWords({input: d.word.word.text, loc, limit: 20})
                     .then(data => {
-                        // console.log(JSON.parse(data), "--- data");
+
 
                         const word_data = JSON.parse(data);
                         // this.updateAndShowWordProjector(word_data);
@@ -144,7 +147,7 @@ export class PanelController {
                                 return allWords.map((aw, wi) =>
                                     (wi === replaceIndex) ? wd : aw).join(' ');
                             })
-                            console.log(pivot, compare, "--- pivot, compare");
+
                             S2SApi.compareTranslation({pivot, compare})
                                 .then(data => {
                                     word_data["compare"] = JSON.parse(data)["compare"];
@@ -162,7 +165,7 @@ export class PanelController {
                     .catch(error => console.log(error, "--- error"));
 
 
-                console.log(d.word.word.text, d, " enc--- ");
+
             }
 
 
@@ -188,7 +191,7 @@ export class PanelController {
 
                         const d = JSON.parse(data);
 
-                        this.update(d, main, extra);
+                        this.update(d, main, null);
 
 
                     }

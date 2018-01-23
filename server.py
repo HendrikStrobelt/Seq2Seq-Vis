@@ -86,42 +86,11 @@ def get_translation(**request):
     #
     a_f = []
 
-    # print(json.dumps(translate, indent=4))
-
-    for attn_row in translate['attn']:
-        attn = np.array(attn_row)
-        if attn.shape[0] > 0:  # TODO: hack until API is fixed
-            sorted_indices = np.argsort(attn, axis=1)
-
-            for row_i in range(len(attn)):
-                dec_order = sorted_indices[row_i][::-1]
-                values = attn[row_i, dec_order]
-                min_i = 0
-                acc = 0.
-                while acc < 0.75:
-                    acc += values[min_i]
-                    min_i += 1
-                if min_i < len(values):
-                    attn[row_i, dec_order[min_i:]] = 0.
-
-            a_f.append(attn.tolist())
-
-    translate['attnFiltered'] = a_f
-
-    # print(attn[row_i], min_i)
-
-    # print(attn, np.argsort(attn, axis=1)[::-1])
-
     return translate
-    # return {
-    #     'in': res['src'],
-    #     'out': res['tgt'],
-    #     'attn': attn.tolist(),
-    #     'score': res['pred_score']
-    # }
 
 
-def extract_sentence(x): return ' '.join(map(lambda y: y['token'], x['decoder'][0]))
+def extract_sentence(x): return ' '.join(
+    map(lambda y: y['token'], x['decoder'][0]))
 
 
 def extract_attn(x): return np.array(x['attn'][0])

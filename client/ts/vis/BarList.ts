@@ -68,8 +68,6 @@ export class BarList extends VComponent {
 
         const barsEnter = bars.enter().append('rect').attr('class', op.css_bar);
 
-        console.log(op.xScale.domain(), this.options, "--- this.xScale, this.options");
-
 
         barsEnter.merge(bars).attrs({
             x: d => op.width - op.xScale(d),

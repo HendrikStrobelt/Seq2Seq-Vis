@@ -34,6 +34,12 @@
   &.highlight rect {
     @extend .rect_highlight
   }
+
+  &.selected rect {
+    fill: #0a99ff;
+    fill-opacity: .9;
+  }
+
 }
 
 .outWord {
