@@ -241,7 +241,7 @@ class ONMTmodelAPI():
             cuda=self.opt.cuda,
             beam_trace=self.opt.dump_beam != "")
 
-    def translate(self, in_text, partial_decode=None, k=5, attn=None):
+    def translate(self, in_text, partial_decode=[], k=5, attn=None):
         """
         in_text: list of strings
         partial_decode: list of strings, not implemented yet
@@ -271,6 +271,7 @@ class ONMTmodelAPI():
         test_data = onmt.io.OrderedIterator(
             dataset=data, device=self.opt.gpu,
             batch_size=self.opt.batch_size, train=False, sort=False,
+            sort_within_batch=True,
             shuffle=False)
 
         # set n_best in translator
@@ -285,15 +286,27 @@ class ONMTmodelAPI():
             data, self.translator.fields,
             self.opt.n_best, self.opt.replace_unk, self.opt.tgt)
 
+        # Convert partial decode into valid input to decoder
+        print("partial:", partial_decode)
+        vocab = self.fields["tgt"].vocab
+        partial = []
+        for p in partial_decode:
+            curr_part = []
+            for tok in p.split():
+                curr_part.append(vocab.stoi[tok])
+            partial.append(curr_part)
+
         reply = {}
         # Only has one batch, but indexing does not work
         for batch in test_data:
             batch_data = self.translator.translate_batch(
-                batch, data, return_states=True)
+                batch, data, return_states=True,
+                partial=partial)
             context = batch_data['context'][:, 0, :]
             translations = builder.from_batch(batch_data)
-            # iteratres over items in batch - only one for now
+            # iteratres over items in batch
             for transIx, trans in enumerate(translations):
+                print(trans.pred_sents)
                 res = {}
                 # Fill encoder Result
                 encoderRes = []
@@ -331,9 +344,16 @@ class ONMTmodelAPI():
 
 def main():
     model = ONMTmodelAPI("demo-model_acc_41.38_ppl_28.26_e13.pt")
+    # reply = model.translate(["This is a test ."])
     reply = model.translate(["This is a test .", "this is a second test ."])
-    print(json.dumps(reply, indent=2, sort_keys=True))
-    print(reply.keys())
+    print("______")
+    # reply = model.translate(["This is a test ."], partial_decode=["Dies ist"])
+    reply = model.translate(["This is a test .", "this is a second test ."],
+                             partial_decode=["Dies ist", "Ein zweiter"])
+
+
+
+    #print(json.dumps(reply, indent=2, sort_keys=True))
 
 if __name__ == "__main__":
     main()
