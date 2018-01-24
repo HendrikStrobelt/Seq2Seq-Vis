@@ -3,6 +3,8 @@ from __future__ import division, unicode_literals
 import argparse
 import codecs
 import json
+
+import h5py
 import torch
 
 import numpy as np
@@ -241,7 +243,8 @@ class ONMTmodelAPI():
             cuda=self.opt.cuda,
             beam_trace=self.opt.dump_beam != "")
 
-    def translate(self, in_text, partial_decode=[], k=5, attn=None):
+
+    def translate(self, in_text, partial_decode=None, k=5, attn=None, dump_data=False):
         """
         in_text: list of strings
         partial_decode: list of strings, not implemented yet
@@ -255,6 +258,20 @@ class ONMTmodelAPI():
         with codecs.open("tmp.txt", "w", "utf-8") as f:
             for line in in_text:
                 f.write(line + "\n")
+
+        if dump_data:
+            # Code to extract the source and target dict
+            with open("data/src.dict", 'w') as f:
+                for w, ix in self.translator.fields['src'].vocab.stoi.items():
+                    f.write(str(ix) + " " + w + "\n")
+            with open("data/tgt.dict", 'w') as f:
+                for w, ix in self.translator.fields['tgt'].vocab.stoi.items():
+                    f.write(str(ix) + " " + w + "\n")
+            with h5py.File("data/embs.h5", 'w') as f:
+                f.create_dataset("encoder", data=self.translator.model.encoder.embeddings.emb_luts[0].weight.data.numpy())
+                f.create_dataset("decoder", data=self.translator.model.decoder.embeddings.emb_luts[0].weight.data.numpy())
+
+
 
         # Use written file as input to dataset builder
         data = onmt.io.build_dataset(
@@ -297,6 +314,7 @@ class ONMTmodelAPI():
             partial.append(curr_part)
 
         reply = {}
+
         # Only has one batch, but indexing does not work
         for batch in test_data:
             batch_data = self.translator.translate_batch(
@@ -343,15 +361,13 @@ class ONMTmodelAPI():
 
 
 def main():
-    model = ONMTmodelAPI("demo-model_acc_41.38_ppl_28.26_e13.pt")
+    model = ONMTmodelAPI("data/model_en_de_jan11_acc_47.56_ppl_20.49_e13.pt")
     # reply = model.translate(["This is a test ."])
     reply = model.translate(["This is a test .", "this is a second test ."])
     print("______")
     # reply = model.translate(["This is a test ."], partial_decode=["Dies ist"])
     reply = model.translate(["This is a test .", "this is a second test ."],
                              partial_decode=["Dies ist", "Ein zweiter"])
-
-
 
     #print(json.dumps(reply, indent=2, sort_keys=True))
 

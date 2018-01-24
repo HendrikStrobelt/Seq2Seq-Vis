@@ -1,6 +1,7 @@
 import os
 
 import h5py
+import numpy as np
 
 from model_api.opennmt_model import ONMTmodelAPI
 
@@ -17,6 +18,8 @@ class S2SProject:
         self.dicts = {'i2t': {'src': {}, 'tgt': {}},
                       't2i': {'src': {}, 'tgt': {}}}
 
+        self.cached_norms = {'src': None, 'tgt': None}
+
         for h in ['src', 'tgt']:
             with open(os.path.join(directory, self.config['dicts'][h])) as f:
                 raw = f.readline()
@@ -28,3 +31,9 @@ class S2SProject:
                         self.dicts['i2t'][h][iid] = token
                         self.dicts['t2i'][h][token] = iid
                     raw = f.readline()
+
+    def cached_norm(self, loc, matrix):
+        if self.cached_norms[loc] is None:
+            self.cached_norms[loc] = np.linalg.norm(matrix, axis=1)
+
+        return self.cached_norms[loc]
