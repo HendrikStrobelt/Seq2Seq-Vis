@@ -244,7 +244,7 @@ class ONMTmodelAPI():
             beam_trace=self.opt.dump_beam != "")
 
 
-    def translate(self, in_text, partial_decode=None, k=5, attn=None, dump_data=False):
+    def translate(self, in_text, partial_decode=[], k=5, attn=None, dump_data=False):
         """
         in_text: list of strings
         partial_decode: list of strings, not implemented yet
@@ -361,9 +361,9 @@ class ONMTmodelAPI():
 
 
 def main():
-    model = ONMTmodelAPI("data/model_en_de_jan11_acc_47.56_ppl_20.49_e13.pt")
+    model = ONMTmodelAPI("data/model_en_de_20.49.pt")
     # reply = model.translate(["This is a test ."])
-    reply = model.translate(["This is a test .", "this is a second test ."])
+    reply = model.translate(["This is a test .", "this is a second test ."], dump_data=True)
     print("______")
     # reply = model.translate(["This is a test ."], partial_decode=["Dies ist"])
     reply = model.translate(["This is a test .", "this is a second test ."],
