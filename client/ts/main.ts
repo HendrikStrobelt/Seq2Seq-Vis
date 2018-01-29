@@ -3,6 +3,8 @@ import * as _ from "lodash";
 
 import {PanelController} from "./controller/PanelController";
 import {S2SApi, Translation} from "./api/S2SApi";
+import '../css/main.scss'
+
 
 window.onload = () => {
     // let svg = d3.selectAll('#vis');
@@ -21,11 +23,14 @@ window.onload = () => {
         const value = (<HTMLInputElement> d3.select('#query_input').node()).value;
 
 
+
+
         S2SApi.translate({input: value.trim()})
             .then((data: string) => {
                 // console.log(data, "--- data");
                 const raw_data = JSON.parse(data);
                 panelCtrl.update(raw_data);
+                panelCtrl.cleanPanels();
 
 
                 $('#spinner').hide();
@@ -54,7 +59,9 @@ window.onload = () => {
 
     function windowResize() {
         const width = window.innerWidth;
-        const height = window.innerHeight - $("#title").height() - $("#ui").height() - 5;
+        const height = window.innerHeight
+            - $("#title").height()
+            - $("#ui").height() - 5;
         // globalEvents.trigger('svg-resize', {width, height})
     }
 

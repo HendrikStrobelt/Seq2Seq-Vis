@@ -1,7 +1,13 @@
 @import "global";
 
+$encoder-color-ref: #4363aa;
+$encoder-color: #5ba2ec;
+$decoder-color: #f9d862;
+$attn-color: #6c7067;
+$highlight-color: #d62f30;
+
 .rect_highlight {
-  stroke: red;
+  stroke: $highlight-color;
   stroke-width: 2px;
   //stroke-dasharray: 1,1;
 }
@@ -20,24 +26,28 @@
   pointer-events: none;
 }
 
-
-
 .inWord {
   text {
     @extend .measureWord
   }
   rect {
-    fill: #0a99ff;
-    fill-opacity: .5;
+    fill: $encoder-color;
+    fill-opacity: .9;
+  }
+
+  &.selected {
+    text {
+      fill: lightgray;
+    }
+
+    rect {
+      fill: $encoder-color-ref;
+      fill-opacity: 1;
+    }
   }
 
   &.highlight rect {
     @extend .rect_highlight
-  }
-
-  &.selected rect {
-    fill: #0a99ff;
-    fill-opacity: .9;
   }
 
 }
@@ -47,8 +57,8 @@
     @extend .measureWord
   }
   rect {
-    fill: #ff9f23;
-    fill-opacity: .5;
+    fill: $decoder-color;
+    fill-opacity: 1;
   }
 
   &.highlight rect {
@@ -61,22 +71,22 @@
     @extend .measureWord
   }
   rect {
-    fill: #ff9f23;
-    fill-opacity: .2;
+    fill: $decoder-color;
+    fill-opacity: .6;
   }
 }
 
 .attn_graph {
   path {
     fill: none;
-    stroke: grey;
+    stroke: $attn-color;
     opacity: .3;
-    transition: .5s;
+    //transition: .5s;
   }
-  &.highlight path{
+  &.highlight path {
     opacity: .7;
-    stroke: red;
-    transition: .5s;
+    stroke: $highlight-color;
+    //transition: .5s;
   }
 }
 
@@ -116,9 +126,33 @@
   font-size: 8pt;
   font-weight: bold;
 
-  rect{
-    fill: lightgray;
+  rect {
+    fill: $main-color;
   }
+
+  .word {
+    text {
+      pointer-events: none;
+    }
+
+    rect:hover {
+      @extend .rect_highlight
+    }
+
+    &.selected {
+      text {
+        fill: lightgray;
+      }
+
+      rect {
+        fill: $encoder-color-ref !important;
+        fill-opacity: 1 !important;
+
+      }
+    }
+
+  }
+
   //}
 }
 

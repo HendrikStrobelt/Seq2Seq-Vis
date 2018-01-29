@@ -38,7 +38,7 @@ export class PanelManager {
     private _current = {
         topN: <number> 0,
         hideStates: <boolean> false,
-        box_width: <number> 50,
+        box_width: <number> 40,
         wordProjector: <WordProjector> null,
         closeWordsList: <CloseWordList> null,
         hasMediumPanel: <boolean> false
@@ -309,7 +309,8 @@ export class PanelManager {
 
     closeWordProjector() {
         if (this._current.wordProjector) {
-            this._current.wordProjector.destroy();
+            this._vis.right.selection.selectAll('*').remove();
+            this._vis.right = initPanel(this._vis.right.selection);
             this._current.wordProjector = null;
         }
     }

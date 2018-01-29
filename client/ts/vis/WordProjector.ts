@@ -4,7 +4,7 @@ import * as d3 from "d3"
 import * as cola from "../../node_modules/webcola/dist/index"
 import {SimpleEventHandler} from "../etc/SimpleEventHandler";
 import {SVGMeasurements} from "../etc/SVGplus";
-import {D3Sel} from "../etc/LocalTypes";
+import {D3Sel, LooseObject} from "../etc/LocalTypes";
 
 
 type wordObj = {
@@ -98,6 +98,8 @@ export class WordProjector extends VComponent {
         const compare = op.data_access.compare(data);
         this._current.has_compare = compare !== null;
 
+        this._current.clearHighlights = true;
+
         return _.sortBy(_.zipWith(words, scores, norm_pos, compare,
             (word, score, pos, compare) => ({word, score, pos, compare})),
             (d: { word, score, pos, compare }) => -d.score);
@@ -122,7 +124,7 @@ export class WordProjector extends VComponent {
         const xscale = d3.scaleLinear().range([30, op.width - 30]);
         const yscale = d3.scaleLinear().range([10, op.height - 10]);
         const scoreExtent = d3.extent(renderData.map(d => d.score))
-        const wordScale = d3.scaleLinear().domain(scoreExtent).range([6, 14]);
+        const wordScale = d3.scaleLinear().domain(scoreExtent).range([10, 12]);
 
 
         const ofree = []
@@ -133,7 +135,7 @@ export class WordProjector extends VComponent {
             const x = xscale(rd.pos[0])
             const y = yscale(rd.pos[1])
 
-            const width = op.text_measurer.textLength(w, 'font-size:' + height + 'px;')
+            const width = op.text_measurer.textLength(w, 'font-size:' + height + 'pt;')
             // console.log(w,height,x,y,width,"--- w,height,x,y,width");
 
             ofree.push(new cola.Rectangle(x - width / 2 - 4, x + width / 2 + 4, y - height / 2 - 3, y + height / 2 + 3))
@@ -173,17 +175,44 @@ export class WordProjector extends VComponent {
         });
         allWords.select('text')
             .text(d => d.word)
-            .style('font-size', d => wordScale(d.score) + 'px')
+            .style('font-size', d => wordScale(d.score) + 'pt')
 
         if (this._current.has_compare) {
             const bd_max = _.max(<number[]>renderData.map(d => d.compare.dist));
             const bd_scale = d3.scaleLinear<string, string>().domain([0, bd_max])
-                .range(['#ffffff', '#3f6f9e']);
+                .range(['#ffffff', '#63676e']);
             allWords.select('rect').style('fill', d => {
                 // console.log(d,"--- d");
                 return bd_scale(d.compare.dist)
             })
 
+        }
+
+
+        if (this._current.clearHighlights) {
+            this.highlightWord(null, false);
+            this._current.clearHighlights = false;
+        }
+
+
+    }
+
+    highlightWord(word: string, highlight: boolean, exclusive = true, label = 'selected'): void {
+
+        const allWords = this.layers.main.selectAll(".word");
+
+        if (!highlight && exclusive) {
+            allWords.classed(label, false);
+        } else {
+            allWords
+                .classed(label, function (d: wordObj) {
+                    if ((d.word === word)) {
+                        return highlight;
+                    } else {
+                        if (exclusive) return false;
+                        else return d3.select(this).classed(label)
+                    }
+                })
         }
 
 

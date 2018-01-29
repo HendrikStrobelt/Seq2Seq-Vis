@@ -109,6 +109,8 @@ export class WordLine extends VComponent {
         });
         // todo: update SVG (parent) size
 
+        this._current.clearSelections = true;
+
         return renderData;
 
     }
@@ -146,6 +148,7 @@ export class WordLine extends VComponent {
 
     highlightWord(row: number, index: number, highlight: boolean, exclusive = false, label = 'highlight'): void {
 
+        // console.log(row, highlight, exclusive, label, "--- word,highlight,exclusive,label");
         this.base.selectAll(`.${this.options.css_class_main}`)
             .classed(label, function (d: LooseObject, i: number) {
                 if ((d.row === row) && (i === index)) {
@@ -213,6 +216,13 @@ export class WordLine extends VComponent {
             else
                 return `translate(${d.word.width * .5},${Math.floor(op.box_height / 2)})`
         }).text((d: any) => d.word.text);
+
+
+        if (this._current.clearSelections){
+            this.highlightWord(-1,-1,false,
+                true, 'selected');
+            this._current.clearSelections = false;
+        }
 
 
     }

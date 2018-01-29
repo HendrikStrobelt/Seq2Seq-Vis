@@ -1,10 +1,10 @@
-.rect_highlight, .inWord.highlight rect, .outWord.highlight rect {
-  stroke: red;
+.rect_highlight, .inWord.highlight rect, .outWord.highlight rect, .wordprojector .word rect:hover {
+  stroke: #d62f30;
   stroke-width: 2px; }
 
 .small_line {
   fill: none;
-  stroke: #3fb391;
+  stroke: #fffdfa;
   pointer-events: none;
   stroke-width: 3px; }
 
@@ -15,29 +15,29 @@
   pointer-events: none; }
 
 .inWord rect {
-  fill: #0a99ff;
-  fill-opacity: .5; }
-.inWord.selected rect {
-  fill: #0a99ff;
+  fill: #5ba2ec;
   fill-opacity: .9; }
+.inWord.selected text {
+  fill: lightgray; }
+.inWord.selected rect {
+  fill: #4363aa;
+  fill-opacity: 1; }
 
 .outWord rect {
-  fill: #ff9f23;
-  fill-opacity: .5; }
+  fill: #f9d862;
+  fill-opacity: 1; }
 
 .topKWord rect {
-  fill: #ff9f23;
-  fill-opacity: .2; }
+  fill: #f9d862;
+  fill-opacity: .6; }
 
 .attn_graph path {
   fill: none;
-  stroke: grey;
-  opacity: .3;
-  transition: .5s; }
+  stroke: #6c7067;
+  opacity: .3; }
 .attn_graph.highlight path {
   opacity: .7;
-  stroke: red;
-  transition: .5s; }
+  stroke: #d62f30; }
 
 .state_line {
   fill: none;
@@ -63,7 +63,14 @@
   font-size: 8pt;
   font-weight: bold; }
   .wordprojector rect {
+    fill: #fffdfa; }
+  .wordprojector .word text {
+    pointer-events: none; }
+  .wordprojector .word.selected text {
     fill: lightgray; }
+  .wordprojector .word.selected rect {
+    fill: #4363aa !important;
+    fill-opacity: 1 !important; }
 
 .close_word_list {
   alignment-baseline: middle;
@@ -89,13 +96,15 @@
 body {
   font-family: 'Source Sans Pro', sans-serif;
   font-weight: 300;
-  font-size: 12pt; }
+  font-size: 10pt;
+  margin: 0;
+  background: #fffdfa; }
 
 input[type="text"] {
   font-size: 12pt;
   font-family: 'Source Sans Pro', sans-serif;
   font-weight: 600;
-  margin: 3px 0;
+  margin-top: 3px;
   display: inline-block;
   border: 1px solid #ccc;
   border-radius: 4px;
@@ -104,11 +113,36 @@ input[type="text"] {
   box-sizing: border-box;
   padding: 8px 6px; }
 
+ul.topnav {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background-color: #d4d4d4; }
+  ul.topnav li {
+    float: left; }
+    ul.topnav li a {
+      display: block;
+      color: #4a4a4a;
+      text-align: center;
+      padding: 4px 6px;
+      text-decoration: none; }
+    ul.topnav li a:hover:not(.active) {
+      background-color: #b3deff; }
+    ul.topnav li a.active {
+      background-color: #80ccff; }
+    ul.topnav li.right {
+      float: right; }
+
+@media screen and (max-width: 400px) {
+  ul.topnav li.right,
+  ul.topnav li {
+    float: none; } }
 .full_width_input {
   width: 100%; }
 
 .header {
-  padding: 5px 0;
+  padding: 5px;
   border-bottom: solid 1px lightgray; }
 
 .mainPanel {

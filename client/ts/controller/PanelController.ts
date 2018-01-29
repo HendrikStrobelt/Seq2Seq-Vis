@@ -93,6 +93,13 @@ export class PanelController {
     }
 
 
+
+    cleanPanels(){
+        this.pm.closeWordProjector();
+        this.pm.removeMediumPanel();
+    }
+
+
     updateAndShowWordProjector(data) {
         const wp = this.pm.getWordProjector();
         wp.update(data);
@@ -111,12 +118,22 @@ export class PanelController {
         const vis = this.pm.vis;
 
         const determinePanelType = caller => {
-            if ((caller === vis.left.encoder_words) || _.includes(vis.left.encoder_extra, caller))
+            if ((caller === vis.left.encoder_words)) //_.includes(vis.left.encoder_extra, caller)
                 return {vType: AttentionVis.VERTEX_TYPE.Encoder, col: vis.left};
+            else if ((caller === vis.middle.encoder_words))
+                return {
+                    vType: AttentionVis.VERTEX_TYPE.Encoder,
+                    col: vis.middle
+                };
+            else if ((caller === vis.middle.decoder_words))
+                return {
+                    vType: AttentionVis.VERTEX_TYPE.Decoder,
+                    col: vis.middle
+                };
             else return {
-                vType: AttentionVis.VERTEX_TYPE.Decoder,
-                col: vis.left
-            };
+                    vType: AttentionVis.VERTEX_TYPE.Decoder,
+                    col: vis.left
+                };
         };
 
 
@@ -129,7 +146,7 @@ export class PanelController {
                     loc = 'tgt'
                 }
 
-                d.caller.highlightWord(d.row, d.index, d.selected, true,'selected');
+                d.caller.highlightWord(d.row, d.index, d.selected, true, 'selected');
 
                 const allWords = d.caller.firstRowPlainWords;
 
@@ -165,7 +182,6 @@ export class PanelController {
                     .catch(error => console.log(error, "--- error"));
 
 
-
             }
 
 
@@ -175,7 +191,11 @@ export class PanelController {
             d.caller.highlightWord(d.row, d.index, d.hovered);
 
             const {vType, col} = determinePanelType(d.caller);
-            col.attention.highlightAllEdges(d.index, vType, d.hovered);
+            if (col != this.pm.vis.left) {
+                col.attention.highlightAllEdges(d.index, vType, d.hovered);
+            }
+            this.pm.vis.left.attention.highlightAllEdges(d.index, vType, d.hovered);
+
         }
 
 
@@ -184,6 +204,10 @@ export class PanelController {
 
         this.eventHandler.bind(WordProjector.events.wordClicked,
             (d: WordProjectorClickedEvent) => {
+
+                d.caller.highlightWord(d.word, true,
+                    true, 'selected');
+
 
                 S2SApi.translate({input: d.sentence}).then(data => {
 
