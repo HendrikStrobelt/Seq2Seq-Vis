@@ -341,12 +341,14 @@ class ONMTmodelAPI():
                     if p:
                         topIx = []
                         topIxAttn = []
-                        for token, attn, state in zip(p,
-                                                      trans.attns[ix],
-                                                      batch_data["target_states"][transIx][ix]):
+                        for token, attn, state, cstar in zip(p,
+                                                             trans.attns[ix],
+                                                             batch_data["target_states"][transIx][ix],
+                                                             batch_data['target_cstar'][transIx][ix]):
                             currentDec = {}
                             currentDec['token'] = token
                             currentDec['state'] = list(state.data)
+                            currentDec['cstar'] = list(cstar.data)
                             topIx.append(currentDec)
                             topIxAttn.append(list(attn))
                             # if t in ['.', '!', '?']:
@@ -368,6 +370,8 @@ def main():
     # reply = model.translate(["This is a test ."], partial_decode=["Dies ist"])
     reply = model.translate(["This is a test .", "this is a second test ."],
                              partial_decode=["Dies ist", "Ein zweiter"])
+
+    print(reply)
 
     #print(json.dumps(reply, indent=2, sort_keys=True))
 
