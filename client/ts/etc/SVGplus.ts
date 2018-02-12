@@ -8,7 +8,7 @@ export class SVG {
         return "translate(" + x + "," + y + ")"
     }
 
-    static group(parent, classes, pos) {
+    static group(parent, classes, pos = {x: 0, y: 0}) {
         return parent.append('g').attrs({
             class: classes,
             "transform": SVG.translate(pos)

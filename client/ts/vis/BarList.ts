@@ -6,6 +6,7 @@ export class BarList extends VComponent {
 
     static events = {};
 
+    // noinspection JSUnusedGlobalSymbols
     defaultOptions = {
         width: 90,
         bar_height: 20,
@@ -17,14 +18,9 @@ export class BarList extends VComponent {
     };
 
 
-    layout = [
-        // {name: 'axis', pos: [0, 0]},
-        {name: 'main', pos: [0, 0]},
-    ];
-
     constructor(d3Parent, eventHandler, options: {} = {}) {
         super(d3Parent, eventHandler);
-        this.superInit(options)
+        this.superInit(options, false)
     }
 
     _init() {
@@ -63,7 +59,7 @@ export class BarList extends VComponent {
 
         const op = this.options;
 
-        const bars = this.layers.main.selectAll(`.${op.css_bar}`).data(barValues);
+        const bars = this.base.selectAll(`.${op.css_bar}`).data(barValues);
         bars.exit().remove();
 
         const barsEnter = bars.enter().append('rect').attr('class', op.css_bar);

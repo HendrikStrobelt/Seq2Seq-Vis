@@ -8,7 +8,6 @@ import {SVG} from "../etc/SVGplus";
 import {D3Sel, LooseObject} from "../etc/LocalTypes";
 
 
-
 export abstract class VComponent {
 
     // STATIC FIELDS ============================================================
@@ -22,25 +21,28 @@ export abstract class VComponent {
 
     /**
      * set of ALL options and their defaults
-     */
-    protected abstract readonly defaultOptions: {} = {
+     * Example:
+     * {
         pos: {x: 10, y: 10},
         // List of Events that are ONLY handled globally:
         globalExclusiveEvents: []
     };
-
-
-    /**
-     * Defines the layers in SVG  for bg,main,fg,...
+     *
      */
-    protected abstract readonly layout: { name: string, pos: number[] }[] = [{name: 'main', pos: [0, 0]}];
+    abstract readonly defaultOptions;
+
+
+    // /**
+    //  * Defines the layers in SVG  for bg,main,fg,...
+    //  */
+    // protected abstract readonly layout: { name: string, pos: number[] }[] = [{name: 'main', pos: [0, 0]}];
 
 
     protected id: string;
     protected parent: any;
     protected options: LooseObject;
     protected base: D3Sel;
-    protected layers: LooseObject;
+    protected layers: { main?: D3Sel, fg?: D3Sel, bg?: D3Sel, [key: string]: D3Sel };
     protected eventHandler: SimpleEventHandler;
     protected _current: LooseObject;
     protected data: any;
@@ -64,7 +66,7 @@ export abstract class VComponent {
      * @param {D3Sel} d3parent  D3 selection of parent SVG DOM Element
      * @param {SimpleEventHandler} eventHandler a global event handler object or 'null' for local event handler
      */
-    constructor(d3parent: D3Sel, eventHandler?: SimpleEventHandler) {
+    protected constructor(d3parent: D3Sel, eventHandler?: SimpleEventHandler) {
         this.id = Util.simpleUId({});
 
         this.parent = d3parent;
@@ -81,9 +83,10 @@ export abstract class VComponent {
     /**
      * Has to be called as last call in subclass constructor.
      * @param {{}} options
+     * @param defaultLayers -- create the default <g> layers: bg -> main -> fg
      * @param runInit -- run this._init() or not
      */
-    protected superInit(options: {} = {}, runInit = true) {
+    protected superInit(options: {} = {}, defaultLayers = true, runInit = true) {
         // Set default options if not specified in constructor call
         const defaults = this.defaultOptions;
         this.options = {};
@@ -91,8 +94,18 @@ export abstract class VComponent {
         keys.forEach(key => this.options[key] = (key in options) ? options[key] : defaults[key]);
 
         // Create the base group element
-        this.base = this._createBaseElement(this.parent);
-        this.layers = this._createLayoutLayers(this.base);
+        this.base = SVG.group(this.parent,
+            this.constructor.name.toLowerCase() + ' ID' + this.id,
+            this.options.pos);
+
+        // create default layers: background, main, foreground
+        this.layers = {};
+        if (defaultLayers) {
+            // construction order is important !
+            this.layers.bg = SVG.group(this.base, 'bg');
+            this.layers.main = SVG.group(this.base, 'main');
+            this.layers.fg = SVG.group(this.base, 'fg');
+        }
 
         // bind events
         this._bindLocalEvents();
@@ -103,30 +116,33 @@ export abstract class VComponent {
 
     // CREATE BASIC ELEMENTS ============================================================
 
-    /**
-     * Creates the base element (<g>) that hosts the vis
-     * @param {Element} parent the parent Element
-     * @returns {*} D3 selection of the base element
-     * @private
-     */
-    _createBaseElement(parent) {
-        // Create a group element to host the visualization
-        // <g> CSS Class is javascript class name in lowercase + ID
-        return SVG.group(
-            parent,
-            this.constructor.name.toLowerCase() + ' ID' + this.id,
-            this.options.pos || {x: 0, y: 0}
-        );
-    }
-
-    _createLayoutLayers(base) {
-        const res = {};
-        for (const lE of this.layout) {
-            res[lE.name] = SVG.group(base, lE.name, {x: lE.pos[0], y: lE.pos[1]});
-        }
-
-        return res;
-    }
+    // /**
+    //  * Creates the base element (<g>) that hosts the vis
+    //  * @param {Element} parent the parent Element
+    //  * @returns {*} D3 selection of the base element
+    //  * @private
+    //  */
+    // _createBaseElement(parent) {
+    //     // Create a group element to host the visualization
+    //     // <g> CSS Class is javascript class name in lowercase + ID
+    //     return SVG.group(
+    //         parent,
+    //         this.constructor.name.toLowerCase() + ' ID' + this.id,
+    //         this.options.pos || {x: 0, y: 0}
+    //     );
+    // }
+    //
+    // _createLayoutLayers(base) {
+    //     const res = {};
+    //     for (const lE of this.layout) {
+    //         res[lE.name] = SVG.group(base, lE.name, {
+    //             x: lE.pos[0],
+    //             y: lE.pos[1]
+    //         });
+    //     }
+    //
+    //     return res;
+    // }
 
 
     /**

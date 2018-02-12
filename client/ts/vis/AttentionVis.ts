@@ -23,6 +23,8 @@ export class AttentionVis extends VComponent {
 
     static events = {};
 
+
+    // noinspection JSUnusedGlobalSymbols
     defaultOptions = {
         max_bundle_width: 15,
         height: 50,
@@ -31,11 +33,9 @@ export class AttentionVis extends VComponent {
         x_offset: 3
     };
 
-    layout = [];
-
     constructor(d3Parent: D3Sel, eventHandler?: SimpleEventHandler, options: {} = {}) {
         super(d3Parent, eventHandler);
-        this.superInit(options);
+        this.superInit(options, false);
     }
 
     _init() {

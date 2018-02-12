@@ -8,7 +8,8 @@ import {D3Sel, LooseObject} from "../etc/LocalTypes";
 
 export class CloseWordList extends VComponent {
 
-    readonly defaultOptions = {
+    // noinspection JSUnusedGlobalSymbols
+    defaultOptions = {
         height: 400,
         width: 1000,
         lineSpacing: 20,
@@ -22,13 +23,6 @@ export class CloseWordList extends VComponent {
             compare: d => d.compare
         }
     };
-
-
-    readonly layout = [
-        {name: 'bg', pos: [0, 0]},
-        {name: 'main', pos: [0, 0]},
-    ];
-
 
     constructor(d3Parent: D3Sel, eventHandler?: SimpleEventHandler, options: {} = {}) {
         super(d3Parent, eventHandler);

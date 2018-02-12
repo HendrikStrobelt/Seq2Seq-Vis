@@ -3,8 +3,11 @@ import * as d3 from "d3";
 import * as _ from "lodash";
 import {SimpleEventHandler} from "../etc/SimpleEventHandler";
 import {D3Sel} from "../etc/LocalTypes";
+import {SVG} from "../etc/SVGplus";
 
 export class StateVis extends VComponent {
+
+    layers: {main: D3Sel, axis: D3Sel};
 
     static events = {};
 
@@ -18,18 +21,15 @@ export class StateVis extends VComponent {
         data_access: d => d.encoder.map(e => e.state)
     };
 
-    readonly layout = [
-        {name: 'axis', pos: [0, 0]},
-        {name: 'main', pos: [0, 0]},
-    ];
-
     constructor(d3Parent:D3Sel, eventHandler: SimpleEventHandler, options = {}) {
         super(d3Parent, eventHandler);
-        this.superInit(options)
+        this.superInit(options, false)
     }
 
     _init() {
         if (this.options.hidden) this.hideView();
+        this.layers.main = SVG.group(this.base, 'main');
+        this.layers.axis = SVG.group(this.base, 'axis');
     }
 
     _wrangle(data) {
