@@ -96,7 +96,7 @@ export class AttentionVis extends VComponent {
 
     _render(renderData: { edges: Edge[], maxPos: number }) {
 
-        console.log(renderData, "--- renderData");
+        // console.log(renderData, "--- renderData");
 
         const op = this.options;
 

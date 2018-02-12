@@ -78,7 +78,7 @@ export class PanelManager {
         if (!this._current.hasMediumPanel) {
             this.buildFullStack(this._vis.middle);
             // this.buildDecorators(this._vis.middle_extra);
-            this._current.hasMediumPanel=true;
+            this._current.hasMediumPanel = true;
         }
 
 
@@ -86,7 +86,7 @@ export class PanelManager {
     }
 
     public removeMediumPanel() {
-        if (this._current.hasMediumPanel){
+        if (this._current.hasMediumPanel) {
             //todo: check if this works...
             this._vis.middle_extra.selection.selectAll("*").remove();
             this._vis.middle_extra = initPanel(this._vis.middle_extra.selection);
@@ -204,6 +204,22 @@ export class PanelManager {
             }
         });
 
+
+        const partial_diff = (x) => {
+            const y = x.map(e => _.isArray(e.cstar) ? e.cstar : [])
+
+            // diff:
+            // for (let i = 0; i < y.length - 1; i++) {
+            //     y[i] = y[i + 1].map((yd, yi) => Math.abs(yd - y[i][yi]))
+            // }
+            // y[y.length - 1] = y[0].map(() => 0)
+
+
+            return y;
+
+        }
+
+
         visColumn.decoder_extra.push(this._createStatesVis({
             col: visColumn.selection,
             className: 'states_decoder',
@@ -211,7 +227,10 @@ export class PanelManager {
             options: {
                 data_access: d =>
                     (d.decoder.length > this._current.topN) ?
-                        d.decoder[this._current.topN].map(e => _.isArray(e.state) ? e.state : []) : [[]], // TODO: fix hack !!!
+                        partial_diff(d.decoder[this._current.topN])
+                        // d.decoder[this._current.topN]
+                        //     .map(e => _.isArray(e.cstar) ? e.cstar : [])
+                        : [[]], // TODO: fix hack !!!
                 hidden: this._current.hideStates,
                 height: 100,
                 cell_width: this._current.box_width

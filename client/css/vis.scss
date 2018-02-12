@@ -120,7 +120,7 @@ $highlight-color: #d62f30;
 
 .wordprojector {
   //text {
-  dominant-baseline: middle;
+  //dominant-baseline: middle;
   text-anchor: middle;
   opacity: .8;
   font-size: 8pt;
@@ -133,6 +133,7 @@ $highlight-color: #d62f30;
   .word {
     text {
       pointer-events: none;
+       dominant-baseline: middle;
     }
 
     rect:hover {

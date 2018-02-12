@@ -76,7 +76,7 @@ def get_translation(**request):
 
     in_sentence = request['in']
     translate = model.translate(in_text=[in_sentence])[0]
-    print("_".join(map(lambda x: x['token'], translate["decoder"][0])))
+    # print("_".join(map(lambda x: x['token'], translate["decoder"][0])))
     # r = requests.post('http://127.0.0.1:7784/translator/translate', data=json.dumps([{"src": inSentence}]))
     #
     # # res: [[{'src': 'Hello World', 'tgt': 'Hallo Welt', 'pred_score': -0.1768690943718, 'attn': [[0.62342292070389,
@@ -84,7 +84,7 @@ def get_translation(**request):
     #
     # res = r.json()[0][0]
     #
-    a_f = []
+    # a_f = []
 
     return translate
 

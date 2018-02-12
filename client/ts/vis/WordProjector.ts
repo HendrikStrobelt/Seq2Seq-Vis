@@ -111,7 +111,7 @@ export class WordProjector extends VComponent {
 
     _render(renderData: wordObj[]) {
 
-        console.log(renderData, "--- renderData");
+        // console.log(renderData, "--- renderData");
         const op = this.options;
 
         const word = this.layers.main.selectAll(".word").data(renderData);
