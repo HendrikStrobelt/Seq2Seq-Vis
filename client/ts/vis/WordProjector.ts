@@ -27,13 +27,14 @@ export type WordProjectorClickedEvent = {
     [key: string]: any
 }
 
-export class WordProjector extends VComponent {
+export class WordProjector extends VComponent<any> {
 
     static events = {
         wordClicked: "WordProjector_word_clicked"
     }
 
-    defaultOptions = {
+    options = {
+        pos:{x:0,y:0},
         height: 400,
         width: 500,
         css_class_main: 'wp_vis',
@@ -43,7 +44,8 @@ export class WordProjector extends VComponent {
             scores: d => d.score,
             words: d => d.word,
             compare: d => d.compare
-        }
+        },
+        text_measurer:null
     };
 
 

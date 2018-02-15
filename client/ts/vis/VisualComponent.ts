@@ -8,7 +8,7 @@ import {SVG} from "../etc/SVGplus";
 import {D3Sel, LooseObject} from "../etc/LocalTypes";
 
 
-export abstract class VComponent {
+export abstract class VComponent<DataInterface> {
 
     // STATIC FIELDS ============================================================
 
@@ -29,18 +29,18 @@ export abstract class VComponent {
     };
      *
      */
-    abstract readonly defaultOptions;
+        // abstract readonly defaultOptions;
 
 
-    // /**
-    //  * Defines the layers in SVG  for bg,main,fg,...
-    //  */
-    // protected abstract readonly layout: { name: string, pos: number[] }[] = [{name: 'main', pos: [0, 0]}];
+        // /**
+        //  * Defines the layers in SVG  for bg,main,fg,...
+        //  */
+        // protected abstract readonly layout: { name: string, pos: number[] }[] = [{name: 'main', pos: [0, 0]}];
 
 
     protected id: string;
     protected parent: any;
-    protected options: LooseObject;
+    protected abstract options: { pos: { x: number, y: number }, [key: string]: any };
     protected base: D3Sel;
     protected layers: { main?: D3Sel, fg?: D3Sel, bg?: D3Sel, [key: string]: D3Sel };
     protected eventHandler: SimpleEventHandler;
@@ -88,10 +88,12 @@ export abstract class VComponent {
      */
     protected superInit(options: {} = {}, defaultLayers = true, runInit = true) {
         // Set default options if not specified in constructor call
-        const defaults = this.defaultOptions;
-        this.options = {};
-        const keys = new Set([...Object.keys(defaults), ...Object.keys(options)]);
-        keys.forEach(key => this.options[key] = (key in options) ? options[key] : defaults[key]);
+        // const defaults = this.defaultOptions;
+        // this.options = {};
+        // const keys = new Set([...Object.keys(defaults), ...Object.keys(options)]);
+        // keys.forEach(key => this.options[key] = (key in options) ? options[key] : defaults[key]);
+        Object.keys(options).forEach(key => this.options[key] = options[key]);
+
 
         // Create the base group element
         this.base = SVG.group(this.parent,
@@ -107,42 +109,8 @@ export abstract class VComponent {
             this.layers.fg = SVG.group(this.base, 'fg');
         }
 
-        // bind events
-        this._bindLocalEvents();
-
         if (runInit) this._init();
     }
-
-
-    // CREATE BASIC ELEMENTS ============================================================
-
-    // /**
-    //  * Creates the base element (<g>) that hosts the vis
-    //  * @param {Element} parent the parent Element
-    //  * @returns {*} D3 selection of the base element
-    //  * @private
-    //  */
-    // _createBaseElement(parent) {
-    //     // Create a group element to host the visualization
-    //     // <g> CSS Class is javascript class name in lowercase + ID
-    //     return SVG.group(
-    //         parent,
-    //         this.constructor.name.toLowerCase() + ' ID' + this.id,
-    //         this.options.pos || {x: 0, y: 0}
-    //     );
-    // }
-    //
-    // _createLayoutLayers(base) {
-    //     const res = {};
-    //     for (const lE of this.layout) {
-    //         res[lE.name] = SVG.group(base, lE.name, {
-    //             x: lE.pos[0],
-    //             y: lE.pos[1]
-    //         });
-    //     }
-    //
-    //     return res;
-    // }
 
 
     /**
@@ -154,14 +122,13 @@ export abstract class VComponent {
 
     // DATA UPDATE & RENDER ============================================================
 
-    // noinspection JSUnusedGlobalSymbols
     /**
      * Every time data has changed, update is called and
      * triggers wrangling and re-rendering
      * @param {Object} data data object
      * @return {*} ---
      */
-    update(data) {
+    update(data: DataInterface) {
         this.data = data;
         if (this._current.hidden) return;
         this.renderData = this._wrangle(data);
@@ -173,10 +140,10 @@ export abstract class VComponent {
      * Data wrangling method -- implement in subclass. Returns this.renderData.
      * Simplest implementation: `return data;`
      * @param {Object} data data
-     * @returns {*} ---
+     * @returns {*} -- data in render format
      * @abstract
      */
-    abstract _wrangle(data): any;
+    protected abstract _wrangle(data);
 
 
     /**
@@ -185,7 +152,7 @@ export abstract class VComponent {
      * @abstract
      * @returns {*} ---
      */
-    abstract _render(renderData): void;
+    protected abstract _render(renderData): void;
 
 
     // UPDATE OPTIONS ============================================================
@@ -200,21 +167,9 @@ export abstract class VComponent {
         if (reRender) this._render(this.renderData);
     }
 
-    // BIND LOCAL EVENTS ============================================================
-    _bindEvent(eventHandler, name, func) {
-        // Wrap in Set to handle 'undefinded' etc..
-        const globalEvents = new Set(this.options.globalExclusiveEvents);
-        if (!globalEvents.has(name)) {
-            eventHandler.bind(name, func)
-        }
-    }
 
-    /**
-     * Could be used to bind local event handling
-     */
-    _bindLocalEvents() {
-        //console.warn('_bindLocalEvents() not implemented.')
-    }
+    // === CONVENIENCE ====
+
 
     hideView() {
         if (!this._current.hidden) {

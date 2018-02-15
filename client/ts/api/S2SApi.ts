@@ -1,5 +1,7 @@
 import {Networking} from "../etc/Networking";
 import {LooseObject} from "../etc/LocalTypes";
+import {WordLineData} from "../vis/WordLine";
+import {AttentionVisData} from "../vis/AttentionVis";
 
 export class S2SApi {
 
@@ -50,9 +52,8 @@ export class Translation {
 
     public _current: LooseObject;
 
-    constructor(result, current) {
+    constructor(result) {
         this._result = result;
-        this._current = current;
     }
 
 
@@ -85,6 +86,15 @@ export class Translation {
 
         } else return false;
 
+    }
+
+
+    get encoderWords(): WordLineData {
+        return {wordRows: [this._result.encoder.map(w => w.token)]}
+    }
+
+    decoderWords(currentTopK): WordLineData {
+        return {wordRows: [this._result.decoder[currentTopK].map(w => w.token)]}
     }
 
 

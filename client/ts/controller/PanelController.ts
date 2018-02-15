@@ -1,16 +1,10 @@
 import * as d3 from 'd3'
-import * as _ from 'lodash';
 
 import {SimpleEventHandler} from "../etc/SimpleEventHandler";
 import {WordLine, WordLineHoverEvent} from "../vis/WordLine"
-import {BarList} from "../vis/BarList";
-import {StateVis} from "../vis/StateVis";
-import {AttentionVis} from "../vis/AttentionVis";
+import {AttentionVis, AttentionVisData} from "../vis/AttentionVis";
 import {WordProjector, WordProjectorClickedEvent} from "../vis/WordProjector";
-import {CloseWordList} from "../vis/CloseWordList";
 import {S2SApi, Translation} from "../api/S2SApi";
-import {LooseObject} from "../etc/LocalTypes";
-import {VComponent} from "../vis/VisualComponent";
 import {PanelManager} from "./PanelManager";
 
 
@@ -53,39 +47,56 @@ export class PanelController {
         // const vis = this.pm.vis;
 
 
-        const data = new Translation(raw_data, cur);
+        const data = new Translation(raw_data);
         data.filterAttention();
+
         const enc = main.encoder_words;
         const dec = main.decoder_words;
 
-        enc.update(data);
-        dec.update(data);
+        enc.update(data.encoderWords);
+        dec.update(data.decoderWords(cur.topN));
 
-        cur.inWordPos = enc.positions[0];
-        cur.inWords = enc.rows[0];
-        cur.outWordPos = dec.positions[0];
-        cur.outWords = dec.rows[0];
-        data._current = cur;
+        const attentionData: AttentionVisData = {
+            inWidths: enc.rows[0].map(t => t.width),
+            outWidths: dec.rows[0].map(t => t.width),
+            inPos: enc.positions[0],
+            outPos: dec.positions[0],
+            edgeWeights: data.attnFiltered[cur.topN]
+        }
+
 
         const attn = main.attention;
-        attn.update(data);
+        attn.update(attentionData);
 
-        main.encoder_extra.forEach(e => e.update(data));
-        main.decoder_extra.forEach(e => e.update(data));
+        // main.encoder_extra.forEach(e => e.update(data));
+        // main.decoder_extra.forEach(e => e.update(data));
 
 
         //==== setup column
 
         if (extra) {
-            extra.decoder_words.update(data);
 
-            extra.decoder_extra.forEach(d => {
-                if ('updateOptions' in d) {
-                    d.updateOptions({options: {xScale: extra.decoder_words.xScale}});
-                    d.update(data);
+            const extentScores = (scores) => {
+                const ex = <[number, number]>d3.extent(scores);
+                if (ex[0] * ex[1] > 0) {
+                    if (ex[0] > 0) ex[0] = ex[1];
+                    ex[1] = 0;
                 }
+                return ex;
+            }
 
-            })
+            extra.decoder_words.update({
+                extent: extentScores(data.scores),
+                values: [data.scores[cur.topN]]
+            });
+
+            // extra.decoder_extra.forEach(d => {
+            //     if ('updateOptions' in d) {
+            //         d.updateOptions({options: {xScale: extra.decoder_words.xScale}});
+            //         d.update(data);
+            //     }
+            //
+            // })
 
         }
 
@@ -93,8 +104,7 @@ export class PanelController {
     }
 
 
-
-    cleanPanels(){
+    cleanPanels() {
         this.pm.closeWordProjector();
         this.pm.removeMediumPanel();
     }
@@ -192,9 +202,9 @@ export class PanelController {
 
             const {vType, col} = determinePanelType(d.caller);
             if (col != this.pm.vis.left) {
-                col.attention.highlightAllEdges(d.index, vType, d.hovered);
+                col.attention.actionHighlightEdges(d.index, vType, d.hovered);
             }
-            this.pm.vis.left.attention.highlightAllEdges(d.index, vType, d.hovered);
+            this.pm.vis.left.attention.actionHighlightEdges(d.index, vType, d.hovered);
 
         }
 

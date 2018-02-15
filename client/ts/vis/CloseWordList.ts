@@ -5,11 +5,12 @@ import {SimpleEventHandler} from "../etc/SimpleEventHandler";
 import {SVGMeasurements} from "../etc/SVGplus";
 import {D3Sel, LooseObject} from "../etc/LocalTypes";
 
+type WordListType = LooseObject[];
 
-export class CloseWordList extends VComponent {
+export class CloseWordList extends VComponent<any> {
 
-    // noinspection JSUnusedGlobalSymbols
-    defaultOptions = {
+    options = {
+        pos: {x: 0, y: 0},
         height: 400,
         width: 1000,
         lineSpacing: 20,
@@ -21,8 +22,10 @@ export class CloseWordList extends VComponent {
             scores: d => d.score,
             words: d => d.word,
             compare: d => d.compare
-        }
+        },
+        text_measurer:null
     };
+
 
     constructor(d3Parent: D3Sel, eventHandler?: SimpleEventHandler, options: {} = {}) {
         super(d3Parent, eventHandler);
@@ -42,7 +45,7 @@ export class CloseWordList extends VComponent {
         if (this.options.hidden) this.hideView();
     }
 
-    _wrangle(data) {
+    protected _wrangle(data) {
 
         console.log("wrnagle--- ");
 
@@ -75,7 +78,12 @@ export class CloseWordList extends VComponent {
 
         // if (this._states.has_compare) {
         return _.sortBy(_.zipWith(words, scores, wordWidth, compare,
-            (word, score, width, compare) => ({word, score, width, compare})), d => -d.score);
+            (word, score, width, compare) => ({
+                word,
+                score,
+                width,
+                compare
+            })), d => -d.score);
         // } else {
         //     return _.sortBy(_.zipWith(words, scores, wordWidth,
         //       (word, score, width) => ({word, score, width})), d => -d.score);
@@ -123,7 +131,11 @@ export class CloseWordList extends VComponent {
 
         const scoreBarsEnter = scoreBars.enter().append('g').attr('class', 'scoreBar');
         scoreBarsEnter.append('rect');
-        scoreBarsEnter.append('text').attrs({x: 2, y: ls / 2 - 2, 'class': 'barText'});
+        scoreBarsEnter.append('text').attrs({
+            x: 2,
+            y: ls / 2 - 2,
+            'class': 'barText'
+        });
 
         const allScoreBars = scoreBarsEnter.merge(scoreBars).attrs({
             transform: (d, i) => `translate(${wordEnd + 10 + 10},${yscale(i) - ls / 2 })`
@@ -147,7 +159,11 @@ export class CloseWordList extends VComponent {
             barDist.exit().remove();
             const barDistEnter = barDist.enter().append('g').attr('class', 'distBar');
             barDistEnter.append('rect');
-            barDistEnter.append('text').attrs({x: 2, y: ls / 2 - 2, 'class': 'barText'});
+            barDistEnter.append('text').attrs({
+                x: 2,
+                y: ls / 2 - 2,
+                'class': 'barText'
+            });
 
 
             const all_barDist = barDistEnter.merge(barDist).attrs({

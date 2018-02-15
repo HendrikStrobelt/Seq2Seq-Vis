@@ -11,21 +11,34 @@ type Edge = {
     inPos: number,
     outPos: number,
     width: number,
-    edge: [number, number]
+    edge: number[]
 }
-
 
 enum VertexType {Encoder = 0, Decoder = 1}
 
-export class AttentionVis extends VComponent {
+/**
+ * Input to render()
+ */
+type AV_RenderType = { edges: Edge[], maxPos: number }
+
+export interface AttentionVisData {
+    inWidths: number[],
+    outWidths: number[],
+    inPos: number[],
+    outPos: number[],
+    edgeWeights: number[][],
+}
+
+
+export class AttentionVis extends VComponent<AttentionVisData> {
 
     static VERTEX_TYPE = VertexType;
 
     static events = {};
 
 
-    // noinspection JSUnusedGlobalSymbols
-    defaultOptions = {
+    options = {
+        pos: {x: 0, y: 0},
         max_bundle_width: 15,
         height: 50,
         css_class_main: 'attn_graph',
@@ -41,7 +54,9 @@ export class AttentionVis extends VComponent {
     _init() {
     }
 
-    _createGraph(attnWeights: number[][], maxBundleWidth, inWords, outWords, inPos, outPos) {
+    private _createGraph(attnWeights: number[][], maxBundleWidth: number,
+                         inWidths: number[], outWidths: number[],
+                         inPos: number[], outPos: number[]): AV_RenderType {
 
         const attnPerInWord = _.unzip(attnWeights);
         const attnPerInWordSum = attnPerInWord.map(a => _.sum(a));
@@ -51,20 +66,26 @@ export class AttentionVis extends VComponent {
 
         let maxPos = 0;
 
-        const inPositionGraph = inWords.map((inWord, inIndex) => {
-            let inc = inPos[inIndex] + (inWord.width - lineWidthScale(attnPerInWordSum[inIndex])) * .5;
-            return outWords.map((_, outIndex) => {
+        const inPositionGraph = inWidths.map((inWord, inIndex) => {
+            let inc = inPos[inIndex] + (inWord - lineWidthScale(attnPerInWordSum[inIndex])) * .5;
+            return outWidths.map((_, outIndex) => {
                 const lw = lineWidthScale(attnPerInWord[inIndex][outIndex]);
                 const res = inc + lw * .5;
                 inc += lineWidthScale(attnPerInWord[inIndex][outIndex]);
                 maxPos = inc > maxPos ? inc : maxPos;
-                return {inPos: res, width: lw, edge: [inIndex, outIndex], classes: `in${inIndex} out${outIndex}`}
+                return {
+                    inPos: res,
+                    width: lw,
+                    edge: [inIndex, outIndex],
+                    classes: `in${inIndex} out${outIndex}`,
+                    outPos: null
+                }
             });
         });
 
-        outWords.forEach((outWord, outIndex) => {
-            let inc = outPos[outIndex] + (outWord.width - lineWidthScale(1)) * .5;
-            inWords.forEach((_, inIndex) => {
+        outWidths.forEach((outWord, outIndex) => {
+            let inc = outPos[outIndex] + (outWord - lineWidthScale(1)) * .5;
+            inWidths.forEach((_, inIndex) => {
                 const line = inPositionGraph[inIndex][outIndex];
                 line['outPos'] = inc + line.width * .5;
                 inc += line.width;
@@ -76,14 +97,22 @@ export class AttentionVis extends VComponent {
 
     }
 
+    protected _wrangle(data: AttentionVisData) {
 
-    _wrangle(data: Translation) {
-
-
-        const {edges, maxPos} = this._createGraph(data.attnFiltered[data._current.topN],
+        const {edges, maxPos} = this._createGraph(
+            data.edgeWeights,
             this.options.max_bundle_width,
-            data._current.inWords, data._current.outWords,
-            data._current.inWordPos, data._current.outWordPos);
+            data.inWidths,
+            data.outWidths,
+            data.inPos,
+            data.outPos
+        );
+
+
+        // const {edges, maxPos} = this._createGraph(data.attnFiltered[data._current.topN],
+        //     this.options.max_bundle_width,
+        //     data._current.inWords, data._current.outWords,
+        //     data._current.inWordPos, data._current.outWordPos);
 
         this.parent.attrs({
             width: maxPos + 5 + this.options.x_offset, //reserve
@@ -94,7 +123,7 @@ export class AttentionVis extends VComponent {
 
     }
 
-    _render(renderData: { edges: Edge[], maxPos: number }) {
+    protected _render(renderData: AV_RenderType) {
 
         // console.log(renderData, "--- renderData");
 
@@ -120,12 +149,7 @@ export class AttentionVis extends VComponent {
 
     }
 
-    _bindLocalEvents() {
-
-    }
-
-
-    highlightAllEdges(index: number, type: VertexType, highlight: boolean) {
+    actionHighlightEdges(index: number, type: VertexType, highlight: boolean) {
 
         if (highlight) {
             this.base.selectAll(`.${this.options.css_class_main}`)

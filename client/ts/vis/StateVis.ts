@@ -5,23 +5,31 @@ import {SimpleEventHandler} from "../etc/SimpleEventHandler";
 import {D3Sel} from "../etc/LocalTypes";
 import {SVG} from "../etc/SVGplus";
 
-export class StateVis extends VComponent {
+type StateVisRender = { states: number[][], yDomain: number[] }
 
-    layers: {main: D3Sel, axis: D3Sel};
+export interface StateVisData {
+    states: number[][]
+}
+
+
+export class StateVis extends VComponent<StateVisData> {
+
+    layers: { main: D3Sel, axis: D3Sel };
 
     static events = {};
 
-    readonly defaultOptions = {
+    options = {
+        pos: {x: 0, y: 0},
         cell_width: 100,
         height: 50,
         css_class_main: 'state_vis',
         css_line: 'state_line',
         x_offset: 3,
         hidden: true,
-        data_access: d => d.encoder.map(e => e.state)
+        // data_access: d => d.encoder.map(e => e.state)
     };
 
-    constructor(d3Parent:D3Sel, eventHandler: SimpleEventHandler, options = {}) {
+    constructor(d3Parent: D3Sel, eventHandler: SimpleEventHandler, options = {}) {
         super(d3Parent, eventHandler);
         this.superInit(options, false)
     }
@@ -32,13 +40,13 @@ export class StateVis extends VComponent {
         this.layers.axis = SVG.group(this.base, 'axis');
     }
 
-    _wrangle(data) {
+    _wrangle(data: StateVisData): StateVisRender {
 
         const op = this.options;
 
-        const orig_states = op.data_access(data);
-        const states = d3.transpose(orig_states);
-        const yDomain = d3.extent(<number[]> _.flattenDeep(<any[][]> states));
+        const orig_states = data.states;
+        const states = <number[][]> d3.transpose(orig_states);
+        const yDomain = d3.extent(<number[]>_.flattenDeep(states));
 
         this.parent.attrs({
             width: (orig_states.length * op.cell_width + (op.x_offset + 5 + 20)),
@@ -46,11 +54,10 @@ export class StateVis extends VComponent {
         });
 
 
-
         return {states, yDomain}
     }
 
-    _render(renderData) {
+    _render(renderData: StateVisRender) {
 
 
         const op = this.options;

@@ -13,11 +13,11 @@ import * as _ from "lodash";
 
 
 type VisColumn<DW=WordLine> = {
-    encoder_extra: VComponent[],
+    encoder_extra: VComponent<any>[],
     encoder_words: WordLine,
     attention: AttentionVis,
     decoder_words: DW,
-    decoder_extra: VComponent[],
+    decoder_extra: VComponent<any>[],
     selection: D3Sel
 }
 
@@ -99,13 +99,13 @@ export class PanelManager {
 
 
     private buildDecorators(visColumn: VisColumn<BarList>) {
-        visColumn.encoder_extra.push(PanelManager._setupPanel({
-            col: visColumn.selection,
-            className: "encoder_states_setup",
-            addSVG: false,
-            title: 'Enc states: ',
-            divStyles: {height: '100px', width: '100px', 'padding-top': '5px'}
-        }));
+        // visColumn.encoder_extra.push(PanelManager._setupPanel({
+        //     col: visColumn.selection,
+        //     className: "encoder_states_setup",
+        //     addSVG: false,
+        //     title: 'Enc states: ',
+        //     divStyles: {height: '100px', width: '100px', 'padding-top': '5px'}
+        // }));
 
         visColumn.encoder_words = PanelManager._setupPanel({
             col: visColumn.selection,
@@ -139,42 +139,42 @@ export class PanelManager {
             }
         })
 
-        visColumn.decoder_extra.push(PanelManager._setupPanel({
-            col: visColumn.selection,
-            className: "decoder_states_setup",
-            addSVG: false,
-            title: 'Dec states: ',
-            divStyles: {
-                height: '100px',
-                width: '100px',
-                'padding-bottom': '5px'
-            }
-        }))
-
-        visColumn.decoder_extra.push(this._createScoreVis({
-            col: visColumn.selection,
-            className: "decoder_words_setup",
-            divStyles: {width: '100px', 'padding-top': '5px'},
-            options: {
-                bar_height: 23,
-                data_access: d => d.scores.filter((_, i) => i !== this._current.topN),
-                data_access_all: null
-            }
-        }))
+        // visColumn.decoder_extra.push(PanelManager._setupPanel({
+        //     col: visColumn.selection,
+        //     className: "decoder_states_setup",
+        //     addSVG: false,
+        //     title: 'Dec states: ',
+        //     divStyles: {
+        //         height: '100px',
+        //         width: '100px',
+        //         'padding-bottom': '5px'
+        //     }
+        // }))
+        //
+        // visColumn.decoder_extra.push(this._createScoreVis({
+        //     col: visColumn.selection,
+        //     className: "decoder_words_setup",
+        //     divStyles: {width: '100px', 'padding-top': '5px'},
+        //     options: {
+        //         bar_height: 23,
+        //         data_access: d => d.scores.filter((_, i) => i !== this._current.topN),
+        //         data_access_all: null
+        //     }
+        // }))
     }
 
     private buildFullStack(visColumn: VisColumn) {
-        visColumn.encoder_extra.push(this._createStatesVis({
-            col: visColumn.selection,
-            className: 'states_encoder',
-            divStyles: {'padding-top': '5px'},
-            options: {
-                data_access: d => d.encoder.map(e => _.isArray(e.state) ? e.state : []),// TODO: fix hack !!!
-                hidden: this._current.hideStates,
-                height: 100,
-                cell_width: this._current.box_width
-            }
-        }));
+        // visColumn.encoder_extra.push(this._createStatesVis({
+        //     col: visColumn.selection,
+        //     className: 'states_encoder',
+        //     divStyles: {'padding-top': '5px'},
+        //     options: {
+        //         data_access: d => d.encoder.map(e => _.isArray(e.state) ? e.state : []),// TODO: fix hack !!!
+        //         hidden: this._current.hideStates,
+        //         height: 100,
+        //         cell_width: this._current.box_width
+        //     }
+        // }));
 
         visColumn.encoder_words = this._createWordLine({
             col: visColumn.selection,
@@ -200,7 +200,7 @@ export class PanelManager {
                 box_width: this._current.box_width,
                 box_type: this._current.hideStates ? WordLine.BoxType.flow : WordLine.BoxType.fixed,
                 css_class_main: 'outWord',
-                data_access: d => d.decoder.length ? [d.decoder[this._current.topN]] : []
+                // data_access: d => d.decoder.length ? [d.decoder[this._current.topN]] : []
             }
         });
 
@@ -220,32 +220,32 @@ export class PanelManager {
         }
 
 
-        visColumn.decoder_extra.push(this._createStatesVis({
-            col: visColumn.selection,
-            className: 'states_decoder',
-            divStyles: {'padding-bottom': '5px'},
-            options: {
-                data_access: d =>
-                    (d.decoder.length > this._current.topN) ?
-                        partial_diff(d.decoder[this._current.topN])
-                        // d.decoder[this._current.topN]
-                        //     .map(e => _.isArray(e.cstar) ? e.cstar : [])
-                        : [[]], // TODO: fix hack !!!
-                hidden: this._current.hideStates,
-                height: 100,
-                cell_width: this._current.box_width
-            }
-        }));
-
-        visColumn.decoder_extra.push(this._createWordLine({
-            col: visColumn.selection,
-            className: 'decoder_topK',
-            divStyles: {'padding-top': '5px'},
-            options: {
-                css_class_main: 'topKWord',
-                data_access: d => d.decoder.filter((_, i) => i !== this._current.topN)
-            }
-        }))
+        // visColumn.decoder_extra.push(this._createStatesVis({
+        //     col: visColumn.selection,
+        //     className: 'states_decoder',
+        //     divStyles: {'padding-bottom': '5px'},
+        //     options: {
+        //         data_access: d =>
+        //             (d.decoder.length > this._current.topN) ?
+        //                 partial_diff(d.decoder[this._current.topN])
+        //                 // d.decoder[this._current.topN]
+        //                 //     .map(e => _.isArray(e.cstar) ? e.cstar : [])
+        //                 : [[]], // TODO: fix hack !!!
+        //         hidden: this._current.hideStates,
+        //         height: 100,
+        //         cell_width: this._current.box_width
+        //     }
+        // }));
+        //
+        // visColumn.decoder_extra.push(this._createWordLine({
+        //     col: visColumn.selection,
+        //     className: 'decoder_topK',
+        //     divStyles: {'padding-top': '5px'},
+        //     options: {
+        //         css_class_main: 'topKWord',
+        //         data_access: d => d.decoder.filter((_, i) => i !== this._current.topN)
+        //     }
+        // }))
     }
 
     static _setupPanel({col, className, divStyles, addSVG = true, title = <string> null}) {
