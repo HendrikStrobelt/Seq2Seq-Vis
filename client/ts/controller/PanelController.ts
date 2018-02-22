@@ -9,29 +9,21 @@ import {PanelManager} from "./PanelManager";
 
 
 export class PanelController {
-    // private _columns: LooseObject;
-
-
-    private eventHandler: SimpleEventHandler;
+    private readonly eventHandler: SimpleEventHandler;
     private pm: PanelManager;
     private _current = {
-        topN: 0,
+        beamIndex: 0,
         inWordPos: [],
         outWordPos: [],
         inWords: [],
         outWords: [],
-    }
+    };
 
     constructor() {
-
-
         this.eventHandler = new SimpleEventHandler(<Element> d3.select('body').node());
-
         this.pm = new PanelManager(this.eventHandler);
 
-
         this._init();
-
         this._bindEvents();
 
     }
@@ -44,38 +36,36 @@ export class PanelController {
     update(raw_data, main = this.pm.vis.left, extra = this.pm.vis.zero) {
 
         const cur = this._current;
-        // const vis = this.pm.vis;
 
+        //=== translation object with convenience functions
+        const translation = new Translation(raw_data);
+        translation.filterAttention(.75);
 
-        const data = new Translation(raw_data);
-        data.filterAttention();
-
+        //=== update words:
         const enc = main.encoder_words;
         const dec = main.decoder_words;
+        enc.update({wordRows: [translation.encoderWords]});
+        dec.update({wordRows: [translation.decoderWords[cur.beamIndex]]});
 
-        enc.update(data.encoderWords);
-        dec.update(data.decoderWords(cur.topN));
-
+        //=== update attention using measures from word lists:
         const attentionData: AttentionVisData = {
             inWidths: enc.rows[0].map(t => t.width),
-            outWidths: dec.rows[0].map(t => t.width),
+            outWidths: dec.rows[cur.beamIndex].map(t => t.width),
             inPos: enc.positions[0],
-            outPos: dec.positions[0],
-            edgeWeights: data.attnFiltered[cur.topN]
-        }
-
-
+            outPos: dec.positions[cur.beamIndex],
+            edgeWeights: translation.attnFiltered[cur.beamIndex]
+        };
         const attn = main.attention;
         attn.update(attentionData);
 
-        // main.encoder_extra.forEach(e => e.update(data));
-        // main.decoder_extra.forEach(e => e.update(data));
+        // main.encoder_extra.forEach(e => e.update(translation));
+        // main.decoder_extra.forEach(e => e.update(translation));
 
 
-        //==== setup column
-
+        //=== setup column
         if (extra) {
 
+            //=== helper function to
             const extentScores = (scores) => {
                 const ex = <[number, number]>d3.extent(scores);
                 if (ex[0] * ex[1] > 0) {
@@ -83,17 +73,17 @@ export class PanelController {
                     ex[1] = 0;
                 }
                 return ex;
-            }
+            };
 
             extra.decoder_words.update({
-                extent: extentScores(data.scores),
-                values: [data.scores[cur.topN]]
+                extent: extentScores(translation.scores),
+                values: [translation.scores[cur.beamIndex]]
             });
 
             // extra.decoder_extra.forEach(d => {
             //     if ('updateOptions' in d) {
             //         d.updateOptions({options: {xScale: extra.decoder_words.xScale}});
-            //         d.update(data);
+            //         d.update(translation);
             //     }
             //
             // })

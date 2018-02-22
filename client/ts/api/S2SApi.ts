@@ -89,12 +89,14 @@ export class Translation {
     }
 
 
-    get encoderWords(): WordLineData {
-        return {wordRows: [this._result.encoder.map(w => w.token)]}
+    get encoderWords(): string[] {
+        return this._result.encoder.map(w => w.token);
     }
 
-    decoderWords(currentTopK): WordLineData {
-        return {wordRows: [this._result.decoder[currentTopK].map(w => w.token)]}
+    get decoderWords(): string[][] {
+        return this._result.decoder.map(
+            deco => deco.map(
+                w => w.token))
     }
 
 
