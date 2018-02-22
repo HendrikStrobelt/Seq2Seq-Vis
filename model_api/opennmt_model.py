@@ -348,7 +348,7 @@ class ONMTmodelAPI():
                             currentDec = {}
                             currentDec['token'] = token
                             currentDec['state'] = list(state.data)
-                            currentDec['cstar'] = list(cstar.data)
+                            currentDec['context'] = list(cstar.data)
                             topIx.append(currentDec)
                             topIxAttn.append(list(attn))
                             # if t in ['.', '!', '?']:

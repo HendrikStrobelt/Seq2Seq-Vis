@@ -14,6 +14,7 @@ from sklearn.manifold import MDS, TSNE
 from model_api.onmt_lua_model_api import ONMTLuaModelAPI
 from model_api.opennmt_model import ONMTmodelAPI
 from s2s.project import S2SProject
+from s2s.vectorIndex import VectorIndex
 
 __author__ = 'Hendrik Strobelt, Sebastian Gehrmann'
 CONFIG_FILE_NAME = 's2s.yaml'
@@ -85,6 +86,30 @@ def get_translation(**request):
     # res = r.json()[0][0]
     #
     # a_f = []
+
+    if 'neighbors' in request:
+        for neighborhood in request['neighbors']:
+            index = current_project.get_index(neighborhood)
+
+            closest = lambda v: index.get_closest(v, k=10,
+                                                  ignore_same_tgt=False,
+                                                  include_distances=True,
+                                                  use_vectors=True)
+            if index:
+                if neighborhood == 'encoder':
+                    for enc in translate['encoder']:
+                        enc['neighbors'] = closest(enc['state'])
+                if neighborhood == 'decoder':
+                    for beam in translate['decoder']:
+                        for dec in beam:
+                            dec['neighbors'] = closest(dec['state'])
+                if neighborhood == 'context':
+                    for beam in translate['decoder']:
+                        for dec in beam:
+                            dec['neighbor_context'] = closest(dec['context'])
+
+            # if neighborhood ['decoder', 'encoder']:
+            #     index = current_project.get_index(neighborhood)
 
     return translate
 
@@ -191,6 +216,17 @@ def get_close_words(**request):
             'score': neighbors[neighbour_ids].tolist(),
             'pos': positions.tolist()
             }
+
+
+def get_close_vectors(**request):
+    current_project = list(projects.values())[0]  # type: S2SProject
+    # os.path.join(current_project.directory, request["vector_name"] + ".ann")
+    index = current_project.get_index(
+        request["vector_name"])  # type: VectorIndex
+    closest = index.get_closest_x(request["indices"], include_distances=True)
+    # print(request["vector_name"], request['index'])
+
+    return closest
 
 
 def find_and_load_project(directory):

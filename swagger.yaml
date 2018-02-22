@@ -23,11 +23,13 @@ paths:
       summary: Get Translation and Data for sentence
       parameters:
         - $ref: '#/parameters/inSentence'
+        - $ref: '#/parameters/neighbors'
       responses:
         200:
           description: Return Translation and meta data
           schema:
             $ref: '#/definitions/Translation'
+
   /compare_translation:
     get:
       tags: [Translate, All]
@@ -54,6 +56,18 @@ paths:
       responses:
         200:
           description: Return list of closest words
+
+  /close_vectors:
+    get:
+      tags: [Embedding, All]
+      operationId: server.get_close_vectors
+      summary: Find closesest vector to vector at position
+      parameters:
+        - $ref: '#/parameters/vector_name'
+        - $ref: '#/parameters/indices'
+      responses:
+        200:
+          description: return list of indices
 
 parameters:
   inSentence:
@@ -102,6 +116,35 @@ parameters:
       - "tsne"
       - "none"
     default: "pca"
+  vector_name:
+    name: vector_name
+    description: Name of the vector -- encoder, embedding, etc...
+    in: query
+    type: string
+    default: "context"
+  index:
+    name: index
+    in: query
+    description: position in corpus
+    type: integer
+    default: 100
+  indices:
+    name: indices
+    in: query
+    description: positions in corpus
+    type: array
+    items:
+      type: integer
+    required: true
+  neighbors:
+    name: neighbors
+    description: list of dimensions to add neighbors to
+    in: query
+    type: array
+    items:
+      type: string
+    required: false
+
 
 
 # These definitions are only needed for proper documentation
