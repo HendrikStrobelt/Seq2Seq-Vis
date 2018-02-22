@@ -95,18 +95,22 @@ def get_translation(**request):
                                                   ignore_same_tgt=False,
                                                   include_distances=True,
                                                   use_vectors=True)
+
+            rr = lambda x: [(xx[0], round(xx[1], 5)) for xx in x]
+
             if index:
                 if neighborhood == 'encoder':
                     for enc in translate['encoder']:
-                        enc['neighbors'] = closest(enc['state'])
+                        enc['neighbors'] = rr(closest(enc['state']))
                 if neighborhood == 'decoder':
                     for beam in translate['decoder']:
                         for dec in beam:
-                            dec['neighbors'] = closest(dec['state'])
+                            dec['neighbors'] = rr(closest(dec['state']))
                 if neighborhood == 'context':
                     for beam in translate['decoder']:
                         for dec in beam:
-                            dec['neighbor_context'] = closest(dec['context'])
+                            dec['neighbor_context'] = rr(
+                                closest(dec['context']))
 
             # if neighborhood ['decoder', 'encoder']:
             #     index = current_project.get_index(neighborhood)

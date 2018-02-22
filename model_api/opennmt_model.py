@@ -244,7 +244,7 @@ class ONMTmodelAPI():
             beam_trace=self.opt.dump_beam != "")
 
 
-    def translate(self, in_text, partial_decode=[], k=5, attn=None, dump_data=False):
+    def translate(self, in_text, partial_decode=[], k=5, attn=None, dump_data=False, roundTo=5):
         """
         in_text: list of strings
         partial_decode: list of strings, not implemented yet
@@ -323,6 +323,7 @@ class ONMTmodelAPI():
             context = batch_data['context'][:, 0, :]
             translations = builder.from_batch(batch_data)
             # iteratres over items in batch
+            rr = lambda x: [(round(xx, roundTo)) for xx in x]
             for transIx, trans in enumerate(translations):
                 print(trans.pred_sents)
                 res = {}
@@ -330,13 +331,15 @@ class ONMTmodelAPI():
                 encoderRes = []
                 for token, state in zip(in_text[transIx].split(), context):
                     encoderRes.append({'token': token,
-                                       'state': list(state.data)
+                                       'state': rr(list(state.data))
                                        })
                 res['encoder'] = encoderRes
 
                 # # Fill decoder Result
                 decoderRes = []
                 attnRes = []
+
+
                 for ix, p in enumerate(trans.pred_sents[:k]):
                     if p:
                         topIx = []
@@ -347,10 +350,10 @@ class ONMTmodelAPI():
                                                              batch_data['target_cstar'][transIx][ix]):
                             currentDec = {}
                             currentDec['token'] = token
-                            currentDec['state'] = list(state.data)
-                            currentDec['context'] = list(cstar.data)
+                            currentDec['state'] = rr(list(state.data))
+                            currentDec['context'] = rr(list(cstar.data))
                             topIx.append(currentDec)
-                            topIxAttn.append(list(attn))
+                            topIxAttn.append(rr(list(attn)))
                             # if t in ['.', '!', '?']:
                             #     break
                         decoderRes.append(topIx)
