@@ -70,26 +70,14 @@ def send_static_dep(path):
     return send_from_directory('node_modules/', path)
 
 
-# ------ API routing as defined in swagger.yaml (connexion)
-def get_translation(**request):
-    current_project = list(projects.values())[0]
-    model = current_project.model
+def translate(project, in_sentences, neighbors):
+    model = project.model
 
-    in_sentence = request['in']
-    translate = model.translate(in_text=[in_sentence])[0]
-    # print("_".join(map(lambda x: x['token'], translate["decoder"][0])))
-    # r = requests.post('http://127.0.0.1:7784/translator/translate', data=json.dumps([{"src": inSentence}]))
-    #
-    # # res: [[{'src': 'Hello World', 'tgt': 'Hallo Welt', 'pred_score': -0.1768690943718, 'attn': [[0.62342292070389,
-    # # 0.37657704949379], [0.16017833352089, 0.83982169628143]], 'n_best': 1}]]
-    #
-    # res = r.json()[0][0]
-    #
-    # a_f = []
+    translations = model.translate(in_text=in_sentences)
 
-    if 'neighbors' in request:
-        for neighborhood in request['neighbors']:
-            index = current_project.get_index(neighborhood)
+    for _, translation in translations.items():
+        for neighborhood in neighbors:
+            index = project.get_index(neighborhood)
 
             closest = lambda v: index.get_closest(v, k=10,
                                                   ignore_same_tgt=False,
@@ -100,22 +88,29 @@ def get_translation(**request):
 
             if index:
                 if neighborhood == 'encoder':
-                    for enc in translate['encoder']:
+                    for enc in translation['encoder']:
                         enc['neighbors'] = rr(closest(enc['state']))
                 if neighborhood == 'decoder':
-                    for beam in translate['decoder']:
+                    for beam in translation['decoder']:
                         for dec in beam:
                             dec['neighbors'] = rr(closest(dec['state']))
                 if neighborhood == 'context':
-                    for beam in translate['decoder']:
+                    for beam in translation['decoder']:
                         for dec in beam:
                             dec['neighbor_context'] = rr(
                                 closest(dec['context']))
 
-            # if neighborhood ['decoder', 'encoder']:
-            #     index = current_project.get_index(neighborhood)
+    return translations
 
-    return translate
+
+# ------ API routing as defined in swagger.yaml (connexion)
+def get_translation(**request):
+    current_project = list(projects.values())[0]
+
+    in_sentence = request['in']
+    neighbors = request.get('neighbors', [])
+
+    return translate(current_project, [in_sentence], neighbors)[0]
 
 
 def extract_sentence(x): return ' '.join(
@@ -128,18 +123,19 @@ def extract_attn(x): return np.array(x['attn'][0])
 def compare_translation(**request):
     pivot = request["in"]
     compare = request["compare"]
+    neighbors = request.get('neighbors', [])
 
     current_project = list(projects.values())[0]
     model = current_project.model
 
     # trans_all = model.translate(in_text=[pivot]+compare)
 
-    pivot_res = model.translate(in_text=[pivot])[0]
+    pivot_res = translate(current_project, [pivot], neighbors)[0]
     pivot_attn = extract_attn(pivot_res)
     pivot_attn_l = pivot_attn.shape[0]
 
     # compare.append(pivot)
-    compare_t = model.translate(in_text=compare)
+    compare_t = translate(current_project, compare, neighbors)
 
     res = []
     index_orig = 0

@@ -14,7 +14,6 @@ import onmt
 import onmt.ModelConstructor
 import onmt.modules
 
-
 PAD_WORD = '<blank>'
 UNK = 0
 BOS_WORD = '<s>'
@@ -92,6 +91,7 @@ def translate_opts(parser):
                        help='Window stride for spectrogram in seconds')
     group.add_argument('-window', default='hamming',
                        help='Window type for spectrogram generation')
+
 
 def model_opts(parser):
     """
@@ -243,8 +243,8 @@ class ONMTmodelAPI():
             cuda=self.opt.cuda,
             beam_trace=self.opt.dump_beam != "")
 
-
-    def translate(self, in_text, partial_decode=[], k=5, attn=None, dump_data=False, roundTo=5):
+    def translate(self, in_text, partial_decode=[], k=5, attn=None,
+                  dump_data=False, roundTo=5):
         """
         in_text: list of strings
         partial_decode: list of strings, not implemented yet
@@ -268,10 +268,12 @@ class ONMTmodelAPI():
                 for w, ix in self.translator.fields['tgt'].vocab.stoi.items():
                     f.write(str(ix) + " " + w + "\n")
             with h5py.File("data/embs.h5", 'w') as f:
-                f.create_dataset("encoder", data=self.translator.model.encoder.embeddings.emb_luts[0].weight.data.numpy())
-                f.create_dataset("decoder", data=self.translator.model.decoder.embeddings.emb_luts[0].weight.data.numpy())
-
-
+                f.create_dataset("encoder", data=
+                self.translator.model.encoder.embeddings.emb_luts[
+                    0].weight.data.numpy())
+                f.create_dataset("decoder", data=
+                self.translator.model.decoder.embeddings.emb_luts[
+                    0].weight.data.numpy())
 
         # Use written file as input to dataset builder
         data = onmt.io.build_dataset(
@@ -313,7 +315,7 @@ class ONMTmodelAPI():
                 curr_part.append(vocab.stoi[tok])
             partial.append(curr_part)
 
-        reply = {}
+        reply = {}  # todo: should become a list
 
         # Only has one batch, but indexing does not work
         for batch in test_data:
@@ -339,15 +341,18 @@ class ONMTmodelAPI():
                 decoderRes = []
                 attnRes = []
 
-
                 for ix, p in enumerate(trans.pred_sents[:k]):
                     if p:
                         topIx = []
                         topIxAttn = []
                         for token, attn, state, cstar in zip(p,
                                                              trans.attns[ix],
-                                                             batch_data["target_states"][transIx][ix],
-                                                             batch_data['target_cstar'][transIx][ix]):
+                                                             batch_data[
+                                                                 "target_states"][
+                                                                 transIx][ix],
+                                                             batch_data[
+                                                                 'target_cstar'][
+                                                                 transIx][ix]):
                             currentDec = {}
                             currentDec['token'] = token
                             currentDec['state'] = rr(list(state.data))
@@ -368,15 +373,17 @@ class ONMTmodelAPI():
 def main():
     model = ONMTmodelAPI("data/model_en_de_20.49.pt")
     # reply = model.translate(["This is a test ."])
-    reply = model.translate(["This is a test .", "this is a second test ."], dump_data=True)
+    reply = model.translate(["This is a test .", "this is a second test ."],
+                            dump_data=True)
     print("______")
     # reply = model.translate(["This is a test ."], partial_decode=["Dies ist"])
     reply = model.translate(["This is a test .", "this is a second test ."],
-                             partial_decode=["Dies ist", "Ein zweiter"])
+                            partial_decode=["Dies ist", "Ein zweiter"])
 
     print(reply)
 
-    #print(json.dumps(reply, indent=2, sort_keys=True))
+    # print(json.dumps(reply, indent=2, sort_keys=True))
+
 
 if __name__ == "__main__":
     main()
