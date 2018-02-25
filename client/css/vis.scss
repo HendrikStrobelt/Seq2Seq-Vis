@@ -219,18 +219,25 @@ $highlight-color: #d62f30;
     stroke: cadetblue;
     stroke-width: 2px;
     stroke-opacity: .3;
+    &.pl_1 {
+      stroke: #9e9e5f;
+    }
+
   }
 
   .plPoint {
     fill: cadetblue;
     fill-opacity: .3;
+    &.pl_1 {
+      fill: #9e9e5f;
+    }
   }
 
   .endPoint {
-    fill: #9c605f;
+    fill: #9c605f!important;
   }
   .startPoint {
-    fill: #7d9c5f;
+    fill: #7d9c5f!important;
   }
 
 }

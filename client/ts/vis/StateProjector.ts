@@ -18,7 +18,8 @@ export class StateProjector extends VComponent<StateProjectorData> {
         hidden: false,
         xScale: d3.scaleLinear(),
         yScale: d3.scaleLinear(),
-        zoom: null
+        zoom: null,
+        noOfLines: 1
     };
 
     constructor(d3Parent, eventHandler?, options: {} = {}) {
@@ -54,8 +55,9 @@ export class StateProjector extends VComponent<StateProjectorData> {
 
     protected _wrangle(data: StateProjectorData) {
 
-        let [minX, maxX] = d3.extent(data.states.map(d => d.pos[0]));
-        let [minY, maxY] = d3.extent(data.states.map(d => d.pos[1]));
+        const st = data.states;
+        let [minX, maxX] = d3.extent(st.map(d => d.pos[0]));
+        let [minY, maxY] = d3.extent(st.map(d => d.pos[1]));
 
         let diffX = maxX - minX;
         let diffY = maxY - minY;
@@ -69,6 +71,8 @@ export class StateProjector extends VComponent<StateProjectorData> {
 
         this._current.xScale.domain([minX, minX + diffX]).range([5, 495]);
         this._current.yScale.domain([minY, minY + diffY]).range([5, 495]);
+
+        this._current.noOfLines = st.filter(d => d.pivot == 0).length;
 
         this.parent.attrs({
             'width': 500,
@@ -102,26 +106,35 @@ export class StateProjector extends VComponent<StateProjectorData> {
 
         pps.select('circle').attr('r', d => d.occ.length);
 
+        this.layers.fg.selectAll('.pl').remove();
+        this.layers.fg.selectAll('.plPoint').remove();
+        for (let pT = 0; pT < cur.noOfLines; pT++) {
+            const onlyPivots = states.filter(d => (d.pivot > -1) && (d.occ[0][2] == pT))
+                .sort((a, b) => a.pivot - b.pivot);
+            this.lineDraw(onlyPivots, 'pl_'+pT);
+        }
 
-        const onlyPivots = states.filter(d => d.pivot > -1)
-            .sort((a, b) => a.pivot - b.pivot);
+    }
+
+    private lineDraw(onlyPivots: StateDesc[], className:string) {
+        const cur = this._current;
 
         const line = d3.line<StateDesc>()
             .x(d => cur.xScale(d.pos[0]))
             .y(d => cur.yScale(d.pos[1]))
         // .curve(d3.curveCardinal)
 
-        let pls = this.layers.fg.selectAll('.pl')
-            .data([onlyPivots])
-        pls = pls.enter().append('path').attr('class', 'pl')
+        let pls = this.layers.fg.selectAll('.pl.'+className)
+            .data([onlyPivots]);
+        pls = pls.enter().append('path').attr('class', 'pl '+className)
             .merge(pls);
         pls
         // .transition()
             .attr('d', line);
 
-        let plPoints = this.layers.fg.selectAll('.plPoint').data(onlyPivots);
+        let plPoints = this.layers.fg.selectAll('.plPoint.'+className).data(onlyPivots);
         plPoints.exit().remove();
-        plPoints = plPoints.enter().append('circle').attr('class', 'plPoint')
+        plPoints = plPoints.enter().append('circle').attr('class', 'plPoint '+className)
             .merge(plPoints);
 
         plPoints.attrs({
@@ -131,7 +144,5 @@ export class StateProjector extends VComponent<StateProjectorData> {
         })
         plPoints.classed('startPoint', d => d.pivot === 0);
         plPoints.classed('endPoint', d => d.pivot === onlyPivots.length - 1);
-
     }
-
 }

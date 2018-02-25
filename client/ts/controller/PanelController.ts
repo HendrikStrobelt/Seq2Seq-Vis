@@ -18,7 +18,8 @@ export class PanelController {
         inWords: [],
         outWords: [],
         allNeighbors: {},
-        projectedNeighbor: null
+        projectedNeighbor: null,
+        sentence: null
     };
 
     constructor() {
@@ -57,7 +58,6 @@ export class PanelController {
 
         const cur = this._current;
 
-        if (main == this.pm.vis.left) this.updateProjectorData(raw_data.allNeighbors);
 
         //=== translation object with convenience functions
         const translation = new Translation(raw_data);
@@ -90,6 +90,12 @@ export class PanelController {
         main.context.update({
             row: translation.contextNeighbors[cur.beamIndex]
         });
+
+        if (main == this.pm.vis.left) {
+            this._current.sentence = translation.inputSentence;
+            this.updateProjectorData(raw_data.allNeighbors);
+        }
+
 
         // main.encoder_extra.forEach(e => e.update(translation));
         // main.decoder_extra.forEach(e => e.update(translation));
@@ -242,13 +248,19 @@ export class PanelController {
                     true, 'selected');
 
 
-                S2SApi.translate({input: d.sentence}).then(data => {
+                S2SApi.translate_compare({
+                    input: this._current.sentence,
+                    compare: d.sentence
+                }).then(data => {
 
                         const {main, extra} = this.pm.getMediumPanel();
 
-                        const d = JSON.parse(data);
+                        const d = <{in:any, compare:any, neighbors:any}>JSON.parse(data);
 
-                        this.update(d, main, null);
+                        console.log(d,"--- d");
+                        this.update(d.compare, main, null);
+
+                        this.updateProjectorData(d.neighbors);
 
 
                     }

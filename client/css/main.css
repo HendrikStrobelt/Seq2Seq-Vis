@@ -108,13 +108,17 @@
   stroke: cadetblue;
   stroke-width: 2px;
   stroke-opacity: .3; }
+  .stateprojector .pl.pl_1 {
+    stroke: #9e9e5f; }
 .stateprojector .plPoint {
   fill: cadetblue;
   fill-opacity: .3; }
+  .stateprojector .plPoint.pl_1 {
+    fill: #9e9e5f; }
 .stateprojector .endPoint {
-  fill: #9c605f; }
+  fill: #9c605f !important; }
 .stateprojector .startPoint {
-  fill: #7d9c5f; }
+  fill: #7d9c5f !important; }
 
 body {
   font-family: 'Source Sans Pro', sans-serif;

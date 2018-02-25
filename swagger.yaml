@@ -29,6 +29,18 @@ paths:
           description: Return Translation and meta data
           schema:
             $ref: '#/definitions/Translation'
+  /translate_compare:
+    get:
+      tags: [Translate, Neighbors, All]
+      operationId: server.get_translation_compare
+      summary: Two-way comparison between two sentences with merged vector-spaces
+      parameters:
+        - $ref: '#/parameters/inSentence'
+        - $ref: '#/parameters/compareSentence'
+        - $ref: '#/parameters/neighbors'
+      responses:
+        200:
+          description: fun
 
   /compare_translation:
     get:
@@ -90,6 +102,11 @@ parameters:
     in: query
     type: string
     default:  "world"
+  compareSentence:
+    name: compare
+    description: compare sentence
+    in: query
+    type: string
   compareSentences:
     name: compare
     description: list of sentences to compare against

@@ -14,6 +14,15 @@ export class S2SApi {
         return request.get(payload)
     }
 
+    static translate_compare({input, compare}) {
+        const request = Networking.ajax_request('/api/translate_compare');
+        const payload = new Map([
+            ['in', input],
+            ['compare', compare],
+            ['neighbors', 'decoder,encoder,context']]);
+
+        return request.get(payload)
+    }
 
     static closeWords({input, limit = 50, loc = 'src'}) {
         const request = Networking.ajax_request('/api/close_words');
@@ -35,9 +44,6 @@ export class S2SApi {
         return request
             .get(payload)
     }
-
-
-
 
 
 }
@@ -106,6 +112,10 @@ export class Translation {
         return this._result.encoder.map(w => w.token);
     }
 
+    get inputSentence(): string {
+        return this.encoderWords.join(' ')
+    }
+
     get decoderWords(): string[][] {
         return this._result.decoder.map(
             deco => deco.map(
@@ -146,6 +156,7 @@ export class Translation {
         return this._result.decoder.map(dec =>
             dec.map(d => d.neighbor_context))
     }
+
     get scores() {
         return this._result.scores;
     }

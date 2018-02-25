@@ -71,94 +71,115 @@ def send_static_dep(path):
     return send_from_directory('node_modules/', path)
 
 
-def translate(project, in_sentences, neighbors):
+def closest_vector(index, v, r=5):
+    res = index.get_closest(v, k=20,
+                            ignore_same_tgt=False,
+                            include_distances=True,
+                            use_vectors=True)
+
+    if r > 1:
+        res = [(xx[0], round(xx[1], r)) for xx in res]
+
+    return res
+
+
+def all_neighbors(project, translations, neighbors, p_method='tsne'):
+    pca = P_METHODS[p_method]
+    # pca = umap.UMAP()#TSNE(n_components=2)
+
+    res = {}
+    for neighborhood in neighbors:
+        n_cand = [[]]
+        states = []
+        nb_summary = {}
+        for t_id, translation in translations.items():
+            index = project.get_index(neighborhood)
+
+            if index:
+                if neighborhood == 'encoder':
+                    states.append(
+                        map(lambda x: x['state'], translation['encoder']))
+                    for e_id, enc in enumerate(translation['encoder']):
+                        n_cand_local = closest_vector(index, enc['state'])
+                        enc['neighbors'] = n_cand_local
+                        n_cand[0].append(
+                            {'i': e_id, 't': t_id, 'type': 'enc',
+                             'n': n_cand_local})
+
+                if neighborhood == 'decoder':
+                    states.append(map(lambda x: x['state'],
+                                      translation['decoder'][0]))
+                    bId = 0
+                    for beam in translation['decoder']:
+                        for d_id, dec in enumerate(beam):
+                            n_cand_local = closest_vector(index,
+                                                          dec['state'])
+                            dec['neighbors'] = n_cand_local
+                            if bId == 0:
+                                n_cand[0].append(
+                                    {'i': d_id, 't': t_id, 'type': 'dec',
+                                     'n': n_cand_local})
+
+                        bId += 1
+                if neighborhood == 'context':
+                    states.append(map(lambda x: x['context'],
+                                      translation['decoder'][0]))
+                    bId = 0
+                    for beam in translation['decoder']:
+                        for d_id, dec in enumerate(beam):
+                            n_cand_local = closest_vector(index,
+                                                          dec['context'])
+                            dec['neighbor_context'] = n_cand_local
+                            if bId == 0:
+                                n_cand[0].append(
+                                    {'i': d_id, 't': t_id, 'type': 'ctx',
+                                     'n': n_cand_local})
+                        bId += 1
+
+        for all_cand in n_cand[0]:  # for now only first entry
+            # print(neighborhood, len(nb_summary), all_cand)
+            for n_cand_x in all_cand['n']:
+                cand_id = n_cand_x[0]
+                if cand_id in nb_summary:
+                    nb_summary[cand_id]['occ'].append(
+                        [n_cand_x[0], n_cand_x[1], all_cand['t'],
+                         all_cand['i']])
+                else:
+                    nb_summary[cand_id] = {
+                        'id': cand_id,
+                        'v': index.get_vector(cand_id),
+                        'occ': [[n_cand_x[0], n_cand_x[1], all_cand['t'],
+                                 all_cand['i']]],
+                        'pivot': -1
+                    }
+
+        nb_summary_list = list(nb_summary.values())
+
+        for t_id, t_states in enumerate(states):
+            for s_id, state in enumerate(t_states):
+                nb_summary_list.append({
+                    'id': -1000 * (t_id + 1) + s_id,
+                    'v': state,
+                    'occ': [(-1, 0.0, t_id, s_id)],
+                    'pivot': s_id
+                })
+
+        #
+        positions = pca.fit_transform([x['v'] for x in nb_summary_list])
+        #
+        for i in range(len(positions)):
+            nb_summary_list[i]['pos'] = positions[i].tolist()
+            del nb_summary_list[i]['v']
+
+        res[neighborhood] = nb_summary_list
+
+    return res
+
+
+def translate(project, in_sentences):
     model = project.model
 
     translations = model.translate(in_text=in_sentences)
-
-    pca = PCA(n_components=2)
-    # pca = umap.UMAP()#TSNE(n_components=2)
-
-    for _, translation in translations.items():
-        translation['allNeighbors'] = {}
-        for neighborhood in neighbors:
-            index = project.get_index(neighborhood)
-
-            closest = lambda v: index.get_closest(v, k=50,
-                                                  ignore_same_tgt=False,
-                                                  include_distances=True,
-                                                  use_vectors=True)
-
-            rr = lambda x: [(xx[0], round(xx[1], 5)) for xx in x]
-
-            n_cand = [[]]
-            states = []
-            if index:
-                if neighborhood == 'encoder':
-                    states = map(lambda x: x['state'], translation['encoder'])
-                    for enc in translation['encoder']:
-                        n_cand_local = rr(closest(enc['state']))
-                        n_cand[0].append(n_cand_local)
-                        enc['neighbors'] = n_cand_local
-                if neighborhood == 'decoder':
-                    states = map(lambda x: x['state'],
-                                 translation['decoder'][0])
-                    bId = 0
-                    for beam in translation['decoder']:
-                        for dec in beam:
-                            n_cand_local = rr(closest(dec['state']))
-                            if bId == 0:
-                                n_cand[0].append(n_cand_local)
-                            dec['neighbors'] = n_cand_local
-                        bId += 1
-                if neighborhood == 'context':
-                    states = map(lambda x: x['context'],
-                                 translation['decoder'][0])
-                    bId = 0
-                    for beam in translation['decoder']:
-                        for dec in beam:
-                            n_cand_local = rr(closest(dec['context']))
-                            if bId == 0:
-                                n_cand[0].append(n_cand_local)
-                            dec['neighbor_context'] = n_cand_local
-                        bId += 1
-
-            nb_summary = {}
-
-            for all_cand in n_cand[0]:  # for now only first entry
-                # print(neighborhood, len(nb_summary), all_cand)
-                for n_cand_x in all_cand:
-                    cand_id = n_cand_x[0]
-                    if cand_id in nb_summary:
-                        nb_summary[cand_id]['occ'].append(n_cand_x)
-                    else:
-                        nb_summary[cand_id] = {
-                            'id': cand_id,
-                            'v': index.get_vector(cand_id),
-                            'occ': [n_cand_x],
-                            'pivot': -1
-                        }
-
-            nb_summary_list = list(nb_summary.values())
-
-            s_ID = 0
-            for state in states:
-                nb_summary_list.append({
-                    'id': -1000 + s_ID,
-                    'v': state,
-                    'occ': [(-1, 0.0)],
-                    'pivot': s_ID
-                })
-                s_ID += 1
-
-            positions = pca.fit_transform([x['v'] for x in nb_summary_list])
-
-            for i in range(len(positions)):
-                nb_summary_list[i]['pos'] = positions[i].tolist()
-
-            translation['allNeighbors'][neighborhood] = nb_summary_list
-
-        # translation['all_neighbors'] = all_neighbors
 
     return translations
 
@@ -170,14 +191,39 @@ def get_translation(**request):
     in_sentence = request['in']
     neighbors = request.get('neighbors', [])
 
-    return translate(current_project, [in_sentence], neighbors)[0]
+    translations = translate(current_project, [in_sentence])
+    # print(translations)
+    all_n = all_neighbors(current_project, translations, neighbors)
+    #
+    # print(neighbors,
+    #       all_n)
+    res = translations[0]
+    res['allNeighbors'] = all_n
+
+    return res
 
 
-def extract_sentence(x): return ' '.join(
-    map(lambda y: y['token'], x['decoder'][0]))
+def get_translation_compare(**request):
+    current_project = list(projects.values())[0]
+
+    in_sentence = request['in']
+    compare_sentence = request['compare']
+    neighbors = request.get('neighbors', [])
+
+    translations = translate(current_project, [in_sentence, compare_sentence])
+    all_n = all_neighbors(current_project, translations, neighbors)
+
+    return {'in': translations[0], 'compare': translations[1],
+            'neighbors': all_n}
 
 
-def extract_attn(x): return np.array(x['attn'][0])
+def extract_sentence(x):
+    return ' '.join(
+        map(lambda y: y['token'], x['decoder'][0]))
+
+
+def extract_attn(x):
+    return np.array(x['attn'][0])
 
 
 def compare_translation(**request):
@@ -190,12 +236,12 @@ def compare_translation(**request):
 
     # trans_all = model.translate(in_text=[pivot]+compare)
 
-    pivot_res = translate(current_project, [pivot], neighbors)[0]
+    pivot_res = translate(current_project, [pivot])[0]
     pivot_attn = extract_attn(pivot_res)
     pivot_attn_l = pivot_attn.shape[0]
 
     # compare.append(pivot)
-    compare_t = translate(current_project, compare, neighbors)
+    compare_t = translate(current_project, compare)
 
     res = []
     index_orig = 0
@@ -245,7 +291,8 @@ def get_close_words(**request):
     i2t = current_project.dicts['i2t'][loc]
 
     if loc == 'src':
-        embeddings = current_project.embeddings['encoder']  # TODO: change !!
+        embeddings = current_project.embeddings[
+            'encoder']  # TODO: change !!
     else:
         embeddings = current_project.embeddings['decoder']
 
@@ -269,7 +316,8 @@ def get_close_words(**request):
     # projection methods: MDS, PCA, tSNE -- all with standard params
     positions = []
     if p_method != "none":
-        positions = P_METHODS[p_method].fit_transform(matrix[neighbour_ids, :])
+        positions = P_METHODS[p_method].fit_transform(
+            matrix[neighbour_ids, :])
 
     return {'word': names,
             # 'word_vector': matrix[neighbour_ids, :].tolist(),
@@ -293,7 +341,8 @@ def get_close_vectors(**request):
     # os.path.join(current_project.directory, request["vector_name"] + ".ann")
     index = current_project.get_index(
         request["vector_name"])  # type: VectorIndex
-    closest = index.get_closest_x(request["indices"], include_distances=True)
+    closest = index.get_closest_x(request["indices"],
+                                  include_distances=True)
     # print(request["vector_name"], request['index'])
 
     return closest
