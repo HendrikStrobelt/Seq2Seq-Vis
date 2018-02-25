@@ -133,7 +133,7 @@ $highlight-color: #d62f30;
   .word {
     text {
       pointer-events: none;
-       dominant-baseline: middle;
+      dominant-baseline: middle;
     }
 
     rect:hover {
@@ -194,3 +194,44 @@ $highlight-color: #d62f30;
     font-weight: 200;
   }
 }
+
+.neighborState {
+  rect {
+    fill: #d3d3d3
+  }
+  .line {
+    stroke: #1d5e85;
+    stroke-opacity: .2;
+  }
+
+}
+
+.stateprojector {
+  .pp {
+    opacity: .3;
+
+    &:hover {
+      opacity: .9;
+    }
+  }
+  .pl {
+    fill: none;
+    stroke: cadetblue;
+    stroke-width: 2px;
+    stroke-opacity: .3;
+  }
+
+  .plPoint {
+    fill: cadetblue;
+    fill-opacity: .3;
+  }
+
+  .endPoint {
+    fill: #9c605f;
+  }
+  .startPoint {
+    fill: #7d9c5f;
+  }
+
+}
+

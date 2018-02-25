@@ -69,6 +69,20 @@ paths:
         200:
           description: return list of indices
 
+  /neighbor_details:
+    get:
+      tags: [Embedding, All]
+      operationId: server.get_neighbor_details
+      summary: Get details about close neighbors
+      parameters:
+        - $ref: '#/parameters/vector_name'
+        - $ref: '#/parameters/indices'
+        - $ref: '#/parameters/p_method'
+      responses:
+        200:
+          description: return list details
+
+
 parameters:
   inSentence:
     name: in

@@ -10,6 +10,7 @@ from flask import send_from_directory, redirect, json
 import numpy as np
 from sklearn.decomposition import PCA
 from sklearn.manifold import MDS, TSNE
+import umap
 
 from model_api.onmt_lua_model_api import ONMTLuaModelAPI
 from model_api.opennmt_model import ONMTmodelAPI
@@ -75,30 +76,89 @@ def translate(project, in_sentences, neighbors):
 
     translations = model.translate(in_text=in_sentences)
 
+    pca = PCA(n_components=2)
+    # pca = umap.UMAP()#TSNE(n_components=2)
+
     for _, translation in translations.items():
+        translation['allNeighbors'] = {}
         for neighborhood in neighbors:
             index = project.get_index(neighborhood)
 
-            closest = lambda v: index.get_closest(v, k=10,
+            closest = lambda v: index.get_closest(v, k=50,
                                                   ignore_same_tgt=False,
                                                   include_distances=True,
                                                   use_vectors=True)
 
             rr = lambda x: [(xx[0], round(xx[1], 5)) for xx in x]
 
+            n_cand = [[]]
+            states = []
             if index:
                 if neighborhood == 'encoder':
+                    states = map(lambda x: x['state'], translation['encoder'])
                     for enc in translation['encoder']:
-                        enc['neighbors'] = rr(closest(enc['state']))
+                        n_cand_local = rr(closest(enc['state']))
+                        n_cand[0].append(n_cand_local)
+                        enc['neighbors'] = n_cand_local
                 if neighborhood == 'decoder':
+                    states = map(lambda x: x['state'],
+                                 translation['decoder'][0])
+                    bId = 0
                     for beam in translation['decoder']:
                         for dec in beam:
-                            dec['neighbors'] = rr(closest(dec['state']))
+                            n_cand_local = rr(closest(dec['state']))
+                            if bId == 0:
+                                n_cand[0].append(n_cand_local)
+                            dec['neighbors'] = n_cand_local
+                        bId += 1
                 if neighborhood == 'context':
+                    states = map(lambda x: x['context'],
+                                 translation['decoder'][0])
+                    bId = 0
                     for beam in translation['decoder']:
                         for dec in beam:
-                            dec['neighbor_context'] = rr(
-                                closest(dec['context']))
+                            n_cand_local = rr(closest(dec['context']))
+                            if bId == 0:
+                                n_cand[0].append(n_cand_local)
+                            dec['neighbor_context'] = n_cand_local
+                        bId += 1
+
+            nb_summary = {}
+
+            for all_cand in n_cand[0]:  # for now only first entry
+                # print(neighborhood, len(nb_summary), all_cand)
+                for n_cand_x in all_cand:
+                    cand_id = n_cand_x[0]
+                    if cand_id in nb_summary:
+                        nb_summary[cand_id]['occ'].append(n_cand_x)
+                    else:
+                        nb_summary[cand_id] = {
+                            'id': cand_id,
+                            'v': index.get_vector(cand_id),
+                            'occ': [n_cand_x],
+                            'pivot': -1
+                        }
+
+            nb_summary_list = list(nb_summary.values())
+
+            s_ID = 0
+            for state in states:
+                nb_summary_list.append({
+                    'id': -1000 + s_ID,
+                    'v': state,
+                    'occ': [(-1, 0.0)],
+                    'pivot': s_ID
+                })
+                s_ID += 1
+
+            positions = pca.fit_transform([x['v'] for x in nb_summary_list])
+
+            for i in range(len(positions)):
+                nb_summary_list[i]['pos'] = positions[i].tolist()
+
+            translation['allNeighbors'][neighborhood] = nb_summary_list
+
+        # translation['all_neighbors'] = all_neighbors
 
     return translations
 
@@ -216,6 +276,16 @@ def get_close_words(**request):
             'score': neighbors[neighbour_ids].tolist(),
             'pos': positions.tolist()
             }
+
+
+def get_neighbor_details(**request):
+    current_project = list(projects.values())[0]
+
+    indices = request['indices']
+    index = current_project.get_index(
+        request["vector_name"])  # type: VectorIndex
+
+    return index.get_details(indices)
 
 
 def get_close_vectors(**request):

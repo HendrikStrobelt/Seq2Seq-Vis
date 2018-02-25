@@ -44,7 +44,7 @@ export abstract class VComponent<DataInterface> {
     protected base: D3Sel;
     protected layers: { main?: D3Sel, fg?: D3Sel, bg?: D3Sel, [key: string]: D3Sel };
     protected eventHandler: SimpleEventHandler;
-    protected _current: LooseObject;
+    protected _current: { hidden: boolean, [key: string]: any };
     protected data: any;
     protected renderData: any;
 

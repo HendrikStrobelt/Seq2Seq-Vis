@@ -93,6 +93,29 @@
   .close_word_list .wordComp {
     font-weight: 200; }
 
+.neighborState rect {
+  fill: #d3d3d3; }
+.neighborState .line {
+  stroke: #1d5e85;
+  stroke-opacity: .2; }
+
+.stateprojector .pp {
+  opacity: .3; }
+  .stateprojector .pp:hover {
+    opacity: .9; }
+.stateprojector .pl {
+  fill: none;
+  stroke: cadetblue;
+  stroke-width: 2px;
+  stroke-opacity: .3; }
+.stateprojector .plPoint {
+  fill: cadetblue;
+  fill-opacity: .3; }
+.stateprojector .endPoint {
+  fill: #9c605f; }
+.stateprojector .startPoint {
+  fill: #7d9c5f; }
+
 body {
   font-family: 'Source Sans Pro', sans-serif;
   font-weight: 300;

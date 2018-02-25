@@ -17,6 +17,8 @@ export class PanelController {
         outWordPos: [],
         inWords: [],
         outWords: [],
+        allNeighbors: {},
+        projectedNeighbor: null
     };
 
     constructor() {
@@ -33,9 +35,29 @@ export class PanelController {
 
     }
 
+    updateProjectorSelection(key) {
+        this._current.projectedNeighbor = key;
+        this.pm.vis.projectors.update({states: this._current.allNeighbors[key]});
+    }
+
+    updateProjectorData(allNeighbors) {
+        const cur = this._current;
+
+        cur.allNeighbors = allNeighbors;
+
+        const allNeighborKeys = Object.keys(allNeighbors);
+        if (!cur.projectedNeighbor) cur.projectedNeighbor = allNeighborKeys[0];
+
+        this.pm.setProjectorOptions(allNeighborKeys, cur.projectedNeighbor);
+
+        this.updateProjectorSelection(cur.projectedNeighbor);
+    }
+
     update(raw_data, main = this.pm.vis.left, extra = this.pm.vis.zero) {
 
         const cur = this._current;
+
+        if (main == this.pm.vis.left) this.updateProjectorData(raw_data.allNeighbors);
 
         //=== translation object with convenience functions
         const translation = new Translation(raw_data);
@@ -57,6 +79,17 @@ export class PanelController {
         };
         const attn = main.attention;
         attn.update(attentionData);
+
+
+        main.encoder_states.update({
+            row: translation.encoderNeighbors
+        });
+        main.decoder_states.update({
+            row: translation.decoderNeighbors[cur.beamIndex]
+        });
+        main.context.update({
+            row: translation.contextNeighbors[cur.beamIndex]
+        });
 
         // main.encoder_extra.forEach(e => e.update(translation));
         // main.decoder_extra.forEach(e => e.update(translation));
@@ -222,6 +255,12 @@ export class PanelController {
                 )
 
 
+            })
+
+        this.pm.panels.projectorSelect
+            .on('change', () => {
+                const v = this.pm.panels.projectorSelect.property('value');
+                this.updateProjectorSelection(v);
             })
 
 

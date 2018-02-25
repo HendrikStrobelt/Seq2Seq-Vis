@@ -43,6 +43,21 @@ class VectorIndex:
                                  use_vectors))
         return res
 
+    def get_details(self, ixs):
+        res = []
+        for ix in ixs:
+            res.append({'index': ix,
+                        'v': self.u.get_item_vector(ix),
+                        'pos': search_to_sentence_index(ix)})
+
+        return res
+
+    def get_vectors(self, ixs):
+        return map(lambda x: self.u.get_item_vector(x), ixs)
+
+    def get_vector(self, ix):
+        return self.u.get_item_vector(ix)
+
 
 def search_to_sentence_index(index):
     return index // 55, index % 55

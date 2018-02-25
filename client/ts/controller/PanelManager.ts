@@ -10,25 +10,33 @@ import {WordProjector} from "../vis/WordProjector";
 import {SimpleEventHandler} from "../etc/SimpleEventHandler";
 import {D3Sel, LooseObject} from "../etc/LocalTypes";
 import * as _ from "lodash";
+import {NeighborStates} from "../vis/NeighborStates";
+import {StateProjector} from "../vis/StateProjector";
 
 
 type VisColumn<DW=WordLine> = {
-    encoder_extra: VComponent<any>[],
+    // encoder_extra: VComponent<any>[],
+    encoder_states: NeighborStates,
     encoder_words: WordLine,
     attention: AttentionVis,
     decoder_words: DW,
-    decoder_extra: VComponent<any>[],
+    context: NeighborStates,
+    decoder_states: NeighborStates,
+    // decoder_extra: VComponent<any>[],
     selection: D3Sel
 }
 
 function initPanel<T=WordLine>(select): VisColumn<T> {
     return {
         selection: select,
-        encoder_extra: [],
+        // encoder_extra: [],
+        encoder_states: null,
         encoder_words: null,
         attention: null,
         decoder_words: null,
-        decoder_extra: []
+        context: null,
+        decoder_states: null,
+        // decoder_extra: []
     }
 };
 
@@ -50,8 +58,13 @@ export class PanelManager {
         middle: initPanel(d3.select('.col3')),
         right: initPanel(d3.select('.col5')),
         middle_extra: <VisColumn<BarList>> initPanel(d3.select('.col2')),
-        right_extra: initPanel(d3.select('.col4'))
+        right_extra: initPanel(d3.select('.col4')),
+        projectors: this._createProjectorPanel()
     };
+
+    panels = {
+        projectorSelect: this._createProjectorOptions()
+    }
 
     get vis() {
         return this._vis;
@@ -73,6 +86,17 @@ export class PanelManager {
 
     }
 
+
+    _createProjectorPanel() {
+        const parent = d3.select('#projectorPanel').append('svg').attrs({
+            width: 500,
+            height: 30
+        });
+
+        return new StateProjector(parent, this.eventHandler, {})
+
+
+    }
 
     public getMediumPanel() {
         if (!this._current.hasMediumPanel) {
@@ -107,6 +131,14 @@ export class PanelManager {
         //     divStyles: {height: '100px', width: '100px', 'padding-top': '5px'}
         // }));
 
+        visColumn.encoder_states = PanelManager._setupPanel({
+            col: visColumn.selection,
+            className: "encoder_states_setup",
+            addSVG: false,
+            title: 'Enc states: ',
+            divStyles: {height: '21px', width: '100px', 'padding-top': '0px'}
+        })
+
         visColumn.encoder_words = PanelManager._setupPanel({
             col: visColumn.selection,
             className: "encoder_words_setup",
@@ -137,6 +169,21 @@ export class PanelManager {
                 data_access: d => [d.scores[this._current.topN]],
                 data_access_all: d => d.scores
             }
+        })
+
+        visColumn.encoder_states = PanelManager._setupPanel({
+            col: visColumn.selection,
+            className: "decoder_states_setup",
+            addSVG: false,
+            title: 'Dec states: ',
+            divStyles: {height: '21px', width: '100px', 'padding-top': '0px'}
+        })
+        visColumn.context = PanelManager._setupPanel({
+            col: visColumn.selection,
+            className: "context_setup",
+            addSVG: false,
+            title: 'Context states: ',
+            divStyles: {height: '21px', width: '100px', 'padding-top': '5px'}
         })
 
         // visColumn.decoder_extra.push(PanelManager._setupPanel({
@@ -176,6 +223,14 @@ export class PanelManager {
         //     }
         // }));
 
+        visColumn.encoder_states = this._createNeighborStates({
+            col: visColumn.selection,
+            className: 'encoder_state_neighbors',
+            options: {
+                box_width: this._current.box_width
+            }
+        });
+
         visColumn.encoder_words = this._createWordLine({
             col: visColumn.selection,
             className: 'encoder_words',
@@ -201,6 +256,23 @@ export class PanelManager {
                 box_type: this._current.hideStates ? WordLine.BoxType.flow : WordLine.BoxType.fixed,
                 css_class_main: 'outWord',
                 // data_access: d => d.decoder.length ? [d.decoder[this._current.topN]] : []
+            }
+        });
+
+        visColumn.decoder_states = this._createNeighborStates({
+            col: visColumn.selection,
+            className: 'decoder_state_neighbors',
+            divStyles: {'padding-bottom': '5px'},
+            options: {
+                box_width: this._current.box_width
+            }
+        });
+        visColumn.context = this._createNeighborStates({
+            col: visColumn.selection,
+            className: 'context_state_neighbors',
+
+            options: {
+                box_width: this._current.box_width
             }
         });
 
@@ -287,6 +359,12 @@ export class PanelManager {
         return new StateVis(svg, this.eventHandler, options);
     }
 
+    _createNeighborStates({col, className, options, divStyles = {}}) {
+        const svg = PanelManager._standardSVGPanel({col, className, divStyles});
+
+        return new NeighborStates(svg, this.eventHandler, options)
+    }
+
 
     _createAttention({col, className, options, divStyles = null}) {
         const svg = PanelManager._standardSVGPanel({col, className, divStyles});
@@ -346,6 +424,28 @@ export class PanelManager {
         }
 
         return this._current.closeWordsList;
+    }
+
+    _createProjectorOptions() {
+        return d3.select('#projectorSelect')
+        // .on('change', ()=>{
+        //     const v = d3.select('#projectorSelect').property('value')
+        //     console.log(v,"--- ");
+        // })
+    }
+
+    setProjectorOptions(options: string[], defaultOption = null) {
+        const op = this.panels.projectorSelect
+            .selectAll('option').data(options);
+        op.exit().remove();
+        op.enter().append('option')
+            .merge(op)
+            // .attr('selected', d => (d === defaultOption) ? true : null)
+            .attr('value', d => d)
+            .text(d => d)
+
+        if (defaultOption) this.panels.projectorSelect.property('value', defaultOption)
+
     }
 
 

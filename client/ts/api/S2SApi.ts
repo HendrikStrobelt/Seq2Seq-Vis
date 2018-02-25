@@ -8,7 +8,8 @@ export class S2SApi {
 
     static translate({input}) {
         const request = Networking.ajax_request('/api/translate');
-        const payload = new Map([['in', input]]);
+        const payload = new Map([['in', input],
+            ['neighbors', 'decoder,encoder,context']]);
 
         return request.get(payload)
     }
@@ -36,6 +37,9 @@ export class S2SApi {
     }
 
 
+
+
+
 }
 
 
@@ -45,8 +49,17 @@ export class Translation {
         attn: number[][][],
         attnFiltered: number[][][],
         scores: number[],
-        decoder: { state: number[], token: string }[][],
-        encoder: { state: number[], token: string }[],
+        decoder: {
+            neighbors: number[][],
+            neighbor_context: number[][],
+            state: number[],
+            token: string
+        }[][],
+        encoder: {
+            neighbors: number[][],
+            state: number[],
+            token: string
+        }[],
         [key: string]: any
     } = null;
 
@@ -116,10 +129,23 @@ export class Translation {
         return this._result.encoder;
     }
 
+    get encoderNeighbors() {
+        return this._result.encoder.map(d => d.neighbors)
+    }
+
     get decoder() {
         return this._result.decoder;
     }
 
+    get decoderNeighbors() {
+        return this._result.decoder.map(dec =>
+            dec.map(d => d.neighbors))
+    }
+
+    get contextNeighbors() {
+        return this._result.decoder.map(dec =>
+            dec.map(d => d.neighbor_context))
+    }
     get scores() {
         return this._result.scores;
     }
