@@ -320,10 +320,10 @@ class ONMTmodelAPI():
             batch_data = self.translator.translate_batch(
                 batch, data, return_states=True,
                 partial=partial)
-            context = batch_data['context'][:, 0, :]
             translations = builder.from_batch(batch_data)
             # iteratres over items in batch
             for transIx, trans in enumerate(translations):
+                context = batch_data['context'][:, transIx, :]
                 print(trans.pred_sents)
                 res = {}
                 # Fill encoder Result
@@ -333,7 +333,6 @@ class ONMTmodelAPI():
                                        'state': list(state.data)
                                        })
                 res['encoder'] = encoderRes
-
                 # # Fill decoder Result
                 decoderRes = []
                 attnRes = []
@@ -365,13 +364,13 @@ class ONMTmodelAPI():
 def main():
     model = ONMTmodelAPI("data/model_en_de_20.49.pt")
     # reply = model.translate(["This is a test ."])
-    reply = model.translate(["This is a test .", "this is a second test ."], dump_data=True)
+    reply = model.translate(["This", "That"], dump_data=True)
     print("______")
     # reply = model.translate(["This is a test ."], partial_decode=["Dies ist"])
-    reply = model.translate(["This is a test .", "this is a second test ."],
-                             partial_decode=["Dies ist", "Ein zweiter"])
+    # reply = model.translate(["This is a test .", "this is a second test ."],
+    #                          partial_decode=["Dies ist", "Ein zweiter"])
 
-    print(reply)
+    #print(reply)
 
     #print(json.dumps(reply, indent=2, sort_keys=True))
 
