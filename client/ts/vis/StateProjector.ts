@@ -19,7 +19,8 @@ export class StateProjector extends VComponent<StateProjectorData> {
         xScale: d3.scaleLinear(),
         yScale: d3.scaleLinear(),
         zoom: null,
-        noOfLines: 1
+        noOfLines: 1,
+        pivots: <StateDesc[][]>[[]]
     };
 
     constructor(d3Parent, eventHandler?, options: {} = {}) {
@@ -69,10 +70,19 @@ export class StateProjector extends VComponent<StateProjectorData> {
         //     diffX = diffY
         // }
 
-        this._current.xScale.domain([minX, minX + diffX]).range([5, 495]);
-        this._current.yScale.domain([minY, minY + diffY]).range([5, 495]);
+        const cur = this._current;
+        cur.xScale.domain([minX, minX + diffX]).range([5, 495]);
+        cur.yScale.domain([minY, minY + diffY]).range([5, 495]);
 
-        this._current.noOfLines = st.filter(d => d.pivot == 0).length;
+        cur.noOfLines = st.filter(d => d.pivot == 0).length;
+
+        cur.pivots = [];
+
+        for (let pT = 0; pT < cur.noOfLines; pT++) {
+            cur.pivots.push(st.filter(d => (d.pivot > -1) && (d.occ[0][2] == pT))
+                .sort((a, b) => a.pivot - b.pivot));
+        }
+
 
         this.parent.attrs({
             'width': 500,
@@ -106,35 +116,62 @@ export class StateProjector extends VComponent<StateProjectorData> {
 
         pps.select('circle').attr('r', d => d.occ.length);
 
+        pps.on('mouseover', d => {
+            const allL = this.layers.main.selectAll('.hoverLine')
+                .data(d.occ.map(oc => cur.pivots[oc[2]][oc[3]]));
+            allL.exit().remove();
+
+            allL.enter().append('line').attr('class', 'hoverLine')
+                .styles({
+                    fill: 'none',
+                    stroke: 'red',
+                    'stroke-width': 2,
+                    'pointer-events':'none'
+                })
+                .merge(allL)
+                .attrs({
+                    x1: cur.xScale(d.pos[0]),
+                    y1: cur.yScale(d.pos[1]),
+                    x2: o => cur.xScale(o.pos[0]),
+                    y2: o => cur.yScale(o.pos[1])
+                })
+        })
+        pps.on('mouseout', () => {
+            this.layers.main.selectAll('.hoverLine').remove()
+        })
+
+
         this.layers.fg.selectAll('.pl').remove();
         this.layers.fg.selectAll('.plPoint').remove();
         for (let pT = 0; pT < cur.noOfLines; pT++) {
-            const onlyPivots = states.filter(d => (d.pivot > -1) && (d.occ[0][2] == pT))
-                .sort((a, b) => a.pivot - b.pivot);
-            this.lineDraw(onlyPivots, 'pl_'+pT);
+            // const onlyPivots = states.filter(d => (d.pivot > -1) && (d.occ[0][2] == pT))
+            //     .sort((a, b) => a.pivot - b.pivot);
+            this.lineDraw(cur.pivots[pT], 'pl_' + pT);
         }
 
     }
 
-    private lineDraw(onlyPivots: StateDesc[], className:string) {
+    private lineDraw(onlyPivots: StateDesc[], className: string) {
         const cur = this._current;
 
+        console.log(onlyPivots,"--- onlyPivots");
+        
         const line = d3.line<StateDesc>()
             .x(d => cur.xScale(d.pos[0]))
             .y(d => cur.yScale(d.pos[1]))
         // .curve(d3.curveCardinal)
 
-        let pls = this.layers.fg.selectAll('.pl.'+className)
+        let pls = this.layers.fg.selectAll('.pl.' + className)
             .data([onlyPivots]);
-        pls = pls.enter().append('path').attr('class', 'pl '+className)
+        pls = pls.enter().append('path').attr('class', 'pl ' + className)
             .merge(pls);
         pls
         // .transition()
             .attr('d', line);
 
-        let plPoints = this.layers.fg.selectAll('.plPoint.'+className).data(onlyPivots);
+        let plPoints = this.layers.fg.selectAll('.plPoint.' + className).data(onlyPivots);
         plPoints.exit().remove();
-        plPoints = plPoints.enter().append('circle').attr('class', 'plPoint '+className)
+        plPoints = plPoints.enter().append('circle').attr('class', 'plPoint ' + className)
             .merge(plPoints);
 
         plPoints.attrs({

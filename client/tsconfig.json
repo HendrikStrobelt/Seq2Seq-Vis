@@ -5,7 +5,7 @@
     "module": "es6",
     "target": "es2015",
     "sourceMap": true,
-    "jsx": "react",
+//    "jsx": "react",
     "allowJs": true
   }
 }
