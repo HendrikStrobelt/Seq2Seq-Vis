@@ -83,7 +83,7 @@ def closest_vector(index, v, r=5):
     return res
 
 
-def all_neighbors(project, translations, neighbors, p_method='mds'):
+def all_neighbors(project, translations, neighbors, p_method='tsne'):
     pca = P_METHODS[p_method]
     # pca = umap.UMAP()#TSNE(n_components=2)
 
@@ -346,6 +346,16 @@ def get_close_vectors(**request):
     # print(request["vector_name"], request['index'])
 
     return closest
+
+
+def train_data_for_index(**request):
+    ids = request["indices"]
+    loc = request["loc"]
+
+    current_project = list(projects.values())[0]  # type: S2SProject
+    res = current_project.get_train_for_index(ids, loc)
+
+    return {'loc': loc, 'ids': ids, 'res': res}
 
 
 def find_and_load_project(directory):

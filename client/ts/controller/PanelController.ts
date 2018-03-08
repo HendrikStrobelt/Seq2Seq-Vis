@@ -4,8 +4,9 @@ import {SimpleEventHandler} from "../etc/SimpleEventHandler";
 import {WordLine, WordLineHoverEvent} from "../vis/WordLine"
 import {AttentionVis, AttentionVisData} from "../vis/AttentionVis";
 import {WordProjector, WordProjectorClickedEvent} from "../vis/WordProjector";
-import {S2SApi, Translation} from "../api/S2SApi";
+import {S2SApi, TrainDataIndexResponse, Translation} from "../api/S2SApi";
 import {PanelManager} from "./PanelManager";
+import {StateDesc, StateProjector} from "../vis/StateProjector";
 
 
 export class PanelController {
@@ -38,7 +39,10 @@ export class PanelController {
 
     updateProjectorSelection(key) {
         this._current.projectedNeighbor = key;
-        this.pm.vis.projectors.update({states: this._current.allNeighbors[key]});
+        this.pm.vis.projectors.update({
+            states: this._current.allNeighbors[key],
+            loc: key
+        });
     }
 
     updateProjectorData(allNeighbors) {
@@ -134,7 +138,7 @@ export class PanelController {
 
 
     cleanPanels() {
-        this.pm.closeWordProjector();
+        this.pm.closeAllRight();
         this.pm.removeMediumPanel();
     }
 
@@ -255,9 +259,9 @@ export class PanelController {
 
                         const {main, extra} = this.pm.getMediumPanel();
 
-                        const d = <{in:any, compare:any, neighbors:any}>JSON.parse(data);
+                        const d = <{ in: any, compare: any, neighbors: any }>JSON.parse(data);
 
-                        console.log(d,"--- d");
+                        console.log(d, "--- d");
                         this.update(d.compare, main, null);
 
                         this.updateProjectorData(d.neighbors);
@@ -268,6 +272,22 @@ export class PanelController {
 
 
             })
+
+        this.eventHandler.bind(StateProjector.events.clicked,
+            (d: { loc: string, d: StateDesc }) => {
+                console.log(d, "--- d");
+
+                S2SApi.trainDataIndices([d.d.id], d.loc).then(data => {
+                    const raw_data = <TrainDataIndexResponse> JSON.parse(data);
+
+                    const res = raw_data.res[0];
+                    this.pm.getInfoPanel().setTrans(res.src, res.tgt);
+
+                    console.log(raw_data, "--- data");
+                })
+
+            })
+
 
         this.pm.panels.projectorSelect
             .on('change', () => {

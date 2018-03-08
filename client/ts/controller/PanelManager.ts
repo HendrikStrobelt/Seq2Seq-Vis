@@ -40,6 +40,32 @@ function initPanel<T=WordLine>(select): VisColumn<T> {
     }
 };
 
+
+export class InfoPanel{
+    private tgt: D3Sel;
+    private src: D3Sel;
+
+    constructor(private parent:D3Sel){
+        parent.html('<div class="info_panel">' +
+            '<div class="src"></div>' +
+            '<div class="tgt"></div>' +
+            '</div>')
+
+        this.src = parent.select('.src');
+        this.tgt = parent.select('.tgt');
+    }
+
+
+    setTrans(src:string, tgt:string){
+
+        console.log(this.src, src,"--- this.src");
+        this.src.text(src);
+        this.tgt.text(tgt);
+    }
+
+}
+
+
 export class PanelManager {
 
 
@@ -49,7 +75,8 @@ export class PanelManager {
         box_width: <number> 40,
         wordProjector: <WordProjector> null,
         closeWordsList: <CloseWordList> null,
-        hasMediumPanel: <boolean> false
+        hasMediumPanel: <boolean> false,
+        infoPanel: <InfoPanel>null,
     };
 
     private _vis = {
@@ -393,6 +420,7 @@ export class PanelManager {
 
     getWordProjector() {
         if (this._current.wordProjector === null) {
+            this.closeAllRight();
             this._current.wordProjector = this._createWordProjector({
                 col: this._vis.right.selection,
                 className: "word_projector",
@@ -404,12 +432,24 @@ export class PanelManager {
         return this._current.wordProjector;
     }
 
-    closeWordProjector() {
-        if (this._current.wordProjector) {
+
+    getInfoPanel() {
+        if (this._current.infoPanel === null){
+            this.closeAllRight();
+            this._current.infoPanel = new InfoPanel(this._vis.right.selection);
+        }
+        return this._current.infoPanel
+
+    }
+
+
+    closeAllRight() {
+        // if (this._current.wordProjector) {
             this._vis.right.selection.selectAll('*').remove();
             this._vis.right = initPanel(this._vis.right.selection);
             this._current.wordProjector = null;
-        }
+            this._current.infoPanel = null;
+        // }
     }
 
 

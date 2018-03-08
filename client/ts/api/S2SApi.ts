@@ -3,6 +3,14 @@ import {LooseObject} from "../etc/LocalTypes";
 import {WordLineData} from "../vis/WordLine";
 import {AttentionVisData} from "../vis/AttentionVis";
 
+export type TrainDataIndexResponse = {
+    ids: number[],
+    loc: string,
+    res: { attn: number[][], src: string, tgt: string, tokenId: number, sentId: number }[]
+
+}
+
+
 export class S2SApi {
 
 
@@ -45,6 +53,17 @@ export class S2SApi {
             .get(payload)
     }
 
+    static trainDataIndices(indices: number[], loc: string) {
+        //http://0.0.0.0:8080/api/train_data_for_index?indices=123%2C333&loc=src
+        const request = Networking.ajax_request('/api/train_data_for_index');
+        const payload = new Map([['indices', indices.join(',')],
+            ['loc', loc]]);
+
+        return request
+            .get(payload)
+
+
+    }
 
 }
 

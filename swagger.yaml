@@ -94,6 +94,17 @@ paths:
         200:
           description: return list details
 
+  /train_data_for_index:
+    get:
+      tags: [Index, All]
+      operationId: server.train_data_for_index
+      summary: Get data from training set for specific index id
+      parameters:
+        - $ref: '#/parameters/indices'
+        - $ref: '#/parameters/loc'
+      responses:
+        200:
+          description: return list details
 
 parameters:
   inSentence:

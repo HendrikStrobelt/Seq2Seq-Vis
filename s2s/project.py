@@ -36,6 +36,7 @@ class S2SProject:
                         iid, token = line.split()
                         iid = int(iid)
                         self.dicts['i2t'][h][iid] = token
+                        self.dicts['i2t'][h][0] = '<unk>' # todo: hack
                         self.dicts['t2i'][h][token] = iid
                     raw = f.readline()
 
@@ -57,25 +58,35 @@ class S2SProject:
                 tokens.append(vocab[t])
         return " ".join(tokens)
 
-    def get_train_for_index(self, ix, data_src='tgt'):
-        sentIx, tokIx = self.convert_result_to_correct_index(ix)
-        # Get raw list of tokens
-        src_in = self.train_data['src'][sentIx]
-        tgt_in = self.train_data['tgt'][sentIx]
-        # Convert to text
-        if data_src == 'tgt':
-            src = self.ix2text(src_in, self.dicts['i2t']['src'])
-            tgt = self.ix2text(tgt_in, self.dicts['i2t']['tgt'], tokIx)
-        else:
-            src = self.ix2text(src_in, self.dicts['i2t']['src'], tokIx)
-            tgt = self.ix2text(tgt_in, self.dicts['i2t']['tgt'])
-        # attn = f['attn']['attn'][sentIx]
-        # src_len = compute_sent_length(src_in)
-        # tgt_len = compute_sent_length(tgt_in)
-        # attn = attn[:tgt_len,:src_len]
+    def get_train_for_index(self, ixs, data_src='tgt'):
+
+        # Compute length of a sentence when ignoring padding
+        def compute_sent_length(array):
+            return np.sum([1 for t in array if t != 1])
+
+        res = []
+        for ix in ixs:
+            sentIx, tokIx = self.convert_result_to_correct_index(ix)
+            # Get raw list of tokens
+            src_in = self.train_data['src'][sentIx]
+            tgt_in = self.train_data['tgt'][sentIx]
+            # Convert to text
+            if data_src == 'tgt':
+                src = self.ix2text(src_in, self.dicts['i2t']['src'])
+                tgt = self.ix2text(tgt_in, self.dicts['i2t']['tgt'], tokIx)
+            else:
+                src = self.ix2text(src_in, self.dicts['i2t']['src'], tokIx)
+                tgt = self.ix2text(tgt_in, self.dicts['i2t']['tgt'])
+
+            attn = self.train_data['attn'][sentIx]
+            src_len = compute_sent_length(src_in)
+            tgt_len = compute_sent_length(tgt_in)
+            attn = attn[:tgt_len, :src_len]
+            res.append({'src': src, 'tgt': tgt, 'attn': attn.tolist(),
+                        'sentId': sentIx, 'tokenId': tokIx})
         # print(src)
         # print(tgt)
-        return src, tgt
+        return res
 
     def get_index(self, name):
         if name not in self.indices:

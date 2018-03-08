@@ -2,13 +2,20 @@ import {VComponent} from "./VisualComponent";
 import * as d3 from 'd3'
 import {ZoomTransform} from "d3-zoom";
 
-type StateDesc = { id: number, occ: number[][], pivot: number, pos: number[] }
+export type StateDesc = { id: number, occ: number[][], pivot: number, pos: number[] }
 
 export interface StateProjectorData {
-    states: StateDesc[]
+    states: StateDesc[],
+    loc: string
 }
 
 export class StateProjector extends VComponent<StateProjectorData> {
+
+    static events = {
+        clicked: 'state_projector_clicked',
+        // wordSelected: 'wordline_word_selected'
+    };
+
     protected options = {
         pos: {x: 0, y: 0},
         css_class_main: 'state_projector'
@@ -20,7 +27,8 @@ export class StateProjector extends VComponent<StateProjectorData> {
         yScale: d3.scaleLinear(),
         zoom: null,
         noOfLines: 1,
-        pivots: <StateDesc[][]>[[]]
+        pivots: <StateDesc[][]>[[]],
+        loc: 'src'
     };
 
     constructor(d3Parent, eventHandler?, options: {} = {}) {
@@ -78,6 +86,8 @@ export class StateProjector extends VComponent<StateProjectorData> {
 
         cur.pivots = [];
 
+        cur.loc = data.loc === 'encoder' ? 'src' : 'tgt';
+
         for (let pT = 0; pT < cur.noOfLines; pT++) {
             cur.pivots.push(st.filter(d => (d.pivot > -1) && (d.occ[0][2] == pT))
                 .sort((a, b) => a.pivot - b.pivot));
@@ -126,7 +136,7 @@ export class StateProjector extends VComponent<StateProjectorData> {
                     fill: 'none',
                     stroke: 'red',
                     'stroke-width': 2,
-                    'pointer-events':'none'
+                    'pointer-events': 'none'
                 })
                 .merge(allL)
                 .attrs({
@@ -139,6 +149,10 @@ export class StateProjector extends VComponent<StateProjectorData> {
         pps.on('mouseout', () => {
             this.layers.main.selectAll('.hoverLine').remove()
         })
+
+        pps.on('click',
+            d => this.eventHandler
+                .trigger(StateProjector.events.clicked, {loc: cur.loc, d: d}));
 
 
         this.layers.fg.selectAll('.pl').remove();
@@ -154,8 +168,8 @@ export class StateProjector extends VComponent<StateProjectorData> {
     private lineDraw(onlyPivots: StateDesc[], className: string) {
         const cur = this._current;
 
-        console.log(onlyPivots,"--- onlyPivots");
-        
+        console.log(onlyPivots, "--- onlyPivots");
+
         const line = d3.line<StateDesc>()
             .x(d => cur.xScale(d.pos[0]))
             .y(d => cur.yScale(d.pos[1]))
