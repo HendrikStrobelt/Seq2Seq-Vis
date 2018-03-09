@@ -83,7 +83,7 @@ def closest_vector(index, v, r=5):
     return res
 
 
-def all_neighbors(project, translations, neighbors, p_method='tsne'):
+def all_neighbors(project, translations, neighbors, p_method='pca'):
     pca = P_METHODS[p_method]
     # pca = umap.UMAP()#TSNE(n_components=2)
 
@@ -169,7 +169,7 @@ def all_neighbors(project, translations, neighbors, p_method='tsne'):
         #
         for i in range(len(positions)):
             nb_summary_list[i]['pos'] = positions[i].tolist()
-            nb_summary_list[i]['v']
+            del nb_summary_list[i]['v']
 
         res[neighborhood] = nb_summary_list
 

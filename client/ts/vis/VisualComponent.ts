@@ -39,7 +39,7 @@ export abstract class VComponent<DataInterface> {
 
 
     protected id: string;
-    protected parent: any;
+    protected parent: D3Sel;
     protected abstract options: { pos: { x: number, y: number }, [key: string]: any };
     protected base: D3Sel;
     protected layers: { main?: D3Sel, fg?: D3Sel, bg?: D3Sel, [key: string]: D3Sel };

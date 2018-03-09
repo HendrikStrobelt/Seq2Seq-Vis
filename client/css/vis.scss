@@ -231,14 +231,40 @@ $highlight-color: #d62f30;
     &.pl_1 {
       fill: #9e9e5f;
     }
+
+    &.selected{
+      stroke: #9c605f;
+      stroke-width: 2px;
+    }
   }
 
   .endPoint {
-    fill: #9c605f!important;
+    fill: #9c605f !important;
   }
   .startPoint {
-    fill: #7d9c5f!important;
+    fill: #7d9c5f !important;
   }
 
+}
+
+.info_panel {
+  .translation {
+    padding-bottom: 8px;
+  }
+  .src {
+    padding: 3px;
+    background-color: rgba(87, 147, 217, 0.39);
+  }
+  .tgt {
+    padding: 3px;
+    background-color: rgba(233, 200, 97, 0.42);
+  }
+
+  .highlight{
+    font-weight: bold;
+    padding: 1px;
+    color: white;
+    background-color: #9c605f;
+  }
 }
 

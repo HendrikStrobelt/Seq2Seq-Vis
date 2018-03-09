@@ -1,6 +1,10 @@
 import {VComponent} from "./VisualComponent";
 import * as d3 from 'd3'
-import {ZoomTransform} from "d3-zoom";
+// import * as d3_lasso from 'd3-lasso'
+
+
+// declare function require(name:string);
+// let lasso = require('d3-lasso');
 
 export type StateDesc = { id: number, occ: number[][], pivot: number, pos: number[] }
 
@@ -10,6 +14,7 @@ export interface StateProjectorData {
 }
 
 export class StateProjector extends VComponent<StateProjectorData> {
+
 
     static events = {
         clicked: 'state_projector_clicked',
@@ -28,7 +33,8 @@ export class StateProjector extends VComponent<StateProjectorData> {
         zoom: null,
         noOfLines: 1,
         pivots: <StateDesc[][]>[[]],
-        loc: 'src'
+        loc: 'src',
+        pivotNeighbors: <{ [key: number]: { [key: number]: StateDesc[] } }> {}
     };
 
     constructor(d3Parent, eventHandler?, options: {} = {}) {
@@ -38,6 +44,8 @@ export class StateProjector extends VComponent<StateProjectorData> {
 
     protected _init() {
         const zoom = d3.zoom()
+            .filter(() => (!(<MouseEvent>d3.event).button)
+                && (<MouseEvent>d3.event).shiftKey)
             .scaleExtent([1 / 2, 4])
             .on("zoom", () => this._zoomLayers(d3.event.transform));
         this._current.zoom = zoom;
@@ -52,6 +60,7 @@ export class StateProjector extends VComponent<StateProjectorData> {
                 this.base.select('#zoomRect')
                     .transition().duration(200)
                     .call(<any>zoom.transform, d3.zoomIdentity));
+
 
     }
 
@@ -82,12 +91,21 @@ export class StateProjector extends VComponent<StateProjectorData> {
         cur.xScale.domain([minX, minX + diffX]).range([5, 495]);
         cur.yScale.domain([minY, minY + diffY]).range([5, 495]);
 
-        cur.noOfLines = st.filter(d => d.pivot == 0).length;
-
-        cur.pivots = [];
-
         cur.loc = data.loc === 'encoder' ? 'src' : 'tgt';
 
+        cur.pivotNeighbors = {};
+
+        st.forEach(stt => stt.occ.forEach(occ => {
+            const nn = cur.pivotNeighbors[occ[2]] || {};
+            const nnn = nn[occ[3]] || [];
+            nnn.push(stt);
+            nn[occ[3]] = nnn;
+            cur.pivotNeighbors[occ[2]] = nn;
+        }));
+
+
+        cur.pivots = [];
+        cur.noOfLines = st.filter(d => d.pivot == 0).length;
         for (let pT = 0; pT < cur.noOfLines; pT++) {
             cur.pivots.push(st.filter(d => (d.pivot > -1) && (d.occ[0][2] == pT))
                 .sort((a, b) => a.pivot - b.pivot));
@@ -152,14 +170,15 @@ export class StateProjector extends VComponent<StateProjectorData> {
 
         pps.on('click',
             d => this.eventHandler
-                .trigger(StateProjector.events.clicked, {loc: cur.loc, d: d}));
+                .trigger(StateProjector.events.clicked, {
+                    loc: cur.loc,
+                    d: [d.id]
+                }));
 
 
         this.layers.fg.selectAll('.pl').remove();
         this.layers.fg.selectAll('.plPoint').remove();
         for (let pT = 0; pT < cur.noOfLines; pT++) {
-            // const onlyPivots = states.filter(d => (d.pivot > -1) && (d.occ[0][2] == pT))
-            //     .sort((a, b) => a.pivot - b.pivot);
             this.lineDraw(cur.pivots[pT], 'pl_' + pT);
         }
 
@@ -172,7 +191,7 @@ export class StateProjector extends VComponent<StateProjectorData> {
 
         const line = d3.line<StateDesc>()
             .x(d => cur.xScale(d.pos[0]))
-            .y(d => cur.yScale(d.pos[1]))
+            .y(d => cur.yScale(d.pos[1]));
         // .curve(d3.curveCardinal)
 
         let pls = this.layers.fg.selectAll('.pl.' + className)
@@ -191,9 +210,51 @@ export class StateProjector extends VComponent<StateProjectorData> {
         plPoints.attrs({
             cx: d => cur.xScale(d.pos[0]),
             cy: d => cur.yScale(d.pos[1]),
-            r: 3
+            r: 5
         })
         plPoints.classed('startPoint', d => d.pivot === 0);
         plPoints.classed('endPoint', d => d.pivot === onlyPivots.length - 1);
+
+
+        const myNeighbors = (d) => cur.pivotNeighbors[d.occ[0][2]][d.occ[0][3]]
+            .filter(d => d.id > -1);
+
+
+        // plPoints.on('click', d => {
+        //
+        //     const allL = this.layers.main.selectAll('.hoverLine')
+        //         .data(myNeighbors(d));
+        //     allL.exit().remove();
+        //
+        //     allL.enter().append('line').attr('class', 'hoverLine')
+        //         .styles({
+        //             fill: 'none',
+        //             stroke: 'red',
+        //             'stroke-width': 2,
+        //             'pointer-events': 'none'
+        //         })
+        //         .merge(allL)
+        //         .attrs({
+        //             x1: cur.xScale(d.pos[0]),
+        //             y1: cur.yScale(d.pos[1]),
+        //             x2: o => cur.xScale(o.pos[0]),
+        //             y2: o => cur.yScale(o.pos[1])
+        //         })
+        // })
+
+        plPoints.on('click',
+            d => {
+            this.layers.fg.selectAll('.plPoint')
+                .classed('selected', dd => dd==d);
+
+
+
+            this.eventHandler
+                .trigger(StateProjector.events.clicked, {
+                    loc: cur.loc,
+                    d: myNeighbors(d).map(nn => nn.id)
+                })});
+
+
     }
 }

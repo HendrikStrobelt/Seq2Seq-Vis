@@ -42,25 +42,44 @@ function initPanel<T=WordLine>(select): VisColumn<T> {
 
 
 export class InfoPanel{
+    private infoPanel: D3Sel;
     private tgt: D3Sel;
     private src: D3Sel;
 
     constructor(private parent:D3Sel){
         parent.html('<div class="info_panel">' +
-            '<div class="src"></div>' +
-            '<div class="tgt"></div>' +
+            // '<div class="src"></div>' +
+            // '<div class="tgt"></div>' +
             '</div>')
 
-        this.src = parent.select('.src');
-        this.tgt = parent.select('.tgt');
+        this.infoPanel = parent.select('.info_panel')
+        // this.src = parent.select('.src');
+        // this.tgt = parent.select('.tgt');
     }
 
 
-    setTrans(src:string, tgt:string){
+    cleanData(s:string){
+       return s.replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+            .replace(new RegExp('--\\|'),'<span class="highlight">')
+            .replace(new RegExp('\\|--'),'</span>')
+    }
 
-        console.log(this.src, src,"--- this.src");
-        this.src.text(src);
-        this.tgt.text(tgt);
+    setTrans(translations:{src:string, tgt:string}[]){
+
+        let tSel = this.infoPanel.selectAll(".translation").data(translations);
+        tSel.exit().remove();
+
+        const tEnter = tSel.enter().append('div').attr('class','translation');
+        tEnter.html('<div class="src"></div><div class="tgt"></div>');
+
+        tSel = tEnter.merge(tSel);
+        tSel.select('.src').html(d => this.cleanData(d.src));
+        tSel.select('.tgt').html(d => this.cleanData(d.tgt));
+
+
+
     }
 
 }

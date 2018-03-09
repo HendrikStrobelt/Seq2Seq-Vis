@@ -4,6 +4,7 @@ import * as _ from "lodash";
 import {PanelController} from "./controller/PanelController";
 import {S2SApi, Translation} from "./api/S2SApi";
 import '../css/main.scss'
+import URLHandler from "./etc/URLHandler";
 
 
 window.onload = () => {
@@ -18,14 +19,8 @@ window.onload = () => {
 
     //    --- EVENTS ---
 
-    const updateAllVis = () => {
-        $('#spinner').show();
-        const value = (<HTMLInputElement> d3.select('#query_input').node()).value;
-
-
-
-
-        S2SApi.translate({input: value.trim()})
+    const translate = (value) => {
+        S2SApi.translate({input: value})
             .then((data: string) => {
                 const raw_data = JSON.parse(data);
                 console.log(raw_data, "--- data");
@@ -38,24 +33,39 @@ window.onload = () => {
             .catch((error: Error) => console.log(error, "--- error"));
     };
 
+    const updateAllVis = () => {
+        $('#spinner').show();
+        const value = (<HTMLInputElement> d3.select('#query_input').node())
+            .value.trim();
+
+        URLHandler.setURLParam('in', value, false);
+        translate(value);
+    };
     const updateDebounced = _.debounce(updateAllVis, 1000);
 
-    d3.select('#query_button').on('click', updateAllVis);
 
-    d3.select('#query_input').on('keypress', () => {
-        const keycode = d3.event.keyCode;
-        if (d3.event instanceof KeyboardEvent
-        //&& (keycode === 13 || keycode === 32)
-        ) {
+    /* ****************
+    * URL param 'in' triggers query
+    * *****************/
 
-            updateDebounced();
-            // updateAllVis();
-        }
-    })
+    const input_from_url = URLHandler.parameters['in'];
+    if (input_from_url) {
+        (<HTMLInputElement> d3.select('#query_input').node())
+            .value = input_from_url;
+        translate(input_from_url);
+    }
+    d3.select('#query_input')
+        .on('keypress', () => {
+            const keycode = d3.event.keyCode;
+            if (d3.event instanceof KeyboardEvent
+            //&& (keycode === 13 || keycode === 32)
+            ) {
 
+                updateDebounced();
+                // updateAllVis();
+            }
+        })
 
-    // little eventHandling
-    // globalEvents.bind('svg-resize', ({width, height}) => svg.attrs({width, height}));
 
     function windowResize() {
         const width = window.innerWidth;

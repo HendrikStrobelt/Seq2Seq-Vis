@@ -274,14 +274,14 @@ export class PanelController {
             })
 
         this.eventHandler.bind(StateProjector.events.clicked,
-            (d: { loc: string, d: StateDesc }) => {
+            (d: { loc: string, d: number[] }) => {
                 console.log(d, "--- d");
 
-                S2SApi.trainDataIndices([d.d.id], d.loc).then(data => {
+                S2SApi.trainDataIndices(d.d, d.loc).then(data => {
                     const raw_data = <TrainDataIndexResponse> JSON.parse(data);
 
-                    const res = raw_data.res[0];
-                    this.pm.getInfoPanel().setTrans(res.src, res.tgt);
+                    // const res = raw_data.res;
+                    this.pm.getInfoPanel().setTrans(raw_data.res);
 
                     console.log(raw_data, "--- data");
                 })

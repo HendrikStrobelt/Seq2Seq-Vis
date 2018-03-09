@@ -2,7 +2,7 @@
  * Created by hen on 5/15/17.
  */
 
-export class URLHandler {
+export default class URLHandler {
 
     static basicURL() {
         const url_path = window.location.pathname.split('/').slice(0, -2).join('/');
@@ -14,12 +14,12 @@ export class URLHandler {
      * Read all URL parameters into a map.
      * @returns {Map} the url parameters as a key-value store (ES6 map)
      */
-    static parameters() {
+    static get parameters(): object {
         // Adapted from:  http://stackoverflow.com/questions/2090551/parse-query-string-in-javascript
         const query = window.location.search.substring(1);
         const vars = query.split('&');
 
-        const urlParameters = new Map();
+        const urlParameters = {};
 
         const isInt = x => (/^[0-9]+$/).test(x);
         const isFloat = x => (/^[0-9]+\.[0-9]*$/).test(x);
@@ -36,7 +36,7 @@ export class URLHandler {
                 }
 
                 if (raw_value.length < 1) {
-                    urlParameters.set(key, isArray ? [] : '');
+                    urlParameters[key] = isArray ? [] : '';
                 } else {
                     const [first, ...rest] = raw_value.split(',').map(val => {
                         if (isInt(val)) {
@@ -47,7 +47,7 @@ export class URLHandler {
 
                         return val;
                     });
-                    urlParameters.set(key, isArray ? [first, ...rest] : first);
+                    urlParameters[key] = isArray ? [first, ...rest] : first;
                 }
             }
         });
@@ -57,24 +57,25 @@ export class URLHandler {
     }
 
     /**
-     * updates the 'urlParameters' with the current values from URL
-     * @param urlParameters
+     * Generates a key-value map of all URL params and replaces replaceKeys
+     * @param updateKeys
      */
-    static updateParameters(urlParameters) {
-        const currentParams = URLHandler.parameters();
-        currentParams.forEach((v, k) => urlParameters.set(k, v));
+    static enrichParameters(updateKeys) {
+        const currentParams = URLHandler.parameters;
+        Object.keys(updateKeys).forEach((k) => currentParams[k] = updateKeys[k])
+        return currentParams;
     }
-
 
     /**
      * Generates an URL string from a map of url parameters
-     * @param {Map} urlParameters - the map of parameters
+     * @param {{}} urlParameters - the map of parameters
      * @returns {string} - an URI string
      */
-    static urlString(urlParameters) {
+    static urlString(urlParameters: object) {
         const attr = [];
-        urlParameters.forEach((v, k) => {
-            if (v != undefined) {
+        Object.keys(urlParameters).forEach(k => {
+            const v = urlParameters[k];
+            if (v !== undefined) {
                 let value = v;
                 if (Array.isArray(v)) value = '..' + v.join(',');
                 attr.push(encodeURI(k + '=' + value))
@@ -91,19 +92,19 @@ export class URLHandler {
         return res;
     }
 
-    static setURLParam({key, value, addToBrowserHistory = true}) {
-        const currentParams = URLHandler.parameters();
-        currentParams.set(key, value);
-        URLHandler.updateUrl({urlParameters: currentParams, addToBrowserHistory})
+    static setURLParam(key: string, value: string, addToBrowserHistory = true) {
+        const currentParams = URLHandler.parameters;
+        currentParams[key] = value;
+        URLHandler.updateUrl(currentParams, addToBrowserHistory);
     }
 
-    static updateUrl({urlParameters, addToBrowserHistory = true}) {
+    static updateUrl(urlParameters: object, addToBrowserHistory = true) {
         if (addToBrowserHistory) {
             window.history.pushState(urlParameters, '',
-              URLHandler.urlString(urlParameters))
+                URLHandler.urlString(urlParameters))
         } else {
             window.history.replaceState(urlParameters, '',
-              URLHandler.urlString(urlParameters))
+                URLHandler.urlString(urlParameters))
         }
     }
 

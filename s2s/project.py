@@ -53,7 +53,7 @@ class S2SProject:
         tokens = []
         for ix, t in enumerate(array):
             if ix == highlight:
-                tokens.append("___" + vocab[t] + "___")
+                tokens.append("--|" + vocab[t] + "|--")
             elif t != 1:
                 tokens.append(vocab[t])
         return " ".join(tokens)
