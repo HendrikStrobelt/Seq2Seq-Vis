@@ -103,6 +103,10 @@
   opacity: .3; }
   .stateprojector .pp:hover {
     opacity: .9; }
+  .stateprojector .pp.selected {
+    stroke: #9c605f;
+    stroke-width: 2px;
+    opacity: 1; }
 .stateprojector .pl {
   fill: none;
   stroke: cadetblue;
@@ -122,20 +126,27 @@
   fill: #9c605f !important; }
 .stateprojector .startPoint {
   fill: #7d9c5f !important; }
+.stateprojector .hoverLine {
+  fill: none;
+  stroke: #9c605f;
+  opacity: .1;
+  stroke-width: 2px;
+  pointer-events: none; }
 
-.info_panel .translation {
-  padding-bottom: 8px; }
-.info_panel .src {
-  padding: 3px;
-  background-color: rgba(87, 147, 217, 0.39); }
-.info_panel .tgt {
-  padding: 3px;
-  background-color: rgba(233, 200, 97, 0.42); }
-.info_panel .highlight {
-  font-weight: bold;
-  padding: 1px;
-  color: white;
-  background-color: #9c605f; }
+.info_panel {
+  font-weight: bold; }
+  .info_panel .translation {
+    padding-bottom: 8px; }
+  .info_panel .src {
+    padding: 3px;
+    background-color: rgba(87, 147, 217, 0.39); }
+  .info_panel .tgt {
+    padding: 3px;
+    background-color: rgba(233, 200, 97, 0.42); }
+  .info_panel .highlight {
+    padding: 1px;
+    color: white;
+    background-color: #9c605f; }
 
 body {
   font-family: 'Source Sans Pro', sans-serif;

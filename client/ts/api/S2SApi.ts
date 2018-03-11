@@ -6,7 +6,10 @@ import {AttentionVisData} from "../vis/AttentionVis";
 export type TrainDataIndexResponse = {
     ids: number[],
     loc: string,
-    res: { attn: number[][], src: string, tgt: string, tokenId: number, sentId: number }[]
+    res: {
+        attn: number[][], src: string, tgt: string,
+        tokenId: number, sentId: number
+    }[]
 
 }
 
@@ -47,7 +50,7 @@ export class S2SApi {
         const request = Networking.ajax_request('/api/compare_translation');
         const payload = new Map([
             ['in', pivot],
-            ['compare', compare]]);
+            ['compare', compare.join('|')]]);
 
         return request
             .get(payload)

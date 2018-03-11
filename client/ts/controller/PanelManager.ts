@@ -493,7 +493,7 @@ export class PanelManager {
         // })
     }
 
-    setProjectorOptions(options: string[], defaultOption = null) {
+    updateProjectionSelectField(options: string[], defaultOption = null) {
         const op = this.panels.projectorSelect
             .selectAll('option').data(options);
         op.exit().remove();

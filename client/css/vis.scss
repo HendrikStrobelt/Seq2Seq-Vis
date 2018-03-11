@@ -213,6 +213,12 @@ $highlight-color: #d62f30;
     &:hover {
       opacity: .9;
     }
+    &.selected {
+      stroke: #9c605f;
+      stroke-width: 2px;
+      opacity: 1;
+    }
+
   }
   .pl {
     fill: none;
@@ -232,7 +238,7 @@ $highlight-color: #d62f30;
       fill: #9e9e5f;
     }
 
-    &.selected{
+    &.selected {
       stroke: #9c605f;
       stroke-width: 2px;
     }
@@ -245,9 +251,19 @@ $highlight-color: #d62f30;
     fill: #7d9c5f !important;
   }
 
+  .hoverLine {
+    fill: none;
+    stroke: #9c605f;
+    opacity: .1;
+    stroke-width: 2px;
+    pointer-events: none;
+
+  }
+
 }
 
 .info_panel {
+  font-weight: bold;
   .translation {
     padding-bottom: 8px;
   }
@@ -260,8 +276,7 @@ $highlight-color: #d62f30;
     background-color: rgba(233, 200, 97, 0.42);
   }
 
-  .highlight{
-    font-weight: bold;
+  .highlight {
     padding: 1px;
     color: white;
     background-color: #9c605f;

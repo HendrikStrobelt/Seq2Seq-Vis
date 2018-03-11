@@ -20,6 +20,7 @@ from s2s.vectorIndex import VectorIndex
 __author__ = 'Hendrik Strobelt, Sebastian Gehrmann'
 CONFIG_FILE_NAME = 's2s.yaml'
 projects = {}
+simple_cache = []
 
 logging.basicConfig(level=logging.INFO)
 app = connexion.App(__name__)
@@ -83,8 +84,12 @@ def closest_vector(index, v, r=5):
     return res
 
 
-def all_neighbors(project, translations, neighbors, p_method='pca'):
+def project_states(vectors, p_method='pca'):
     pca = P_METHODS[p_method]
+    return pca.fit_transform(vectors)
+
+
+def all_neighbors(project, translations, neighbors, p_method='tsne'):
     # pca = umap.UMAP()#TSNE(n_components=2)
 
     res = {}
@@ -150,7 +155,7 @@ def all_neighbors(project, translations, neighbors, p_method='pca'):
                         'v': index.get_vector(cand_id),
                         'occ': [[n_cand_x[0], n_cand_x[1], all_cand['t'],
                                  all_cand['i']]],
-                        'pivot': -1
+                        'pivot': None
                     }
 
         nb_summary_list = list(nb_summary.values())
@@ -160,12 +165,12 @@ def all_neighbors(project, translations, neighbors, p_method='pca'):
                 nb_summary_list.append({
                     'id': -1000 * (t_id + 1) + s_id,
                     'v': state,
-                    'occ': [(-1, 0.0, t_id, s_id)],
-                    'pivot': s_id
+                    'occ': [],
+                    'pivot': {'trans_ID': t_id, 'word_ID': s_id}
                 })
 
         #
-        positions = pca.fit_transform([x['v'] for x in nb_summary_list])
+        positions = project_states([x['v'] for x in nb_summary_list], p_method)
         #
         for i in range(len(positions)):
             nb_summary_list[i]['pos'] = positions[i].tolist()
@@ -191,6 +196,16 @@ def get_translation(**request):
     in_sentence = request['in']
     neighbors = request.get('neighbors', [])
 
+    hit = None
+    for test_c in simple_cache:
+        if test_c['in_sentence'] == in_sentence:
+            hit = test_c
+    if hit:
+        # move to front
+        simple_cache.remove(hit)
+        simple_cache.insert(0, hit)
+        return hit['res']
+
     translations = translate(current_project, [in_sentence])
     # print(translations)
     all_n = all_neighbors(current_project, translations, neighbors)
@@ -199,6 +214,10 @@ def get_translation(**request):
     #       all_n)
     res = translations[0]
     res['allNeighbors'] = all_n
+
+    simple_cache.insert(0, {'in_sentence': in_sentence, 'res': res})
+    if len(simple_cache) > 4:
+        simple_cache.pop()
 
     return res
 

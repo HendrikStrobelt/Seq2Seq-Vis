@@ -6,7 +6,12 @@ import {AttentionVis, AttentionVisData} from "../vis/AttentionVis";
 import {WordProjector, WordProjectorClickedEvent} from "../vis/WordProjector";
 import {S2SApi, TrainDataIndexResponse, Translation} from "../api/S2SApi";
 import {PanelManager} from "./PanelManager";
-import {StateDesc, StateProjector} from "../vis/StateProjector";
+import {
+    StateDesc,
+    StateProjector,
+    StateProjectorClickEvent, StateProjectorHoverEvent
+} from "../vis/StateProjector";
+import * as _ from 'lodash';
 
 
 export class PanelController {
@@ -37,7 +42,7 @@ export class PanelController {
 
     }
 
-    updateProjectorSelection(key) {
+    selectProjection(key) {
         this._current.projectedNeighbor = key;
         this.pm.vis.projectors.update({
             states: this._current.allNeighbors[key],
@@ -53,9 +58,9 @@ export class PanelController {
         const allNeighborKeys = Object.keys(allNeighbors);
         if (!cur.projectedNeighbor) cur.projectedNeighbor = allNeighborKeys[0];
 
-        this.pm.setProjectorOptions(allNeighborKeys, cur.projectedNeighbor);
+        this.pm.updateProjectionSelectField(allNeighborKeys, cur.projectedNeighbor);
 
-        this.updateProjectorSelection(cur.projectedNeighbor);
+        this.selectProjection(cur.projectedNeighbor);
     }
 
     update(raw_data, main = this.pm.vis.left, extra = this.pm.vis.zero) {
@@ -145,6 +150,7 @@ export class PanelController {
 
     updateAndShowWordProjector(data) {
         const wp = this.pm.getWordProjector();
+        console.log(data, "--- data");
         wp.update(data);
     }
 
@@ -162,7 +168,10 @@ export class PanelController {
 
         const determinePanelType = caller => {
             if ((caller === vis.left.encoder_words)) //_.includes(vis.left.encoder_extra, caller)
-                return {vType: AttentionVis.VERTEX_TYPE.Encoder, col: vis.left};
+                return {
+                    vType: AttentionVis.VERTEX_TYPE.Encoder,
+                    col: vis.left
+                };
             else if ((caller === vis.middle.encoder_words))
                 return {
                     vType: AttentionVis.VERTEX_TYPE.Encoder,
@@ -234,10 +243,29 @@ export class PanelController {
             d.caller.highlightWord(d.row, d.index, d.hovered);
 
             const {vType, col} = determinePanelType(d.caller);
+            let transID = 0;
             if (col != this.pm.vis.left) {
                 col.attention.actionHighlightEdges(d.index, vType, d.hovered);
+                transID = 1;
             }
             this.pm.vis.left.attention.actionHighlightEdges(d.index, vType, d.hovered);
+
+
+            const proj = this.pm.vis.projectors;
+
+            if (vType === AttentionVis.VERTEX_TYPE.Encoder &&
+                proj._current.loc === 'src') {
+
+                proj.actionHoverPivot(transID, d.index, d.hovered);
+
+            }
+            else if (vType === AttentionVis.VERTEX_TYPE.Decoder &&
+                proj._current.loc === 'tgt') {
+
+                proj.actionHoverPivot(transID, d.index, d.hovered);
+
+            }
+
 
         }
 
@@ -274,17 +302,49 @@ export class PanelController {
             })
 
         this.eventHandler.bind(StateProjector.events.clicked,
-            (d: { loc: string, d: number[] }) => {
-                console.log(d, "--- d");
+            (d: StateProjectorClickEvent) => {
+                d.caller.actionSelectPoints(d.pointIDs);
 
-                S2SApi.trainDataIndices(d.d, d.loc).then(data => {
+                S2SApi.trainDataIndices(d.neighborIDs, d.loc).then(data => {
                     const raw_data = <TrainDataIndexResponse> JSON.parse(data);
 
-                    // const res = raw_data.res;
                     this.pm.getInfoPanel().setTrans(raw_data.res);
-
                     console.log(raw_data, "--- data");
                 })
+
+            })
+
+
+        this.eventHandler.bind(StateProjector.events.hovered,
+            (d: StateProjectorHoverEvent) => {
+                d.caller.actionHoverPivot(d.transID, d.wordID, d.hovered);
+
+                console.log(d, "--- d");
+                const panels = [this.pm.vis.left, this.pm.vis.middle];
+
+                let vType = AttentionVis.VERTEX_TYPE.Encoder;
+
+                const visRoot = panels[d.transID];
+                if (d.loc === 'src') {
+                    visRoot.encoder_words.highlightWord(0, d.wordID, d.hovered)
+                } else {
+                    vType = AttentionVis.VERTEX_TYPE.Decoder;
+                    visRoot.decoder_words.highlightWord(0, d.wordID, d.hovered)
+                }
+
+                for (const transID in _.range(d.transID + 1)) {
+                    const visRoot = panels[transID];
+                    visRoot.attention.actionHighlightEdges(d.wordID, vType, d.hovered);
+                }
+
+                // d.caller.actionSelectPoints(d.pointIDs);
+                //
+                // S2SApi.trainDataIndices(d.neighborIDs, d.loc).then(data => {
+                //     const raw_data = <TrainDataIndexResponse> JSON.parse(data);
+                //
+                //     this.pm.getInfoPanel().setTrans(raw_data.res);
+                //     console.log(raw_data, "--- data");
+                // })
 
             })
 
@@ -292,7 +352,7 @@ export class PanelController {
         this.pm.panels.projectorSelect
             .on('change', () => {
                 const v = this.pm.panels.projectorSelect.property('value');
-                this.updateProjectorSelection(v);
+                this.selectProjection(v);
             })
 
 

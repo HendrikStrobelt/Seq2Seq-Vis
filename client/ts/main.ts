@@ -23,7 +23,7 @@ window.onload = () => {
         S2SApi.translate({input: value})
             .then((data: string) => {
                 const raw_data = JSON.parse(data);
-                console.log(raw_data, "--- data");
+                console.log(raw_data, "--- raw_data");
                 panelCtrl.update(raw_data);
                 panelCtrl.cleanPanels();
 

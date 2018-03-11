@@ -18,11 +18,23 @@ export default class URLHandler {
         // Adapted from:  http://stackoverflow.com/questions/2090551/parse-query-string-in-javascript
         const query = window.location.search.substring(1);
         const vars = query.split('&');
+        console.log(vars, "--- vars");
 
         const urlParameters = {};
 
         const isInt = x => (/^[0-9]+$/).test(x);
         const isFloat = x => (/^[0-9]+\.[0-9]*$/).test(x);
+
+        const typeCast = val => {
+            if (isInt(val)) {
+                return Number.parseInt(val, 10);
+            } else if (isFloat(val)) {
+                return Number.parseFloat(val);
+            }
+            // else:
+            return val;
+        }
+
 
         vars.forEach(v => {
             if (v.length > 0) {
@@ -37,17 +49,11 @@ export default class URLHandler {
 
                 if (raw_value.length < 1) {
                     urlParameters[key] = isArray ? [] : '';
+                } else if (isArray) {
+                    urlParameters[key] = raw_value.split(',')
+                        .map(val => typeCast(val));
                 } else {
-                    const [first, ...rest] = raw_value.split(',').map(val => {
-                        if (isInt(val)) {
-                            return Number.parseInt(val, 10);
-                        } else if (isFloat(val)) {
-                            return Number.parseFloat(val);
-                        }
-
-                        return val;
-                    });
-                    urlParameters[key] = isArray ? [first, ...rest] : first;
+                    urlParameters[key] = typeCast(raw_value);
                 }
             }
         });

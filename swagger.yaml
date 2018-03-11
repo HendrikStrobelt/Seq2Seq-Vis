@@ -120,10 +120,11 @@ parameters:
     type: string
   compareSentences:
     name: compare
-    description: list of sentences to compare against
+    description: list of sentences to compare against (tab seperated !!)
     in: query
-    type: array
     required: true
+    type: array
+    collectionFormat: pipes
     items:
       type: string
   inWord:
