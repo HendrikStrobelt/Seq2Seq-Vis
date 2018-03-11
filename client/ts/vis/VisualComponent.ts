@@ -86,7 +86,7 @@ export abstract class VComponent<DataInterface> {
      * @param defaultLayers -- create the default <g> layers: bg -> main -> fg
      * @param runInit -- run this._init() or not
      */
-    protected superInit(options: {} = {}, defaultLayers = true, runInit = true) {
+    protected superInit(options: {} = {}, defaultLayers = true, runInit = true, createSVG = true) {
         // Set default options if not specified in constructor call
         // const defaults = this.defaultOptions;
         // this.options = {};
@@ -95,20 +95,23 @@ export abstract class VComponent<DataInterface> {
         Object.keys(options).forEach(key => this.options[key] = options[key]);
 
 
-        // Create the base group element
-        this.base = SVG.group(this.parent,
-            this.constructor.name.toLowerCase() + ' ID' + this.id,
-            this.options.pos);
-
-        // create default layers: background, main, foreground
         this.layers = {};
-        if (defaultLayers) {
-            // construction order is important !
-            this.layers.bg = SVG.group(this.base, 'bg');
-            this.layers.main = SVG.group(this.base, 'main');
-            this.layers.fg = SVG.group(this.base, 'fg');
-        }
+        // Create the base group element
+        if (createSVG) {
+            this.base = SVG.group(this.parent,
+                this.constructor.name.toLowerCase() + ' ID' + this.id,
+                this.options.pos);
 
+
+            // create default layers: background, main, foreground
+            if (defaultLayers) {
+                // construction order is important !
+                this.layers.bg = SVG.group(this.base, 'bg');
+                this.layers.main = SVG.group(this.base, 'main');
+                this.layers.fg = SVG.group(this.base, 'fg');
+            }
+
+        }
         if (runInit) this._init();
     }
 

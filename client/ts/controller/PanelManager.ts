@@ -12,6 +12,7 @@ import {D3Sel, LooseObject} from "../etc/LocalTypes";
 import * as _ from "lodash";
 import {NeighborStates} from "../vis/NeighborStates";
 import {StateProjector} from "../vis/StateProjector";
+import {StatePictograms} from "../vis/StatePictograms";
 
 
 type VisColumn<DW=WordLine> = {
@@ -41,12 +42,12 @@ function initPanel<T=WordLine>(select): VisColumn<T> {
 };
 
 
-export class InfoPanel{
+export class InfoPanel {
     private infoPanel: D3Sel;
     private tgt: D3Sel;
     private src: D3Sel;
 
-    constructor(private parent:D3Sel){
+    constructor(private parent: D3Sel) {
         parent.html('<div class="info_panel">' +
             // '<div class="src"></div>' +
             // '<div class="tgt"></div>' +
@@ -58,26 +59,25 @@ export class InfoPanel{
     }
 
 
-    cleanData(s:string){
-       return s.replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-            .replace(new RegExp('--\\|'),'<span class="highlight">')
-            .replace(new RegExp('\\|--'),'</span>')
+    cleanData(s: string) {
+        return s.replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(new RegExp('--\\|'), '<span class="highlight">')
+            .replace(new RegExp('\\|--'), '</span>')
     }
 
-    setTrans(translations:{src:string, tgt:string}[]){
+    setTrans(translations: { src: string, tgt: string }[]) {
 
         let tSel = this.infoPanel.selectAll(".translation").data(translations);
         tSel.exit().remove();
 
-        const tEnter = tSel.enter().append('div').attr('class','translation');
+        const tEnter = tSel.enter().append('div').attr('class', 'translation');
         tEnter.html('<div class="src"></div><div class="tgt"></div>');
 
         tSel = tEnter.merge(tSel);
         tSel.select('.src').html(d => this.cleanData(d.src));
         tSel.select('.tgt').html(d => this.cleanData(d.tgt));
-
 
 
     }
@@ -105,7 +105,8 @@ export class PanelManager {
         right: initPanel(d3.select('.col5')),
         middle_extra: <VisColumn<BarList>> initPanel(d3.select('.col2')),
         right_extra: initPanel(d3.select('.col4')),
-        projectors: this._createProjectorPanel()
+        projectors: this._createProjectorPanel(),
+        statePicto: <StatePictograms> null // initialized in init.. requires projectors
     };
 
     panels = {
@@ -126,12 +127,18 @@ export class PanelManager {
 
         this.buildFullStack(this._vis.left);
 
+        this._vis.statePicto = this._createStatePictoPanel();
+
         // Zero
 
         this.buildDecorators(this._vis.zero);
 
     }
 
+    _createStatePictoPanel() {
+        return new StatePictograms(d3.select('#statePictos'),
+            this._vis.projectors, this.eventHandler)
+    }
 
     _createProjectorPanel() {
         const parent = d3.select('#projectorPanel').append('svg').attrs({
@@ -453,7 +460,7 @@ export class PanelManager {
 
 
     getInfoPanel() {
-        if (this._current.infoPanel === null){
+        if (this._current.infoPanel === null) {
             this.closeAllRight();
             this._current.infoPanel = new InfoPanel(this._vis.right.selection);
         }
@@ -464,10 +471,10 @@ export class PanelManager {
 
     closeAllRight() {
         // if (this._current.wordProjector) {
-            this._vis.right.selection.selectAll('*').remove();
-            this._vis.right = initPanel(this._vis.right.selection);
-            this._current.wordProjector = null;
-            this._current.infoPanel = null;
+        this._vis.right.selection.selectAll('*').remove();
+        this._vis.right = initPanel(this._vis.right.selection);
+        this._current.wordProjector = null;
+        this._current.infoPanel = null;
         // }
     }
 

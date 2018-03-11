@@ -12,6 +12,7 @@ import {
     StateProjectorClickEvent, StateProjectorHoverEvent
 } from "../vis/StateProjector";
 import * as _ from 'lodash';
+import {StatePictograms, StatePictogramsHovered} from "../vis/StatePictograms";
 
 
 export class PanelController {
@@ -48,6 +49,7 @@ export class PanelController {
             states: this._current.allNeighbors[key],
             loc: key
         });
+        this.pm.vis.statePicto.update(null);
     }
 
     updateProjectorData(allNeighbors) {
@@ -254,13 +256,13 @@ export class PanelController {
             const proj = this.pm.vis.projectors;
 
             if (vType === AttentionVis.VERTEX_TYPE.Encoder &&
-                proj._current.loc === 'src') {
+                proj.loc === 'src') {
 
                 proj.actionHoverPivot(transID, d.index, d.hovered);
 
             }
             else if (vType === AttentionVis.VERTEX_TYPE.Decoder &&
-                proj._current.loc === 'tgt') {
+                proj.loc === 'tgt') {
 
                 proj.actionHoverPivot(transID, d.index, d.hovered);
 
@@ -315,27 +317,39 @@ export class PanelController {
             })
 
 
+        const projectHovered = (loc: string, transID: number,
+                                wordID: number, hovered: boolean) => {
+            const panels = [this.pm.vis.left, this.pm.vis.middle];
+
+            let vType = AttentionVis.VERTEX_TYPE.Encoder;
+
+            const visRoot = panels[transID];
+            if (loc === 'src') {
+                visRoot.encoder_words.highlightWord(0, wordID, hovered)
+            } else {
+                vType = AttentionVis.VERTEX_TYPE.Decoder;
+                visRoot.decoder_words.highlightWord(0, wordID, hovered)
+            }
+
+            for (const tID in _.range(transID + 1)) {
+                const visRoot = panels[tID];
+                visRoot.attention.actionHighlightEdges(wordID, vType, hovered);
+            }
+
+            this.pm.vis.projectors.actionHoverPivot(transID, wordID, hovered);
+            this.pm.vis.statePicto.actionHighlightSegment(transID, wordID, hovered)
+
+
+        }
+
+
         this.eventHandler.bind(StateProjector.events.hovered,
             (d: StateProjectorHoverEvent) => {
-                d.caller.actionHoverPivot(d.transID, d.wordID, d.hovered);
+                // d.caller.actionHoverPivot(d.transID, d.wordID, d.hovered);
 
-                console.log(d, "--- d");
-                const panels = [this.pm.vis.left, this.pm.vis.middle];
 
-                let vType = AttentionVis.VERTEX_TYPE.Encoder;
+                projectHovered(d.loc, d.transID, d.wordID, d.hovered);
 
-                const visRoot = panels[d.transID];
-                if (d.loc === 'src') {
-                    visRoot.encoder_words.highlightWord(0, d.wordID, d.hovered)
-                } else {
-                    vType = AttentionVis.VERTEX_TYPE.Decoder;
-                    visRoot.decoder_words.highlightWord(0, d.wordID, d.hovered)
-                }
-
-                for (const transID in _.range(d.transID + 1)) {
-                    const visRoot = panels[transID];
-                    visRoot.attention.actionHighlightEdges(d.wordID, vType, d.hovered);
-                }
 
                 // d.caller.actionSelectPoints(d.pointIDs);
                 //
@@ -346,7 +360,26 @@ export class PanelController {
                 //     console.log(raw_data, "--- data");
                 // })
 
-            })
+            });
+
+        this.eventHandler.bind(StatePictograms.events.segmentHovered,
+            (d: StatePictogramsHovered) => {
+                const seg = d.segment;
+                // d.caller.actionHighlightSegment(seg.transID, seg.wordID, d.hovered);
+
+                projectHovered(seg.loc, seg.transID, seg.wordID, d.hovered);
+
+                this.pm.vis.projectors
+                    .actionHoverRegion([{
+                        x: seg.x,
+                        y: seg.y,
+                        h: seg.oh,
+                        w: seg.ow
+                    }], d.hovered)
+
+
+            }
+        )
 
 
         this.pm.panels.projectorSelect

@@ -47,7 +47,7 @@ export class StateProjector extends VComponent<StateProjectorData> {
         css_class_main: 'state_projector'
     };
 
-    _current = {
+    protected _current = {
         hidden: false,
         xScale: d3.scaleLinear(),
         yScale: d3.scaleLinear(),
@@ -55,8 +55,22 @@ export class StateProjector extends VComponent<StateProjectorData> {
         noOfLines: 1,
         pivots: <StateDesc[][]>[[]],
         loc: 'src',
-        pivotNeighbors: <{ [key: number]: { [key: number]: StateDesc[] } }> {}
+        pivotNeighbors: <{ [key: number]: { [key: number]: StateDesc[] } }> {},
+        project: {w: 500, h: 500}
     };
+
+    // readonly getter
+    get current() {
+        return this._current
+    }
+
+    get states(): StateDesc[] {
+        return this.data.states;
+    }
+
+    get loc(): string {
+        return this.current.loc;
+    }
 
     constructor(d3Parent, eventHandler?, options: {} = {}) {
         super(d3Parent, eventHandler);
@@ -109,8 +123,8 @@ export class StateProjector extends VComponent<StateProjectorData> {
         // }
 
         const cur = this._current;
-        cur.xScale.domain([minX, minX + diffX]).range([5, 495]);
-        cur.yScale.domain([minY, minY + diffY]).range([5, 495]);
+        cur.xScale.domain([minX, minX + diffX]).range([5, cur.project.w]);
+        cur.yScale.domain([minY, minY + diffY]).range([5, cur.project.h]);
 
         cur.loc = data.loc === 'encoder' ? 'src' : 'tgt';
 
@@ -134,12 +148,12 @@ export class StateProjector extends VComponent<StateProjectorData> {
 
 
         this.parent.attrs({
-            'width': 500,
-            'height': 500
+            'width': cur.project.w,
+            'height': cur.project.h,
         });
         this.layers.bg.select('#zoomRect').attrs({
-            'width': 500,
-            'height': 500
+            'width': cur.project.w,
+            'height': cur.project.h,
         });
 
         return data;
@@ -326,6 +340,25 @@ export class StateProjector extends VComponent<StateProjectorData> {
         } else {
             this.layers.main.selectAll('.hoverLine').remove();
         }
+
+    }
+
+    actionHoverRegion(regions: { x: number, y: number, w: number, h: number }[], hovered: boolean, pixelCoord = true) {
+
+        let hRect = this.layers.fg.selectAll('.highlightRect')
+            .data(hovered ? regions : []);
+        hRect.exit().remove();
+
+        hRect = hRect.enter().append('rect').attr('class','highlightRect')
+            .merge(hRect);
+
+        hRect.attrs({
+            x: d => d.x,
+            y: d => d.y,
+            width: d => d.w,
+            height: d => d.h,
+        })
+
 
     }
 

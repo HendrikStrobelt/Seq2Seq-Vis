@@ -4,3 +4,6 @@ node_modules
 __pycache__
 model_api/data
 *.pyc
+model_api/processing/.ipynb_checkpoints
+tmp.txt
+client/dist

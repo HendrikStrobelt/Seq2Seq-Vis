@@ -260,6 +260,13 @@ $highlight-color: #d62f30;
 
   }
 
+  .highlightRect{
+    stroke: #9c605f;
+    stroke-width: 2px;
+    fill: none;
+    stroke-opacity: .5;
+  }
+
 }
 
 .info_panel {
@@ -280,6 +287,15 @@ $highlight-color: #d62f30;
     padding: 1px;
     color: white;
     background-color: #9c605f;
+  }
+}
+
+.pCanvas {
+  border: #d3d3d3 2px solid;
+  margin: 5px;
+
+  &.selected {
+    border: #9c605f 2px solid;
   }
 }
 
