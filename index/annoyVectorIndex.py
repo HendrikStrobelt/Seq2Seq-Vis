@@ -1,7 +1,7 @@
 from annoy import AnnoyIndex
 
 
-class VectorIndex:
+class AnnoyVectorIndex:
 
     def __init__(self, file_name, dim_vector=500):
         self.u = AnnoyIndex(dim_vector)
@@ -48,7 +48,7 @@ class VectorIndex:
         for ix in ixs:
             res.append({'index': ix,
                         'v': self.u.get_item_vector(ix),
-                        'pos': search_to_sentence_index(ix)})
+                        'pos': self.search_to_sentence_index(ix)})
 
         return res
 
@@ -58,10 +58,8 @@ class VectorIndex:
     def get_vector(self, ix):
         return self.u.get_item_vector(ix)
 
+    def search_to_sentence_index(self, index):
+        return index // 55, index % 55
 
-def search_to_sentence_index(index):
-    return index // 55, index % 55
-
-
-def sentence_to_search_index(sentence, pos_in_sent):
-    return sentence * 55 + pos_in_sent
+    def sentence_to_search_index(self, sentence, pos_in_sent):
+        return sentence * 55 + pos_in_sent

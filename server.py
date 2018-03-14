@@ -4,18 +4,16 @@ import argparse
 import os
 import connexion
 import logging
-import requests
 
-from flask import send_from_directory, redirect, json
+from flask import send_from_directory, redirect
 import numpy as np
 from sklearn.decomposition import PCA
 from sklearn.manifold import MDS, TSNE
-import umap
 
-from model_api.onmt_lua_model_api import ONMTLuaModelAPI
-from model_api.opennmt_model import ONMTmodelAPI
+from copy import deepcopy
+
 from s2s.project import S2SProject
-from s2s.vectorIndex import VectorIndex
+from index.annoyVectorIndex import AnnoyVectorIndex
 
 __author__ = 'Hendrik Strobelt, Sebastian Gehrmann'
 CONFIG_FILE_NAME = 's2s.yaml'
@@ -73,23 +71,33 @@ def send_static_dep(path):
 
 
 def closest_vector(index, v, r=5):
-    res = index.get_closest(v, k=20,
+    res = index.get_closest(v, k=5,
                             ignore_same_tgt=False,
                             include_distances=True,
                             use_vectors=True)
 
     if r > 1:
-        res = [(xx[0], round(xx[1], r)) for xx in res]
+        res = [(xx[0], round(xx[1])) for xx in res]
 
     return res
 
 
-def project_states(vectors, p_method='pca'):
+def project_states(vectors, p_method='pca', anchors=None):
     pca = P_METHODS[p_method]
-    return pca.fit_transform(vectors)
+
+    # todo: project down for TSNE
+    if p_method == 'tsne':
+        vectors = PCA(n_components=50).fit_transform(vectors)
+        anchors = None
+
+    if anchors:
+        pca.fit(anchors)
+        return pca.transform(vectors)
+    else:
+        return pca.fit_transform(vectors)
 
 
-def all_neighbors(project, translations, neighbors, p_method='tsne'):
+def all_neighbors(project, translations, neighbors, p_method='pca'):
     # pca = umap.UMAP()#TSNE(n_components=2)
 
     res = {}
@@ -160,6 +168,8 @@ def all_neighbors(project, translations, neighbors, p_method='tsne'):
 
         nb_summary_list = list(nb_summary.values())
 
+        anchors = []
+        # add the actual states as items to the space:
         for t_id, t_states in enumerate(states):
             for s_id, state in enumerate(t_states):
                 nb_summary_list.append({
@@ -168,15 +178,39 @@ def all_neighbors(project, translations, neighbors, p_method='tsne'):
                     'occ': [],
                     'pivot': {'trans_ID': t_id, 'word_ID': s_id}
                 })
+                anchors.append(state)
 
         #
-        positions = project_states([x['v'] for x in nb_summary_list], p_method)
+        positions = project_states([x['v'] for x in nb_summary_list],
+                                   p_method, anchors=anchors)
         #
         for i in range(len(positions)):
             nb_summary_list[i]['pos'] = positions[i].tolist()
-            del nb_summary_list[i]['v']
+            # nb_summary_list[i]['v']
 
         res[neighborhood] = nb_summary_list
+
+    if 'encoder' in neighbors and 'decoder' in neighbors:
+        enc_dec_states = list(map(lambda x: deepcopy(x),
+                                  filter(lambda xx: xx['pivot'] is not None,
+                                         res['encoder'])))
+        all_decoder_list = list(map(lambda x: deepcopy(x),
+                                    filter(lambda xx: xx['pivot'] is not None,
+                                           res['decoder'])))
+
+        for dec in all_decoder_list:
+            dec['pivot']['trans_ID'] = 1
+            enc_dec_states.append(dec)
+
+        ed_pos = project_states([x['v'] for x in enc_dec_states], p_method)
+        for i in range(len(ed_pos)):
+            enc_dec_states[i]['pos'] = ed_pos[i].tolist()
+
+        res['enc_dec'] = enc_dec_states
+
+    for _, nb in res.items():
+        for nbb in nb:
+            del nbb['v']
 
     return res
 
@@ -350,7 +384,7 @@ def get_neighbor_details(**request):
 
     indices = request['indices']
     index = current_project.get_index(
-        request["vector_name"])  # type: VectorIndex
+        request["vector_name"])  # type: AnnoyVectorIndex
 
     return index.get_details(indices)
 
@@ -359,7 +393,7 @@ def get_close_vectors(**request):
     current_project = list(projects.values())[0]  # type: S2SProject
     # os.path.join(current_project.directory, request["vector_name"] + ".ann")
     index = current_project.get_index(
-        request["vector_name"])  # type: VectorIndex
+        request["vector_name"])  # type: AnnoyVectorIndex
     closest = index.get_closest_x(request["indices"],
                                   include_distances=True)
     # print(request["vector_name"], request['index'])

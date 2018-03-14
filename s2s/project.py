@@ -3,8 +3,9 @@ import os
 import h5py
 import numpy as np
 
+from index.faissVectorIndex import FaissVectorIndex
 from model_api.opennmt_model import ONMTmodelAPI
-from s2s.vectorIndex import VectorIndex
+from index.annoyVectorIndex import AnnoyVectorIndex
 
 __author__ = 'Hendrik Strobelt, Sebastian Gehrmann'
 import yaml
@@ -25,6 +26,7 @@ class S2SProject:
         self.cached_norms = {'src': None, 'tgt': None}
         self.directory = os.path.abspath(directory)
 
+        self.indexType = self.config.get('indexType', 'annoy')
         self.indices = {}
 
         for h in ['src', 'tgt']:
@@ -36,7 +38,7 @@ class S2SProject:
                         iid, token = line.split()
                         iid = int(iid)
                         self.dicts['i2t'][h][iid] = token
-                        self.dicts['i2t'][h][0] = '<unk>' # todo: hack
+                        self.dicts['i2t'][h][0] = '<unk>'  # todo: hack
                         self.dicts['t2i'][h][token] = iid
                     raw = f.readline()
 
@@ -46,8 +48,8 @@ class S2SProject:
 
         return self.cached_norms[loc]
 
-    def convert_result_to_correct_index(self, oldix):
-        return oldix // 55, oldix % 55
+    # def convert_result_to_correct_index(self, oldix):
+    #     return oldix // 55, oldix % 55
 
     def ix2text(self, array, vocab, highlight=-1):
         tokens = []
@@ -66,7 +68,7 @@ class S2SProject:
 
         res = []
         for ix in ixs:
-            sentIx, tokIx = self.convert_result_to_correct_index(ix)
+            sentIx, tokIx = self.get_index('decoder').search_to_sentence_index(ix)
             # Get raw list of tokens
             src_in = self.train_data['src'][sentIx]
             tgt_in = self.train_data['tgt'][sentIx]
@@ -89,9 +91,15 @@ class S2SProject:
         return res
 
     def get_index(self, name):
+        extension = ".ann"
+        if self.indexType == 'faiss':
+            extension = ".faiss"
         if name not in self.indices:
-            path = os.path.join(self.directory, name + ".ann")
+            path = os.path.join(self.directory, name + extension)
             if os.path.exists(path):
-                self.indices[name] = VectorIndex(path)
+                if self.indexType=='faiss':
+                    self.indices[name] = FaissVectorIndex(path)
+                else:
+                    self.indices[name] = AnnoyVectorIndex(path)
 
         return self.indices[name]
