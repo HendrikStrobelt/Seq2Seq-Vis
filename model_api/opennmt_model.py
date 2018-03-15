@@ -365,12 +365,15 @@ class ONMTmodelAPI():
                 res['scores'] = list(np.array(trans.pred_scores))[:k]
                 res['decoder'] = decoderRes
                 res['attn'] = attnRes
+                res['beam'] = batch_data['beam'][transIx]
                 reply[transIx] = res
         return reply
 
 
 def main():
-    model = ONMTmodelAPI("data/model_en_de_20.49.pt")
+    # model = ONMTmodelAPI("data/model_en_de_20.49.pt")
+    model = ONMTmodelAPI("processing/s2s_iwslt_ende/baseline-brnn.en-de.s154_acc_61.58_ppl_7.43_e21.pt")
+
     # reply = model.translate(["This is a test ."])
     reply = model.translate(["This", "That"])
     print("______")
@@ -378,8 +381,9 @@ def main():
     # reply = model.translate(["This is a test .", "this is a second test ."],
     #                          partial_decode=["Dies ist", "Ein zweiter"])
 
-    #print(reply)
-    print(json.dumps(reply, indent=2, sort_keys=True))
+    print(len(reply[0]['decoder']))
+    print(len(reply[0]['decoder'][0]))
+    print(reply[0].keys())
 
     # print(json.dumps(reply, indent=2, sort_keys=True))
 
