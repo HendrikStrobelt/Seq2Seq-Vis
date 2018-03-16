@@ -365,14 +365,25 @@ class ONMTmodelAPI():
                 res['scores'] = list(np.array(trans.pred_scores))[:k]
                 res['decoder'] = decoderRes
                 res['attn'] = attnRes
-                res['beam'] = batch_data['beam'][transIx]
+                # todo: make nice...
+                convert_to_py = lambda x: {"pred": x['pred'].item(),
+                                           "score": x[
+                                               'score'].item(),
+                                           "state": rr(list(map(lambda s: s.item(),
+                                                        x['state'])))
+                                           }
+                res['beam'] = list(map(lambda t:
+                                       list(map(convert_to_py,
+                                                t)),
+                                       batch_data['beam'][transIx]))
                 reply[transIx] = res
         return reply
 
 
 def main():
     # model = ONMTmodelAPI("data/model_en_de_20.49.pt")
-    model = ONMTmodelAPI("processing/s2s_iwslt_ende/baseline-brnn.en-de.s154_acc_61.58_ppl_7.43_e21.pt")
+    model = ONMTmodelAPI(
+        "processing/s2s_iwslt_ende/baseline-brnn.en-de.s154_acc_61.58_ppl_7.43_e21.pt")
 
     # reply = model.translate(["This is a test ."])
     reply = model.translate(["This", "That"])

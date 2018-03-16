@@ -29,6 +29,9 @@ class S2SProject:
         self.indexType = self.config.get('indexType', 'annoy')
         self.indices = {}
 
+        self.currentIndexName = None
+        self.currentIndex = None
+
         for h in ['src', 'tgt']:
             with open(os.path.join(directory, self.config['dicts'][h])) as f:
                 raw = f.readline()
@@ -68,7 +71,8 @@ class S2SProject:
 
         res = []
         for ix in ixs:
-            sentIx, tokIx = self.get_index('decoder').search_to_sentence_index(ix)
+            sentIx, tokIx = self.get_index('decoder').search_to_sentence_index(
+                ix)
             # Get raw list of tokens
             src_in = self.train_data['src'][sentIx]
             tgt_in = self.train_data['tgt'][sentIx]
@@ -91,15 +95,50 @@ class S2SProject:
         return res
 
     def get_index(self, name):
-        extension = ".ann"
-        if self.indexType == 'faiss':
-            extension = ".faiss"
-        if name not in self.indices:
-            path = os.path.join(self.directory, name + extension)
-            if os.path.exists(path):
-                if self.indexType=='faiss':
-                    self.indices[name] = FaissVectorIndex(path)
-                else:
-                    self.indices[name] = AnnoyVectorIndex(path)
 
-        return self.indices[name]
+        if name != self.currentIndexName:
+
+            self.currentIndexName = name
+            path = None
+            if 'indices' in self.config:
+                if name in self.config['indices']:
+                    path = os.path.join(self.directory,
+                                        self.config['indices'][name])
+            if not path:
+                extension = ".ann"
+                if self.indexType == 'faiss':
+                    extension = ".faiss"
+                path = os.path.join(self.directory, name + extension)
+
+            print('index:', str(path))
+
+            if os.path.exists(path):
+                if self.indexType == 'faiss':
+                    self.currentIndex = FaissVectorIndex(path)
+                else:
+                    self.currentIndex = AnnoyVectorIndex(path)
+
+        return self.currentIndex
+
+        # if name not in self.indices:
+        #
+        #     path = None
+        #     if 'indices' in self.config:
+        #         if name in self.config['indices']:
+        #             path = os.path.join(self.directory,
+        #                                 self.config['indices'][name])
+        #     if not path:
+        #         extension = ".ann"
+        #         if self.indexType == 'faiss':
+        #             extension = ".faiss"
+        #         path = os.path.join(self.directory, name + extension)
+        #
+        #     print('index:', str(path))
+        #
+        #     if os.path.exists(path):
+        #         if self.indexType == 'faiss':
+        #             self.indices[name] = FaissVectorIndex(path)
+        #         else:
+        #             self.indices[name] = AnnoyVectorIndex(path)
+        #
+        # return self.indices[name]

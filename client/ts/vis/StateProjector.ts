@@ -79,8 +79,7 @@ export class StateProjector extends VComponent<StateProjectorData> {
 
     protected _init() {
         const zoom = d3.zoom()
-            .filter(() => (!(<MouseEvent>d3.event).button)
-                && (<MouseEvent>d3.event).shiftKey)
+            // .filter(() => (<MouseEvent>d3.event).shiftKey)
             .scaleExtent([1 / 2, 4])
             .on("zoom", () => this._zoomLayers(d3.event.transform));
         this._current.zoom = zoom;

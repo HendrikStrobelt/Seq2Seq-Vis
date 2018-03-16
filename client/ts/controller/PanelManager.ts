@@ -21,6 +21,7 @@ type VisColumn<DW=WordLine> = {
     encoder_words: WordLine,
     attention: AttentionVis,
     decoder_words: DW,
+    beam: DW,
     context: NeighborStates,
     decoder_states: NeighborStates,
     // decoder_extra: VComponent<any>[],
@@ -35,6 +36,7 @@ function initPanel<T=WordLine>(select): VisColumn<T> {
         encoder_words: null,
         attention: null,
         decoder_words: null,
+        beam: null,
         context: null,
         decoder_states: null,
         // decoder_extra: []
@@ -184,13 +186,13 @@ export class PanelManager {
         //     divStyles: {height: '100px', width: '100px', 'padding-top': '5px'}
         // }));
 
-        visColumn.encoder_states = PanelManager._setupPanel({
-            col: visColumn.selection,
-            className: "encoder_states_setup",
-            addSVG: false,
-            title: 'Enc states: ',
-            divStyles: {height: '21px', width: '100px', 'padding-top': '0px'}
-        })
+        // visColumn.encoder_states = PanelManager._setupPanel({
+        //     col: visColumn.selection,
+        //     className: "encoder_states_setup",
+        //     addSVG: false,
+        //     title: 'Enc states: ',
+        //     divStyles: {height: '21px', width: '100px', 'padding-top': '0px'}
+        // })
 
         visColumn.encoder_words = PanelManager._setupPanel({
             col: visColumn.selection,
@@ -224,20 +226,28 @@ export class PanelManager {
             }
         })
 
-        visColumn.encoder_states = PanelManager._setupPanel({
+        visColumn.beam = PanelManager._setupPanel({
             col: visColumn.selection,
-            className: "decoder_states_setup",
+            className: "beam_states_setup",
             addSVG: false,
-            title: 'Dec states: ',
-            divStyles: {height: '21px', width: '100px', 'padding-top': '0px'}
+            title: 'topK: ',
+            divStyles: {height: '120px', width: '100px', 'padding-top': '0px'}
         })
-        visColumn.context = PanelManager._setupPanel({
-            col: visColumn.selection,
-            className: "context_setup",
-            addSVG: false,
-            title: 'Context states: ',
-            divStyles: {height: '21px', width: '100px', 'padding-top': '5px'}
-        })
+
+        // visColumn.encoder_states = PanelManager._setupPanel({
+        //     col: visColumn.selection,
+        //     className: "decoder_states_setup",
+        //     addSVG: false,
+        //     title: 'Dec states: ',
+        //     divStyles: {height: '21px', width: '100px', 'padding-top': '0px'}
+        // })
+        // visColumn.context = PanelManager._setupPanel({
+        //     col: visColumn.selection,
+        //     className: "context_setup",
+        //     addSVG: false,
+        //     title: 'Context states: ',
+        //     divStyles: {height: '21px', width: '100px', 'padding-top': '5px'}
+        // })
 
         // visColumn.decoder_extra.push(PanelManager._setupPanel({
         //     col: visColumn.selection,
@@ -276,13 +286,13 @@ export class PanelManager {
         //     }
         // }));
 
-        visColumn.encoder_states = this._createNeighborStates({
-            col: visColumn.selection,
-            className: 'encoder_state_neighbors',
-            options: {
-                box_width: this._current.box_width
-            }
-        });
+        // visColumn.encoder_states = this._createNeighborStates({
+        //     col: visColumn.selection,
+        //     className: 'encoder_state_neighbors',
+        //     options: {
+        //         box_width: this._current.box_width
+        //     }
+        // });
 
         visColumn.encoder_words = this._createWordLine({
             col: visColumn.selection,
@@ -312,22 +322,36 @@ export class PanelManager {
             }
         });
 
-        visColumn.decoder_states = this._createNeighborStates({
+        visColumn.beam = this._createWordLine({
             col: visColumn.selection,
-            className: 'decoder_state_neighbors',
+            className: 'beam_words',
             divStyles: {'padding-bottom': '5px'},
             options: {
-                box_width: this._current.box_width
+                box_width: this._current.box_width,
+                box_type: this._current.hideStates ? WordLine.BoxType.flow : WordLine.BoxType.fixed,
+                css_class_main: 'topKWord',
+                // data_access: d => d.decoder.length ? [d.decoder[this._current.topN]] : []
             }
         });
-        visColumn.context = this._createNeighborStates({
-            col: visColumn.selection,
-            className: 'context_state_neighbors',
 
-            options: {
-                box_width: this._current.box_width
-            }
-        });
+
+
+        // visColumn.decoder_states = this._createNeighborStates({
+        //     col: visColumn.selection,
+        //     className: 'decoder_state_neighbors',
+        //     divStyles: {'padding-bottom': '5px'},
+        //     options: {
+        //         box_width: this._current.box_width
+        //     }
+        // });
+        // visColumn.context = this._createNeighborStates({
+        //     col: visColumn.selection,
+        //     className: 'context_state_neighbors',
+        //
+        //     options: {
+        //         box_width: this._current.box_width
+        //     }
+        // });
 
 
         const partial_diff = (x) => {

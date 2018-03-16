@@ -71,7 +71,7 @@ $highlight-color: #d62f30;
     @extend .measureWord
   }
   rect {
-    fill: $decoder-color;
+    fill: #aaa;
     fill-opacity: .6;
   }
 }

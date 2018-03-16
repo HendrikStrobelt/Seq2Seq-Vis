@@ -2,9 +2,12 @@
 
 import argparse
 import os
+import time
+
 import connexion
 import logging
 
+import umap
 from flask import send_from_directory, redirect
 import numpy as np
 from sklearn.decomposition import PCA
@@ -70,14 +73,26 @@ def send_static_dep(path):
     return send_from_directory('node_modules/', path)
 
 
+def closest_vector_n(index, v, r=5):
+    res = index.get_closest_x(v, k=12,
+                              ignore_same_tgt=False,
+                              include_distances=True,
+                              use_vectors=True)
+
+    if r > 1:
+        res = [[(xx[0], round(xx[1])) for xx in yy] for yy in res]
+
+    return res
+
+
 def closest_vector(index, v, r=5):
-    res = index.get_closest(v, k=5,
+    res = index.get_closest(v, k=12,
                             ignore_same_tgt=False,
                             include_distances=True,
                             use_vectors=True)
 
-    if r > 1:
-        res = [(xx[0], round(xx[1])) for xx in res]
+    # if r > 1:
+    #     res = [(xx[0], round(xx[1])) for xx in res]
 
     return res
 
@@ -86,8 +101,13 @@ def project_states(vectors, p_method='pca', anchors=None):
     pca = P_METHODS[p_method]
 
     # todo: project down for TSNE
-    if p_method == 'tsne':
-        vectors = PCA(n_components=50).fit_transform(vectors)
+    # if p_method == 'tsne':
+    #     vectors = PCA(n_components=50).fit_transform(vectors)
+    #     anchors = None
+    anchors = None
+
+    if p_method == 'umap':
+        pca = umap.UMAP(n_neighbors=min(len(vectors), 10))
         anchors = None
 
     if anchors:
@@ -97,7 +117,7 @@ def project_states(vectors, p_method='pca', anchors=None):
         return pca.fit_transform(vectors)
 
 
-def all_neighbors(project, translations, neighbors, p_method='pca'):
+def all_neighbors(project, translations, neighbors, p_method='tsne'):
     # pca = umap.UMAP()#TSNE(n_components=2)
 
     res = {}
@@ -105,49 +125,61 @@ def all_neighbors(project, translations, neighbors, p_method='pca'):
         n_cand = [[]]
         states = []
         nb_summary = {}
+        start_t = time.time()
+
         for t_id, translation in translations.items():
             index = project.get_index(neighborhood)
+            print('index-work starts..')
 
             if index:
                 if neighborhood == 'encoder':
-                    states.append(
+                    all_enc_states = list(
                         map(lambda x: x['state'], translation['encoder']))
+                    states.append(all_enc_states)
+                    closest_v = closest_vector_n(index, all_enc_states)
                     for e_id, enc in enumerate(translation['encoder']):
-                        n_cand_local = closest_vector(index, enc['state'])
+                        n_cand_local = closest_v[e_id]
                         enc['neighbors'] = n_cand_local
                         n_cand[0].append(
                             {'i': e_id, 't': t_id, 'type': 'enc',
                              'n': n_cand_local})
 
                 if neighborhood == 'decoder':
-                    states.append(map(lambda x: x['state'],
-                                      translation['decoder'][0]))
-                    bId = 0
-                    for beam in translation['decoder']:
-                        for d_id, dec in enumerate(beam):
-                            n_cand_local = closest_vector(index,
-                                                          dec['state'])
-                            dec['neighbors'] = n_cand_local
-                            if bId == 0:
-                                n_cand[0].append(
-                                    {'i': d_id, 't': t_id, 'type': 'dec',
-                                     'n': n_cand_local})
+                    all_states = list(map(lambda x: x['state'],
+                                          translation['decoder'][0]))
 
-                        bId += 1
-                if neighborhood == 'context':
-                    states.append(map(lambda x: x['context'],
-                                      translation['decoder'][0]))
+                    states.append(all_states)
+                    closest_v = closest_vector_n(index, all_states)
+
                     bId = 0
-                    for beam in translation['decoder']:
-                        for d_id, dec in enumerate(beam):
-                            n_cand_local = closest_vector(index,
-                                                          dec['context'])
-                            dec['neighbor_context'] = n_cand_local
-                            if bId == 0:
-                                n_cand[0].append(
-                                    {'i': d_id, 't': t_id, 'type': 'ctx',
-                                     'n': n_cand_local})
-                        bId += 1
+                    # for beam in [translation['decoder'][0]]:
+                    beam = translation['decoder'][0]
+                    for d_id, dec in enumerate(beam):
+                        n_cand_local = closest_v[d_id]
+                        dec['neighbors'] = n_cand_local
+                        if bId == 0:
+                            n_cand[0].append(
+                                {'i': d_id, 't': t_id, 'type': 'dec',
+                                 'n': n_cand_local})
+
+                    bId += 1
+                if neighborhood == 'context':
+                    all_states = list(map(lambda x: x['context'],
+                                          translation['decoder'][0]))
+                    states.append(all_states)
+                    closest_v = closest_vector_n(index, all_states)
+
+                    bId = 0
+                    # for beam in translation['decoder']:
+                    beam = translation['decoder'][0]
+                    for d_id, dec in enumerate(beam):
+                        n_cand_local = closest_v[d_id]
+                        dec['neighbor_context'] = n_cand_local
+                        if bId == 0:
+                            n_cand[0].append(
+                                {'i': d_id, 't': t_id, 'type': 'ctx',
+                                 'n': n_cand_local})
+                    bId += 1
 
         for all_cand in n_cand[0]:  # for now only first entry
             # print(neighborhood, len(nb_summary), all_cand)
@@ -181,8 +213,11 @@ def all_neighbors(project, translations, neighbors, p_method='pca'):
                 anchors.append(state)
 
         #
+        print('index-time:', str(time.time() - start_t))
+        start_t = time.time()
         positions = project_states([x['v'] for x in nb_summary_list],
                                    p_method, anchors=anchors)
+        print('proj-time:', str(time.time() - start_t))
         #
         for i in range(len(positions)):
             nb_summary_list[i]['pos'] = positions[i].tolist()
@@ -190,13 +225,13 @@ def all_neighbors(project, translations, neighbors, p_method='pca'):
 
         res[neighborhood] = nb_summary_list
 
-    if 'encoder' in neighbors and 'decoder' in neighbors:
+    if 'encoder' in res and 'context' in res:
         enc_dec_states = list(map(lambda x: deepcopy(x),
                                   filter(lambda xx: xx['pivot'] is not None,
                                          res['encoder'])))
         all_decoder_list = list(map(lambda x: deepcopy(x),
                                     filter(lambda xx: xx['pivot'] is not None,
-                                           res['decoder'])))
+                                           res['context'])))
 
         for dec in all_decoder_list:
             dec['pivot']['trans_ID'] = 1
@@ -219,13 +254,18 @@ def translate(project, in_sentences):
     model = project.model
 
     translations = model.translate(in_text=in_sentences)
+    tgt_dict = project.dicts['i2t']['tgt']
+    for _, trans in translations.items():
+        for tk in trans['beam']:
+            for lbeam in tk:
+                lbeam['word'] = tgt_dict.get(lbeam['pred'], '??')
 
     return translations
 
 
 # ------ API routing as defined in swagger.yaml (connexion)
 def get_translation(**request):
-    current_project = list(projects.values())[0]
+    current_project = list(projects.values())[0]  # type: S2SProject
 
     in_sentence = request['in']
     neighbors = request.get('neighbors', [])
@@ -241,7 +281,8 @@ def get_translation(**request):
         return hit['res']
 
     translations = translate(current_project, [in_sentence])
-    # print(translations)
+
+    print(translations[0]['beam'])
     all_n = all_neighbors(current_project, translations, neighbors)
     #
     # print(neighbors,
@@ -331,6 +372,7 @@ P_METHODS = {
     "pca": PCA(n_components=2),
     "mds": MDS(),
     "tsne": TSNE(n_iter=1000),
+    'umap': umap.UMAP(metric='cosine'),
     "none": lambda x: x
 }
 

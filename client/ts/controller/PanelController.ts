@@ -92,19 +92,54 @@ export class PanelController {
         attn.update(attentionData);
 
 
-        main.encoder_states.update({
-            row: translation.encoderNeighbors
-        });
-        main.decoder_states.update({
-            row: translation.decoderNeighbors[cur.beamIndex]
-        });
-        main.context.update({
-            row: translation.contextNeighbors[cur.beamIndex]
-        });
+        // main.encoder_states.update({
+        //     row: translation.encoderNeighbors
+        // });
+        // main.decoder_states.update({
+        //     row: translation.decoderNeighbors[cur.beamIndex]
+        // });
+        // main.context.update({
+        //     row: translation.contextNeighbors[cur.beamIndex]
+        // });
 
         if (main == this.pm.vis.left) {
             this._current.sentence = translation.inputSentence;
             this.updateProjectorData(raw_data.allNeighbors);
+        }
+
+        if ('beam' in main) {
+            let beamWords: string[][] = [];
+            let beamColors: string[][] = [];
+            let beamValues:number[][] =[];
+            const top_predict = translation.decoderWords[0];
+
+            for (const j in _.range(raw_data.beam[0].length)) {
+                const ro: string[] = [];
+                const roCol: string[] = [];
+                const bv: number[] =[];
+                for (const i in raw_data.beam) {
+                    const w = raw_data.beam[i][j].word;
+                    ro.push(w);
+
+                    if (w == top_predict[i]) {
+                        roCol.push('#3c3c3c')
+                    }else{
+                        roCol.push(null)
+                    }
+
+                    bv.push(raw_data.beam[i][j].score)
+                }
+                beamWords.push(ro);
+                beamColors.push(roCol);
+                beamValues.push(bv);
+
+            }
+
+            const cScale = d3.scaleLinear<string>().domain(d3.extent(_.flatten(beamValues)))
+                .range(['#fff','#999']);
+            const wordFill = beamValues.map(row => row.map(value => cScale(value)))
+
+            main.beam.update({wordRows: beamWords,  wordFill})
         }
 
 

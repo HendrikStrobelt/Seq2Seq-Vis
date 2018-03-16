@@ -50,10 +50,18 @@ class FaissVectorIndex:
     def get_closest_x(self, ixs, k=10, ignore_same_tgt=False,
                       include_distances=False, use_vectors=False):
         res = []
-        for ix in ixs:
-            res.append(
-                self.get_closest(ix, k, ignore_same_tgt, include_distances,
-                                 use_vectors))
+
+        ix_conv = np.array(ixs, dtype='float32')
+
+        dists, inds = self.u.search(ix_conv, k)
+
+        for i in range(dists.shape[0]):
+            res.append(zip(inds[i].tolist(), dists[i].tolist()))
+
+        # for ix in ixs:
+        #     res.append(
+        #         self.get_closest(ix, k, ignore_same_tgt, include_distances,
+        #                          use_vectors))
         return res
 
     def get_details(self, ixs):
@@ -69,21 +77,11 @@ class FaissVectorIndex:
         return map(lambda x: self.u.reconstruct(x), ixs)
 
     def get_vector(self, ix):
-
-        print(type(ix))
         ix_c = int(ix)
-        print(ix_c)
         return self.u.reconstruct(ix_c)
 
-        # print(ix, type(ix) , int(ix))
-        # r = []
-        # self.u.reconstruct(100)
-        # print(r)
-        # return r
-
-    def search_to_sentence_index(self,index):
+    def search_to_sentence_index(self, index):
         return index // 50, index % 50
-
 
     def sentence_to_search_index(self, sentence, pos_in_sent):
         return sentence * 50 + pos_in_sent
