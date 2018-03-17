@@ -38,6 +38,11 @@ export class BeamTreeVis extends VComponent<BeamTreeData> {
         const links = <NodeType[]> treeGen(root).descendants().slice(1);
 
 
+        // bad habbit, but todo:
+        this.layers.main.selectAll('g.node').remove();
+        this.layers.bg.selectAll('.link').remove();
+        
+
         let i = 0;
         var node = this.layers.main.selectAll('g.node')
             .data(nodes, function (d: any) {
