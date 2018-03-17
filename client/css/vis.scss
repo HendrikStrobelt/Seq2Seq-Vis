@@ -240,8 +240,14 @@ $highlight-color: #d62f30;
 
     &.selected {
       stroke: #9c605f;
-      stroke-width: 2px;
     }
+  }
+
+  .plLabel {
+    text-anchor: middle;
+    pointer-events: none;
+    font-weight: bold;
+    opacity: .5;
   }
 
   .endPoint {
@@ -297,5 +303,21 @@ $highlight-color: #d62f30;
   &.selected {
     border: #9c605f 2px solid;
   }
+}
+
+.beamtreevis{
+  .node{
+    font-weight: bold;
+  }
+  .link{
+    fill:none;
+    stroke: #5793d9;
+    stroke-width: 2px;
+    opacity: .5;
+
+  }
+
+
+
 }
 

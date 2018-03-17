@@ -13,6 +13,7 @@ import {
 } from "../vis/StateProjector";
 import * as _ from 'lodash';
 import {StatePictograms, StatePictogramsHovered} from "../vis/StatePictograms";
+import {BeamTreeData} from "../vis/BeamTree";
 
 
 export class PanelController {
@@ -26,7 +27,8 @@ export class PanelController {
         outWords: [],
         allNeighbors: {},
         projectedNeighbor: null,
-        sentence: null
+        sentence: null,
+        translation: <Translation> null
     };
 
     constructor() {
@@ -45,9 +47,14 @@ export class PanelController {
 
     selectProjection(key) {
         this._current.projectedNeighbor = key;
+        let labels = []
+        if (key === 'encoder') labels = [this._current.translation.encoderWords];
+        else labels = [this._current.translation.decoderWords[0]];
+
         this.pm.vis.projectors.update({
             states: this._current.allNeighbors[key],
-            loc: key
+            loc: key,
+            labels: labels
         });
         this.pm.vis.statePicto.update(null);
     }
@@ -102,28 +109,63 @@ export class PanelController {
         //     row: translation.contextNeighbors[cur.beamIndex]
         // });
 
+        cur.translation = translation;
         if (main == this.pm.vis.left) {
             this._current.sentence = translation.inputSentence;
             this.updateProjectorData(raw_data.allNeighbors);
+
+
+            const btWords: string[][][] = raw_data.beam_trace_words;
+            console.log(raw_data.beam_trace_words, "--- ");
+            const allNodes: { [key: string]: BeamTreeData } = {};
+
+            const root: BeamTreeData = {
+                name: btWords[0][0][0],
+                children: []
+            }
+            allNodes[btWords[0][0][0]] = root;
+
+            for (const depthList of btWords.slice(1)){
+                for (const subBeam of depthList){
+                    const [nodeName] = subBeam.slice(-1);
+                    const rootName = subBeam.slice(0,-1).join('||');
+                    const nodeID = subBeam.join('||');
+
+                    const node:BeamTreeData = {
+                        name:nodeName,
+                        children:[]
+                    };
+
+                    console.log(rootName, nodeID, allNodes,"--- rootName, nodeID, allNodes");
+                    console.log(allNodes[rootName],"--- allNodes[rootName]");
+                    allNodes[rootName].children.push(node);
+                    allNodes[nodeID] = node;
+
+                }
+            }
+
+
+            this.pm.vis.beamView.update(root)
+
         }
 
         if ('beam' in main) {
             let beamWords: string[][] = [];
             let beamColors: string[][] = [];
-            let beamValues:number[][] =[];
+            let beamValues: number[][] = [];
             const top_predict = translation.decoderWords[0];
 
             for (const j in _.range(raw_data.beam[0].length)) {
                 const ro: string[] = [];
                 const roCol: string[] = [];
-                const bv: number[] =[];
+                const bv: number[] = [];
                 for (const i in raw_data.beam) {
                     const w = raw_data.beam[i][j].word;
                     ro.push(w);
 
                     if (w == top_predict[i]) {
                         roCol.push('#3c3c3c')
-                    }else{
+                    } else {
                         roCol.push(null)
                     }
 
@@ -135,11 +177,16 @@ export class PanelController {
 
             }
 
-            const cScale = d3.scaleLinear<string>().domain(d3.extent(_.flatten(beamValues)))
-                .range(['#fff','#999']);
+            const valBound = d3.extent(_.flatten(beamValues));
+            const cScale = d3.scaleLinear<string>().domain(valBound)
+                .range(['#fff', '#999']);
             const wordFill = beamValues.map(row => row.map(value => cScale(value)))
 
-            main.beam.update({wordRows: beamWords,  wordFill})
+            const bwScale = d3.scaleLinear().domain(valBound).range([1, main.beam.options.box_width - 10]);
+            const boxWidth = beamValues.map(row => row.map(value => bwScale(value)))
+
+
+            main.beam.update({wordRows: beamWords, boxWidth})
         }
 
 

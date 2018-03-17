@@ -1,6 +1,7 @@
 import {VComponent} from "./VisualComponent";
 import * as d3 from 'd3'
 import * as _ from "lodash";
+import {ZoomTransform} from "d3-zoom";
 // import * as d3_lasso from 'd3-lasso'
 
 
@@ -16,7 +17,8 @@ export type StateDesc = {
 
 export interface StateProjectorData {
     states: StateDesc[],
-    loc: string
+    loc: string,
+    labels?: string[][]
 }
 
 export type StateProjectorClickEvent = {
@@ -56,7 +58,9 @@ export class StateProjector extends VComponent<StateProjectorData> {
         pivots: <StateDesc[][]>[[]],
         loc: 'src',
         pivotNeighbors: <{ [key: number]: { [key: number]: StateDesc[] } }> {},
-        project: {w: 500, h: 500}
+        project: {w: 500, h: 500},
+        zoomTransform: d3.zoomIdentity,
+        hasLabels: false
     };
 
     // readonly getter
@@ -79,9 +83,9 @@ export class StateProjector extends VComponent<StateProjectorData> {
 
     protected _init() {
         const zoom = d3.zoom()
-            // .filter(() => (<MouseEvent>d3.event).shiftKey)
+        // .filter(() => (<MouseEvent>d3.event).shiftKey)
             .scaleExtent([1 / 2, 4])
-            .on("zoom", () => this._zoomLayers(d3.event.transform));
+            .on("zoom", () => this._zoomLayers((<d3.D3ZoomEvent<any, any>>d3.event).transform));
         this._current.zoom = zoom;
         this.layers.bg.append("rect")
             .attr('id', 'zoomRect')
@@ -98,10 +102,22 @@ export class StateProjector extends VComponent<StateProjectorData> {
 
     }
 
-    protected _zoomLayers(transform) {
+    protected _zoomLayers(transform: ZoomTransform) {
+        this._current.zoomTransform = transform;
         // console.log(transform, "--- transform");
-        this.layers.fg.attr('transform', transform);
-        this.layers.main.attr('transform', transform);
+        this.layers.fg.attr('transform', transform.toString());
+        this.layers.main.attr('transform', transform.toString());
+
+        const f = 1. / Math.sqrt(transform.k);
+
+        const plR = 5 * f;
+        this.layers.fg.selectAll('.plPoint').attr('r', plR);
+
+        const w = 2 * f;
+        this.layers.fg.selectAll('.pl')
+            .style('stroke-width', w + 'px');
+
+
     }
 
 
@@ -146,6 +162,8 @@ export class StateProjector extends VComponent<StateProjectorData> {
         }
 
 
+        cur.hasLabels = data.labels != null;
+
         this.parent.attrs({
             'width': cur.project.w,
             'height': cur.project.h,
@@ -176,7 +194,7 @@ export class StateProjector extends VComponent<StateProjectorData> {
             .attr('transform',
                 d => `translate(${cur.xScale(d.pos[0])},${cur.yScale(d.pos[1])})`);
 
-        pps.select('circle').attr('r', d => Math.sqrt(d.occ.length * 1.));
+        pps.select('circle').attr('r', d => d.occ.length);
 
         pps.on('mouseenter', d => {
             const allL = this.layers.main.selectAll('.hoverLine')
@@ -187,7 +205,7 @@ export class StateProjector extends VComponent<StateProjectorData> {
                 .styles({
                     fill: 'none',
                     stroke: 'red',
-                    'stroke-width': 2,
+                    'stroke-width': (2 / Math.sqrt(this._current.zoomTransform.k)),
                     'pointer-events': 'none'
                 })
                 .merge(allL)
@@ -216,15 +234,19 @@ export class StateProjector extends VComponent<StateProjectorData> {
             });
 
 
+        // this.layers.fg.selectAll('.label').data(renderData.states[0].)
+
+
         this.layers.fg.selectAll('.pl').remove();
         this.layers.fg.selectAll('.plPoint').remove();
         for (let pT = 0; pT < cur.noOfLines; pT++) {
-            this.lineDraw(cur.pivots[pT], 'pl_' + pT);
+            this.lineDraw(cur.pivots[pT], 'pl_' + pT,
+                cur.hasLabels ? renderData.labels[pT] : []);
         }
 
     }
 
-    private lineDraw(onlyPivots: StateDesc[], className: string) {
+    private lineDraw(onlyPivots: StateDesc[], className: string, labels: string[]) {
         const cur = this._current;
 
         console.log(onlyPivots, "--- onlyPivots");
@@ -240,7 +262,8 @@ export class StateProjector extends VComponent<StateProjectorData> {
             .merge(pls);
         pls
         // .transition()
-            .attr('d', line);
+            .attr('d', line)
+            .style('stroke-width', 2. / Math.sqrt(cur.zoomTransform.k) + 'px');
 
         let plPoints = this.layers.fg.selectAll('.plPoint.' + className).data(onlyPivots);
         plPoints.exit().remove();
@@ -250,10 +273,21 @@ export class StateProjector extends VComponent<StateProjectorData> {
         plPoints.attrs({
             cx: d => cur.xScale(d.pos[0]),
             cy: d => cur.yScale(d.pos[1]),
-            r: 5
+            r: 5 / Math.sqrt(cur.zoomTransform.k)
         });
         plPoints.classed('startPoint', d => d.pivot.word_ID === 0);
         plPoints.classed('endPoint', d => d.pivot.word_ID === onlyPivots.length - 1);
+
+
+        const plLabel = this.layers.fg.selectAll(".plLabel").data(labels);
+        plLabel.exit().remove();
+
+        const plLabelEnter = plLabel.enter().append('text').attr('class', 'plLabel');
+
+        plLabelEnter.merge(plLabel).attrs({
+            x: (d, i) => cur.xScale(onlyPivots[i].pos[0]),
+            y: (d, i) => cur.yScale(onlyPivots[i].pos[1]),
+        }).text(d => d);
 
 
         plPoints.on('mouseenter', d => {
@@ -348,7 +382,7 @@ export class StateProjector extends VComponent<StateProjectorData> {
             .data(hovered ? regions : []);
         hRect.exit().remove();
 
-        hRect = hRect.enter().append('rect').attr('class','highlightRect')
+        hRect = hRect.enter().append('rect').attr('class', 'highlightRect')
             .merge(hRect);
 
         hRect.attrs({

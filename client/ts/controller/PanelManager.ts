@@ -13,6 +13,7 @@ import * as _ from "lodash";
 import {NeighborStates} from "../vis/NeighborStates";
 import {StateProjector} from "../vis/StateProjector";
 import {StatePictograms} from "../vis/StatePictograms";
+import {BeamTreeVis} from "../vis/BeamTree";
 
 
 type VisColumn<DW=WordLine> = {
@@ -108,7 +109,8 @@ export class PanelManager {
         middle_extra: <VisColumn<BarList>> initPanel(d3.select('.col2')),
         right_extra: initPanel(d3.select('.col4')),
         projectors: this._createProjectorPanel(),
-        statePicto: <StatePictograms> null // initialized in init.. requires projectors
+        statePicto: <StatePictograms> null, // initialized in init.. requires projectors
+        beamView: this._createBeamViewPanel()
     };
 
     panels = {
@@ -140,6 +142,20 @@ export class PanelManager {
     _createStatePictoPanel() {
         return new StatePictograms(d3.select('#statePictos'),
             this._vis.projectors, this.eventHandler)
+    }
+
+    _createBeamViewPanel() {
+        const parent = d3.select('#beam-view').append('svg').attrs({
+            width: 1000,
+            height: 200
+        });
+
+        return new BeamTreeVis(parent, this.eventHandler, {
+            width: 1000,
+            height: 200
+        })
+
+
     }
 
     _createProjectorPanel() {
@@ -333,7 +349,6 @@ export class PanelManager {
                 // data_access: d => d.decoder.length ? [d.decoder[this._current.topN]] : []
             }
         });
-
 
 
         // visColumn.decoder_states = this._createNeighborStates({

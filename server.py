@@ -237,11 +237,11 @@ def all_neighbors(project, translations, neighbors, p_method='tsne'):
             dec['pivot']['trans_ID'] = 1
             enc_dec_states.append(dec)
 
-        ed_pos = project_states([x['v'] for x in enc_dec_states], p_method)
+        ed_pos = project_states([x['v'] for x in enc_dec_states], 'mds')
         for i in range(len(ed_pos)):
             enc_dec_states[i]['pos'] = ed_pos[i].tolist()
 
-        res['enc_dec'] = enc_dec_states
+        res['enc_ctx'] = enc_dec_states
 
     for _, nb in res.items():
         for nbb in nb:
@@ -259,6 +259,17 @@ def translate(project, in_sentences):
         for tk in trans['beam']:
             for lbeam in tk:
                 lbeam['word'] = tgt_dict.get(lbeam['pred'], '??')
+
+        trans['beam_trace_words'] = []
+
+        for b_level in trans['beam_trace']:
+            level_collect = []
+            for b_trace in b_level:
+                trace_collect = []
+                for w_id in b_trace:
+                    trace_collect.append(tgt_dict.get(w_id, '??'))
+                level_collect.append(trace_collect)
+            trans['beam_trace_words'].append(level_collect)
 
     return translations
 

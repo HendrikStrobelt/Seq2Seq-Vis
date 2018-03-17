@@ -71,7 +71,7 @@ class S2SProject:
 
         res = []
         for ix in ixs:
-            sentIx, tokIx = self.get_index('decoder').search_to_sentence_index(
+            sentIx, tokIx = self.get_index('context').search_to_sentence_index(
                 ix)
             # Get raw list of tokens
             src_in = self.train_data['src'][sentIx]

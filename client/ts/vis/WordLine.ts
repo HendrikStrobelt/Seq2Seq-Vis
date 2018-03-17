@@ -24,6 +24,7 @@ export interface WordLineData {
     wordRows: string[][],
     wordFill?: string[][],
     wordBorder?: string[][],
+    boxWidth?: number[][],
 }
 
 type WordToken = { text: string, width: number, realWidth?: number }
@@ -34,6 +35,7 @@ type WordLineRender = {
     positions: number[][],
     wordFill?: string[][],
     wordBorder?: string[][],
+    boxWidth?: number[][],
 }
 
 export class WordLine extends VComponent<WordLineData> {
@@ -127,12 +129,14 @@ export class WordLine extends VComponent<WordLineData> {
 
         this._current.customFill = data.wordFill != null;
         this._current.customBorder = data.wordBorder != null;
+        this._current.customBoxWidth = data.boxWidth != null;
 
         return {
             rows,
             positions,
             wordFill: data.wordFill,
-            wordBorder: data.wordBorder
+            wordBorder: data.wordBorder,
+            boxWidth: data.boxWidth
         };
 
     }
@@ -226,13 +230,19 @@ export class WordLine extends VComponent<WordLineData> {
             .on('click', (d, i) => this.actionWordClicked({d, i}))
 
 
-        const allR = allWords.select('rect')
-        allR.attr('width', (d: any) => d.word.width + 6);
-        if (this._current.customFill){
-            allR.style('fill', (d:any,i) => render.wordFill[d.row][i])
+        const allR = allWords.select('rect');
+        if (this._current.customBoxWidth) {
+            allR.attr('width', (d: any, i) => render.boxWidth[d.row][i] + 6);
+        } else {
+            allR.attr('width', (d: any) => d.word.width + 6);
         }
-        if (this._current.customBorder){
-            allR.style('stroke', (d:any,i) => render.wordBorder[d.row][i])
+
+        if (this._current.customFill) {
+            allR.style('fill', (d: any, i) => render.wordFill[d.row][i])
+        }
+
+        if (this._current.customBorder) {
+            allR.style('stroke', (d: any, i) => render.wordBorder[d.row][i])
         }
 
         allWords.select('text').attr('transform', (d: any) => {
