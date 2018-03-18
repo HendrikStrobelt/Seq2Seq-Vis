@@ -2,6 +2,7 @@ import os
 
 import h5py
 import numpy as np
+from sklearn.externals import joblib
 
 from index.faissVectorIndex import FaissVectorIndex
 from model_api.opennmt_model import ONMTmodelAPI
@@ -31,6 +32,11 @@ class S2SProject:
 
         self.currentIndexName = None
         self.currentIndex = None
+
+        self.project_model = None
+        if 'project_model' in self.config:
+            self.project_model = joblib.load(
+                os.path.join(directory, self.config['project_model']))
 
         for h in ['src', 'tgt']:
             with open(os.path.join(directory, self.config['dicts'][h])) as f:

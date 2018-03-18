@@ -117,6 +117,33 @@ def project_states(vectors, p_method='pca', anchors=None):
         return pca.fit_transform(vectors)
 
 
+# noinspection SpellCheckingInspection
+def projection_hnlp(model, states, lengths):
+    v = np.array(states)
+    x_pos = model.predict(v)
+    # expected progression
+    y_pos_a = np.concatenate([(np.arange(1, l + 1, 1) / l) for l in lengths])
+    # For removing the coefficients
+    w = model.coef_
+    w = np.expand_dims(w, 1)
+    v_prime = v - np.dot(np.dot(v, w), w.T)
+    y_pos_b = (TSNE(n_components=1, init='pca').fit_transform(v_prime)) \
+        .flatten()
+    y_pos_c = (PCA(n_components=1).fit_transform(v_prime)) \
+        .flatten()
+
+    return x_pos.tolist(), y_pos_a.tolist(), y_pos_b.tolist(), y_pos_c.tolist()
+
+
+def create_proj_list(xs, ys, traces):
+    res = []
+    for ii in range(len(xs)):
+        new_state = traces[ii].copy()
+        new_state['pos'] = [xs[ii], ys[ii]]
+        res.append(new_state)
+    return res
+
+
 def all_neighbors(project, translations, neighbors, p_method='tsne'):
     # pca = umap.UMAP()#TSNE(n_components=2)
 
@@ -200,28 +227,52 @@ def all_neighbors(project, translations, neighbors, p_method='tsne'):
 
         nb_summary_list = list(nb_summary.values())
 
-        anchors = []
+        sentence_states = []
+        sentence_lengths = []
+        sentence_traces = []
         # add the actual states as items to the space:
         for t_id, t_states in enumerate(states):
+            sentence_lengths.append(len(t_states))
             for s_id, state in enumerate(t_states):
-                nb_summary_list.append({
-                    'id': -1000 * (t_id + 1) + s_id,
+                sentence_traces.append({
+                    'id': -10000 * (t_id + 1) + s_id,
                     'v': state,
                     'occ': [],
                     'pivot': {'trans_ID': t_id, 'word_ID': s_id}
                 })
-                anchors.append(state)
+                # nb_summary_list.append({
+                #     'id': -10000 * (t_id + 1) + s_id,
+                #     'v': state,
+                #     'occ': [],
+                #     'pivot': {'trans_ID': t_id, 'word_ID': s_id}
+                # })
+                sentence_states.append(state)
 
+        nb_summary_list = nb_summary_list + sentence_traces
         #
         print('index-time:', str(time.time() - start_t))
         start_t = time.time()
         positions = project_states([x['v'] for x in nb_summary_list],
-                                   p_method, anchors=anchors)
-        print('proj-time:', str(time.time() - start_t))
-        #
+                                   p_method, anchors=sentence_states)
         for i in range(len(positions)):
             nb_summary_list[i]['pos'] = positions[i].tolist()
             # nb_summary_list[i]['v']
+
+        if project.project_model:
+            x_pos, y_pos_a, y_pos_b, y_pos_c = projection_hnlp(
+                project.project_model,
+                sentence_states,
+                sentence_lengths)
+
+            res[neighborhood + '_a'] = create_proj_list(x_pos, y_pos_a,
+                                                        sentence_traces)
+            res[neighborhood + '_b'] = create_proj_list(x_pos, y_pos_b,
+                                                        sentence_traces)
+            res[neighborhood + '_c'] = create_proj_list(x_pos, y_pos_c,
+                                                        sentence_traces)
+
+        print('proj-time:', str(time.time() - start_t))
+        #
 
         res[neighborhood] = nb_summary_list
 
@@ -380,9 +431,9 @@ def compare_translation(**request):
 
 
 P_METHODS = {
-    "pca": PCA(n_components=2),
+    "pca": PCA(n_components=2, ),
     "mds": MDS(),
-    "tsne": TSNE(n_iter=1000),
+    "tsne": TSNE(init='pca'),
     # 'umap': umap.UMAP(metric='cosine'),
     "none": lambda x: x
 }
