@@ -8,6 +8,7 @@ export type TrainDataIndexResponse = {
     loc: string,
     res: {
         attn: number[][], src: string, tgt: string,
+        src_words: string[], tgt_words: string[],
         tokenId: number, sentId: number
     }[]
 

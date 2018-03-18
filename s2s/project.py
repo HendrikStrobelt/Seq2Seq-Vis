@@ -69,6 +69,9 @@ class S2SProject:
         def compute_sent_length(array):
             return np.sum([1 for t in array if t != 1])
 
+        def ix2words(indices, word_dict):
+            return [word_dict.get(x, '???') for x in indices if x != 1]
+
         res = []
         for ix in ixs:
             sentIx, tokIx = self.get_index('context').search_to_sentence_index(
@@ -88,7 +91,11 @@ class S2SProject:
             src_len = compute_sent_length(src_in)
             tgt_len = compute_sent_length(tgt_in)
             attn = attn[:tgt_len, :src_len]
-            res.append({'src': src, 'tgt': tgt, 'attn': attn.tolist(),
+
+            res.append({'src': src, 'tgt': tgt,
+                        'src_words': ix2words(src_in, self.dicts['i2t']['src']),
+                        'tgt_words': ix2words(tgt_in, self.dicts['i2t']['tgt']),
+                        'attn': attn.tolist(),
                         'sentId': sentIx, 'tokenId': tokIx})
         # print(src)
         # print(tgt)

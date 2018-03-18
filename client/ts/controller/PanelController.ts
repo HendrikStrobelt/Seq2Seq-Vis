@@ -115,6 +115,8 @@ export class PanelController {
             this.updateProjectorData(raw_data.allNeighbors);
 
 
+            const winnerBeam = translation.decoderWords[cur.beamIndex]
+
             const btWords: string[][][] = raw_data.beam_trace_words;
             console.log(raw_data.beam_trace_words, "--- ");
             const allNodes: { [key: string]: BeamTreeData } = {};
@@ -125,21 +127,24 @@ export class PanelController {
             }
             allNodes[btWords[0][0][0]] = root;
 
-            for (const depthList of btWords.slice(1)){
-                for (const subBeam of depthList){
+            for (const depthList of btWords.slice(1)) {
+                for (const subBeam of depthList) {
                     const [nodeName] = subBeam.slice(-1);
-                    const rootName = subBeam.slice(0,-1).join('||');
+                    const rootName = subBeam.slice(0, -1).join('||');
                     const nodeID = subBeam.join('||');
 
-                    const node:BeamTreeData = {
-                        name:nodeName,
-                        children:[]
+                    const topBeam = _.isEqual(subBeam.slice(1), winnerBeam.slice(0, subBeam.length - 1));
+
+                    const node: BeamTreeData = {
+                        name: nodeName,
+                        children: [],
+                        topBeam
                     };
 
-                    console.log(rootName, nodeID, allNodes,"--- rootName, nodeID, allNodes");
-                    console.log(allNodes[rootName],"--- allNodes[rootName]");
-                    allNodes[rootName].children.push(node);
-                    allNodes[nodeID] = node;
+                    if (!(nodeID in allNodes)) {
+                        allNodes[rootName].children.push(node);
+                        allNodes[nodeID] = node;
+                    }
 
                 }
             }
@@ -392,7 +397,16 @@ export class PanelController {
                 S2SApi.trainDataIndices(d.neighborIDs, d.loc).then(data => {
                     const raw_data = <TrainDataIndexResponse> JSON.parse(data);
 
-                    this.pm.getInfoPanel().setTrans(raw_data.res);
+                    this.pm.getInfoPanel().update({
+                        translations: raw_data.res.map(d => ({
+                            src: d.src_words,
+                            tgt: d.tgt_words
+                        })),
+                        highlights: {
+                            on: raw_data.loc,
+                            indices: raw_data.res.map(d => d.tokenId)
+                        }
+                    });
                     console.log(raw_data, "--- data");
                 })
 

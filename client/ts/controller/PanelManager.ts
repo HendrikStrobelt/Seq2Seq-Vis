@@ -1,19 +1,18 @@
 import * as d3 from "d3";
-import {VComponent} from "../vis/VisualComponent";
 import {WordLine} from "../vis/WordLine";
 import {AttentionVis} from "../vis/AttentionVis";
 import {BarList} from "../vis/BarList";
 import {StateVis} from "../vis/StateVis";
 import {CloseWordList} from "../vis/CloseWordList";
-import {PanelController} from "./PanelController";
 import {WordProjector} from "../vis/WordProjector";
 import {SimpleEventHandler} from "../etc/SimpleEventHandler";
-import {D3Sel, LooseObject} from "../etc/LocalTypes";
+import {D3Sel} from "../etc/LocalTypes";
 import * as _ from "lodash";
 import {NeighborStates} from "../vis/NeighborStates";
 import {StateProjector} from "../vis/StateProjector";
 import {StatePictograms} from "../vis/StatePictograms";
 import {BeamTreeVis} from "../vis/BeamTree";
+import {InfoPanel} from "../vis/InfoPanel";
 
 
 type VisColumn<DW=WordLine> = {
@@ -43,49 +42,6 @@ function initPanel<T=WordLine>(select): VisColumn<T> {
         // decoder_extra: []
     }
 };
-
-
-export class InfoPanel {
-    private infoPanel: D3Sel;
-    private tgt: D3Sel;
-    private src: D3Sel;
-
-    constructor(private parent: D3Sel) {
-        parent.html('<div class="info_panel">' +
-            // '<div class="src"></div>' +
-            // '<div class="tgt"></div>' +
-            '</div>')
-
-        this.infoPanel = parent.select('.info_panel')
-        // this.src = parent.select('.src');
-        // this.tgt = parent.select('.tgt');
-    }
-
-
-    cleanData(s: string) {
-        return s.replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(new RegExp('--\\|'), '<span class="highlight">')
-            .replace(new RegExp('\\|--'), '</span>')
-    }
-
-    setTrans(translations: { src: string, tgt: string }[]) {
-
-        let tSel = this.infoPanel.selectAll(".translation").data(translations);
-        tSel.exit().remove();
-
-        const tEnter = tSel.enter().append('div').attr('class', 'translation');
-        tEnter.html('<div class="src"></div><div class="tgt"></div>');
-
-        tSel = tEnter.merge(tSel);
-        tSel.select('.src').html(d => this.cleanData(d.src));
-        tSel.select('.tgt').html(d => this.cleanData(d.tgt));
-
-
-    }
-
-}
 
 
 export class PanelManager {

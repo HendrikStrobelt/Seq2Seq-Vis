@@ -7,6 +7,7 @@ import {DefaultLinkObject} from "d3-shape";
 export interface BeamTreeData {
     children: BeamTreeData[]
     name: string
+    topBeam?: boolean
 
 }
 
@@ -41,7 +42,7 @@ export class BeamTreeVis extends VComponent<BeamTreeData> {
         // bad habbit, but todo:
         this.layers.main.selectAll('g.node').remove();
         this.layers.bg.selectAll('.link').remove();
-        
+
 
         let i = 0;
         var node = this.layers.main.selectAll('g.node')
@@ -54,7 +55,7 @@ export class BeamTreeVis extends VComponent<BeamTreeData> {
             .attr('class', 'node')
             .attr("transform", function (d) {
                 return "translate(" + (d.y + 5) + "," + (d.x + 5) + ")";
-            })
+            }).classed('topBeam', d => d.data.topBeam)
 
 
         // // Add Circle for the nodes
@@ -87,7 +88,7 @@ export class BeamTreeVis extends VComponent<BeamTreeData> {
         linkEnter.merge(link).attr('d', d => linkGen({
             source: d,
             target: d.parent
-        }))
+        })).classed('topBeam', d => d.data.topBeam)
 
 
     }

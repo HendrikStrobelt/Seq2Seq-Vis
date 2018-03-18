@@ -266,7 +266,7 @@ $highlight-color: #d62f30;
 
   }
 
-  .highlightRect{
+  .highlightRect {
     stroke: #9c605f;
     stroke-width: 2px;
     fill: none;
@@ -276,10 +276,65 @@ $highlight-color: #d62f30;
 }
 
 .info_panel {
-  font-weight: bold;
+
   .translation {
+    font-weight: bold;
     padding-bottom: 8px;
   }
+
+  .menu {
+    padding-top: 10px;
+    padding-bottom: 10px;
+    margin-top: 5px;
+    margin-bottom: 5px;
+    //background-color: lightgrey;
+
+    .btn {
+      font-weight: bold;
+      padding: 8px 8px;
+      cursor: pointer;
+    }
+
+    .btn_left {
+      border-radius: 5px 0 0 5px;
+    }
+
+    .btn_right {
+      border-radius: 0 5px 5px 0;
+    }
+
+    .show_btn{
+      padding: 6px 8px; // to adjust for borders !!
+    }
+
+    .show_src {
+      //background-color: #adc2d9;
+      border: 2px #5793d9 solid;
+
+      &.selected {
+        background-color: #5793d9;
+
+      }
+
+    }
+    .show_tgt {
+      border: 2px #f9d862 solid;
+
+      &.selected {
+        background-color: #f9d862;
+
+      }
+    }
+
+    .offset_btn {
+      background-color: lightgrey;
+      &.selected {
+        background-color: #9c605f;
+      }
+    }
+
+  }
+
   .src {
     padding: 3px;
     background-color: rgba(87, 147, 217, 0.39);
@@ -305,19 +360,24 @@ $highlight-color: #d62f30;
   }
 }
 
-.beamtreevis{
-  .node{
+.beamtreevis {
+  .node {
     font-weight: bold;
+    //&.topBeam {
+    //  fill: #9c605f;
+    //}
+
   }
-  .link{
-    fill:none;
+  .link {
+    fill: none;
     stroke: #5793d9;
     stroke-width: 2px;
     opacity: .5;
-
+    &.topBeam {
+      stroke: #9c605f;
+      stroke-width: 3px;
+    }
   }
-
-
 
 }
 
