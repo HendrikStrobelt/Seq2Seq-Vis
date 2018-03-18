@@ -7,7 +7,7 @@ import time
 import connexion
 import logging
 
-import umap
+# import umap
 from flask import send_from_directory, redirect
 import numpy as np
 from sklearn.decomposition import PCA
@@ -106,9 +106,9 @@ def project_states(vectors, p_method='pca', anchors=None):
     #     anchors = None
     anchors = None
 
-    if p_method == 'umap':
-        pca = umap.UMAP(n_neighbors=min(len(vectors), 10))
-        anchors = None
+    # if p_method == 'umap':
+    #     pca = umap.UMAP(n_neighbors=min(len(vectors), 10))
+    #     anchors = None
 
     if anchors:
         pca.fit(anchors)
@@ -383,7 +383,7 @@ P_METHODS = {
     "pca": PCA(n_components=2),
     "mds": MDS(),
     "tsne": TSNE(n_iter=1000),
-    'umap': umap.UMAP(metric='cosine'),
+    # 'umap': umap.UMAP(metric='cosine'),
     "none": lambda x: x
 }
 
