@@ -15,13 +15,15 @@ from sklearn.manifold import MDS, TSNE
 
 from copy import deepcopy
 
+from s2s.lru import LRU
 from s2s.project import S2SProject
 from index.annoyVectorIndex import AnnoyVectorIndex
 
 __author__ = 'Hendrik Strobelt, Sebastian Gehrmann'
 CONFIG_FILE_NAME = 's2s.yaml'
 projects = {}
-simple_cache = []
+cache_translate = LRU(5)
+cache_compare = LRU(5)
 
 logging.basicConfig(level=logging.INFO)
 app = connexion.App(__name__)
@@ -74,7 +76,7 @@ def send_static_dep(path):
 
 
 def closest_vector_n(index, v, r=5):
-    res = index.get_closest_x(v, k=12,
+    res = index.get_closest_x(v, k=100,
                               ignore_same_tgt=False,
                               include_distances=True,
                               use_vectors=True)
@@ -147,6 +149,8 @@ def create_proj_list(xs, ys, traces):
 def all_neighbors(project, translations, neighbors, p_method='tsne'):
     # pca = umap.UMAP()#TSNE(n_components=2)
 
+    nr_nn_for_projection = 20
+
     res = {}
     for neighborhood in neighbors:
         n_cand = [[]]
@@ -169,7 +173,7 @@ def all_neighbors(project, translations, neighbors, p_method='tsne'):
                         enc['neighbors'] = n_cand_local
                         n_cand[0].append(
                             {'i': e_id, 't': t_id, 'type': 'enc',
-                             'n': n_cand_local})
+                             'n': n_cand_local[:nr_nn_for_projection]})
 
                 if neighborhood == 'decoder':
                     all_states = list(map(lambda x: x['state'],
@@ -187,7 +191,7 @@ def all_neighbors(project, translations, neighbors, p_method='tsne'):
                         if bId == 0:
                             n_cand[0].append(
                                 {'i': d_id, 't': t_id, 'type': 'dec',
-                                 'n': n_cand_local})
+                                 'n': n_cand_local[:nr_nn_for_projection]})
 
                     bId += 1
                 if neighborhood == 'context':
@@ -205,7 +209,7 @@ def all_neighbors(project, translations, neighbors, p_method='tsne'):
                         if bId == 0:
                             n_cand[0].append(
                                 {'i': d_id, 't': t_id, 'type': 'ctx',
-                                 'n': n_cand_local})
+                                 'n': n_cand_local[:nr_nn_for_projection]})
                     bId += 1
 
         for all_cand in n_cand[0]:  # for now only first entry
@@ -297,6 +301,7 @@ def all_neighbors(project, translations, neighbors, p_method='tsne'):
     for _, nb in res.items():
         for nbb in nb:
             del nbb['v']
+            # nbb['v'] = list(map(lambda x: float(x), list(nbb['v'])))
 
     return res
 
@@ -332,15 +337,17 @@ def get_translation(**request):
     in_sentence = request['in']
     neighbors = request.get('neighbors', [])
 
-    hit = None
-    for test_c in simple_cache:
-        if test_c['in_sentence'] == in_sentence:
-            hit = test_c
-    if hit:
-        # move to front
-        simple_cache.remove(hit)
-        simple_cache.insert(0, hit)
-        return hit['res']
+    res = cache_translate.get(in_sentence)
+    if res:
+        return res
+    # for test_c in simple_cache:
+    #     if test_c['in_sentence'] == in_sentence:
+    #         hit = test_c
+    # if hit:
+    #     # move to front
+    #     simple_cache.remove(hit)
+    #     simple_cache.insert(0, hit)
+    #     return hit['res']
 
     translations = translate(current_project, [in_sentence])
 
@@ -352,9 +359,11 @@ def get_translation(**request):
     res = translations[0]
     res['allNeighbors'] = all_n
 
-    simple_cache.insert(0, {'in_sentence': in_sentence, 'res': res})
-    if len(simple_cache) > 4:
-        simple_cache.pop()
+    cache_translate.add(in_sentence, res)
+
+    # simple_cache.insert(0, {'in_sentence': in_sentence, 'res': res})
+    # if len(simple_cache) > 4:
+    #     simple_cache.pop()
 
     return res
 
@@ -366,11 +375,21 @@ def get_translation_compare(**request):
     compare_sentence = request['compare']
     neighbors = request.get('neighbors', [])
 
+    key = in_sentence + ' VS ' + compare_sentence
+
+    res = cache_compare.get(key)
+    if res:
+        return res
+
     translations = translate(current_project, [in_sentence, compare_sentence])
     all_n = all_neighbors(current_project, translations, neighbors)
 
-    return {'in': translations[0], 'compare': translations[1],
-            'neighbors': all_n}
+    res = {'in': translations[0], 'compare': translations[1],
+           'neighbors': all_n}
+
+    cache_compare.add(key, res)
+
+    return res
 
 
 def extract_sentence(x):

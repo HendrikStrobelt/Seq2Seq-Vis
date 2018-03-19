@@ -22,7 +22,8 @@ export type StateDesc = {
 export interface StateProjectorData {
     states: StateDesc[],
     loc: string,
-    labels?: string[][]
+    labels?: string[][],
+    moreNeighbors?: number[][][]
 }
 
 export type StateProjectorClickEvent = {
@@ -65,10 +66,11 @@ export class StateProjector extends VComponent<StateProjectorData> {
         pivotNeighbors: <{ [key: number]: { [key: number]: StateDesc[] } }> {},
         project: {w: 500, h: 500},
         zoomTransform: d3.zoomIdentity,
-        hasLabels: false
+        hasLabels: false,
+        moreNeighbors: <number[][][]>null
     };
 
-    data:StateProjectorData;
+    data: StateProjectorData;
 
     // readonly getter
     get current() {
@@ -145,10 +147,14 @@ export class StateProjector extends VComponent<StateProjectorData> {
     }
 
     protected _wrangle(data: StateProjectorData) {
+
         const op = this.options;
         const cur = this._current;
         const nDetails = StateProjector.neighborDetails;
 
+        if (data.moreNeighbors) {
+            cur.moreNeighbors = data.moreNeighbors;
+        }
 
         /*======================================
         determine scales and positions
@@ -170,8 +176,8 @@ export class StateProjector extends VComponent<StateProjectorData> {
             }
         }
 
-        cur.xScale.domain([minX, minX + diffX]).range([10, cur.project.w-10]);
-        cur.yScale.domain([minY, minY + diffY]).range([10, cur.project.h-10]);
+        cur.xScale.domain([minX, minX + diffX]).range([10, cur.project.w - 10]);
+        cur.yScale.domain([minY, minY + diffY]).range([10, cur.project.h - 10]);
 
 
         /*======================================
@@ -331,7 +337,7 @@ export class StateProjector extends VComponent<StateProjectorData> {
 
         const plLabelEnter = plLabel.enter()
             .append('text')
-            .attr('class', 'plLabel '+className);
+            .attr('class', 'plLabel ' + className);
 
         plLabelEnter.merge(plLabel).attrs({
             x: (d, i) => cur.xScale(onlyPivots[i].pos[0]),
@@ -366,8 +372,7 @@ export class StateProjector extends VComponent<StateProjectorData> {
         plPoints.on('click',
             d => {
 
-                const neighborIDs = this.myNeighbors(d.pivot.trans_ID, d.pivot.word_ID)
-                    .map(nn => nn.id);
+                const neighborIDs = this.myNeighborIDs(d.pivot.trans_ID, d.pivot.word_ID);
 
                 const evDetails: StateProjectorClickEvent = {
                     loc: cur.loc,
@@ -389,6 +394,15 @@ export class StateProjector extends VComponent<StateProjectorData> {
             return trans[word_ID] || [];
         } else {
             return []
+        }
+    }
+
+
+    myNeighborIDs = (trans_ID, word_ID) => {
+        if (this.current.moreNeighbors) {
+            return this.current.moreNeighbors[trans_ID][word_ID];
+        } else {
+            return this.myNeighbors(trans_ID, word_ID).map(d => d.id)
         }
     }
 

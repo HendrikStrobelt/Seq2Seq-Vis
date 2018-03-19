@@ -47,7 +47,7 @@ export class PanelController {
 
     selectProjection(key) {
         // TODO: remove duck typing for encoder and src/tgt
-        
+
         this._current.projectedNeighbor = key;
         let labels = this._current.translations.map(
             translation => {
@@ -57,10 +57,30 @@ export class PanelController {
                 else return translation.decoderWords[0];
             }
         );
+
+        const getNeighborsFor = {
+            'encoder': (trans: Translation) => trans.encoder.map(d => d.neighbors.map(dd => dd[0])),
+            'decoder': (trans: Translation) => trans.decoder[0].map(d => d.neighbors.map(dd => dd[0])),
+            'context': (trans: Translation) => trans.decoder[0].map(d => d.neighbor_context.map(dd => dd[0])),
+        };
+
+        let moreNeighbors = null;
+        if (key in getNeighborsFor) {
+            const getNeighbors = getNeighborsFor[key];
+            moreNeighbors = this._current.translations.map(translation => {
+                    if (translation == null) return [];
+                    // else:
+                    return getNeighbors(translation)
+                }
+            );
+        }
+
+
         this.pm.vis.projectors.update({
             states: this._current.allNeighbors[key],
-            loc: key.startsWith('enc')?'src':'tgt',
-            labels: labels
+            loc: key.startsWith('enc') ? 'src' : 'tgt',
+            labels,
+            moreNeighbors
         });
         this.pm.vis.statePicto.update(null);
     }
