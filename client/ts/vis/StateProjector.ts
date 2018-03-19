@@ -248,7 +248,7 @@ export class StateProjector extends VComponent<StateProjectorData> {
                 .merge(allL)
                 .attrs({
                     x1: sX(d.pos[0]),
-                    y1: sX(d.pos[1]),
+                    y1: sY(d.pos[1]),
                     x2: o => sX(o.pos[0]),
                     y2: o => sY(o.pos[1])
                 })
