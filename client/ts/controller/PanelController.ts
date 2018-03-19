@@ -351,17 +351,20 @@ export class PanelController {
 
 
             const proj = this.pm.vis.projectors;
+            const pictos = this.pm.vis.statePicto;
 
             if (vType === AttentionVis.VERTEX_TYPE.Encoder &&
                 proj.loc === 'src') {
 
                 proj.actionHoverPivot(transID, d.index, d.hovered);
+                pictos.actionHighlightSegment(transID, d.index, d.hovered);
 
             }
             else if (vType === AttentionVis.VERTEX_TYPE.Decoder &&
                 proj.loc === 'tgt') {
 
                 proj.actionHoverPivot(transID, d.index, d.hovered);
+                pictos.actionHighlightSegment(transID, d.index, d.hovered);
 
             }
 
@@ -417,7 +420,6 @@ export class PanelController {
                             indices: raw_data.res.map(d => d.tokenId)
                         }
                     });
-                    console.log(raw_data, "--- data");
                 })
 
             })
@@ -451,28 +453,13 @@ export class PanelController {
 
         this.eventHandler.bind(StateProjector.events.hovered,
             (d: StateProjectorHoverEvent) => {
-                // d.caller.actionHoverPivot(d.transID, d.wordID, d.hovered);
-
-
                 projectHovered(d.loc, d.transID, d.wordID, d.hovered);
-
-
-                // d.caller.actionSelectPoints(d.pointIDs);
-                //
-                // S2SApi.trainDataIndices(d.neighborIDs, d.loc).then(data => {
-                //     const raw_data = <TrainDataIndexResponse> JSON.parse(data);
-                //
-                //     this.pm.getInfoPanel().setTrans(raw_data.res);
-                //     console.log(raw_data, "--- data");
-                // })
 
             });
 
         this.eventHandler.bind(StatePictograms.events.segmentHovered,
             (d: StatePictogramsHovered) => {
                 const seg = d.segment;
-                // d.caller.actionHighlightSegment(seg.transID, seg.wordID, d.hovered);
-
                 projectHovered(seg.loc, seg.transID, seg.wordID, d.hovered);
 
                 this.pm.vis.projectors

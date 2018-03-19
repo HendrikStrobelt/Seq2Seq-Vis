@@ -68,6 +68,8 @@ export class StateProjector extends VComponent<StateProjectorData> {
         hasLabels: false
     };
 
+    data:StateProjectorData;
+
     // readonly getter
     get current() {
         return this._current
@@ -80,6 +82,12 @@ export class StateProjector extends VComponent<StateProjectorData> {
     get loc(): string {
         return this.current.loc;
     }
+
+    get labels(): string[][] {
+        return this.data.labels;
+
+    }
+
 
     constructor(d3Parent, eventHandler?, options: {} = {}) {
         super(d3Parent, eventHandler);
@@ -375,7 +383,7 @@ export class StateProjector extends VComponent<StateProjectorData> {
 
     }
 
-    private myNeighbors = (trans_ID, word_ID) => {
+    myNeighbors = (trans_ID, word_ID) => {
         const trans = this._current.pivotNeighbors[trans_ID];
         if (trans) {
             return trans[word_ID] || [];

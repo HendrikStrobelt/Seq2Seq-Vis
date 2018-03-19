@@ -1,14 +1,18 @@
 import {VComponent} from "./VisualComponent";
 import {D3Sel} from "../etc/LocalTypes";
 import {SimpleEventHandler} from "../etc/SimpleEventHandler";
-import {StateProjector, StateProjectorData} from "./StateProjector";
+import {
+    StateProjector,
+    StateProjectorClickEvent,
+    StateProjectorData
+} from "./StateProjector";
 import * as _ from "lodash";
 
 
 export type PointSegment = {
     x: number, y: number, ox: number, oy: number,
     id: number, loc: string, transID: number, wordID: number,
-    ow: number, oh: number
+    ow: number, oh: number, word: string
 };
 
 export type StatePictogramsHovered = {
@@ -58,33 +62,33 @@ export class StatePictograms extends VComponent<null> {
     }
 
     protected _render(renderData): void {
-        const pOp = this.projector.current;
+        const pCur = this.projector.current;
         const states = this.projector.states;
         const col = this.colors;
 
         const vContext = <CanvasRenderingContext2D>this.hiddenCanvas.node().getContext('2d');
 
         vContext.fillStyle = col.bg;
-        vContext.fillRect(0, 0, pOp.project.w, pOp.project.h);
+        vContext.fillRect(0, 0, pCur.project.w, pCur.project.h);
 
         vContext.globalAlpha = col.pp.a;
         vContext.fillStyle = col.pp.c;
         for (const st of states) {
             vContext.beginPath();
-            vContext.arc(pOp.xScale(st.pos[0]), pOp.yScale(st.pos[1]),
+            vContext.arc(pCur.xScale(st.pos[0]), pCur.yScale(st.pos[1]),
                 Math.sqrt(st.occ.length), 0, 2 * Math.PI)
             vContext.fill();
         }
 
 
-        const gridScale = this.options.gridElements / pOp.project.w;
+        const gridScale = this.options.gridElements / pCur.project.w;
 
-        const panelWidth = pOp.project.w / this.options.gridElements;
+        const panelWidth = pCur.project.w / this.options.gridElements;
         const panelWidthCeil = Math.ceil(panelWidth);
 
 
         const lineSeqs: PointSegment[][] = [];
-        const pivots = this.projector.current.pivots;
+        const pivots = pCur.pivots;
         for (const transID of _.range(pivots.length)) {
             const line = pivots[transID];
 
@@ -97,18 +101,20 @@ export class StatePictograms extends VComponent<null> {
                 vContext.beginPath();
                 for (const pID of _.range(line.length)) {
                     const pp = line[pID].pos;
-                    if (pID == 0) vContext.moveTo(pOp.xScale(pp[0]), pOp.yScale(pp[1]));
-                    else vContext.lineTo(pOp.xScale(pp[0]), pOp.yScale(pp[1]))
+                    if (pID == 0) vContext.moveTo(pCur.xScale(pp[0]), pCur.yScale(pp[1]));
+                    else vContext.lineTo(pCur.xScale(pp[0]), pCur.yScale(pp[1]))
                 }
                 vContext.stroke();
 
+                const wordList = pCur.hasLabels ? this.projector.labels[transID] || [] : []
 
                 vContext.fillStyle = col.pl.c[transID];
                 let wordID = 0;
                 for (const point of line) {
-                    const ox = pOp.xScale(point.pos[0]);
-                    const oy = pOp.yScale(point.pos[1]);
+                    const ox = pCur.xScale(point.pos[0]);
+                    const oy = pCur.yScale(point.pos[1]);
 
+                    const word = wordList[wordID] || '' + wordID;
                     lineSeq.push({
                         ox, oy,
                         x: Math.floor(ox * gridScale) / gridScale,
@@ -117,8 +123,9 @@ export class StatePictograms extends VComponent<null> {
                         loc: this.projector.loc,
                         transID,
                         wordID,
-                        ow:panelWidthCeil,
-                        oh:panelWidthCeil
+                        ow: panelWidthCeil,
+                        oh: panelWidthCeil,
+                        word
                     });
 
                     vContext.beginPath();
@@ -139,21 +146,24 @@ export class StatePictograms extends VComponent<null> {
 
         panRow = panRow.enter()
             .append('div').attr('class', 'row')
-            .merge(panRow)
+            .merge(panRow);
 
-        let pCanvas = panRow.selectAll('.pCanvas').data(d => d);
-        pCanvas.exit().remove();
+        let pCanvasFrame = panRow.selectAll('.pCanvasFrame').data(d => d);
+        pCanvasFrame.exit().remove();
 
         // noinspection JSSuspiciousNameCombination
-        pCanvas = pCanvas.enter().append('canvas').attrs({
+        const pCanvasFrameEnter = pCanvasFrame.enter().append('g').attr('class', 'pCanvasFrame');
+        pCanvasFrameEnter.append('canvas').attrs({
             class: 'pCanvas',
             width: panelWidthCeil,
-            height: panelWidthCeil,
-        }).merge(pCanvas)
+            height: panelWidthCeil
+        });
+        pCanvasFrameEnter.append('div')
+        pCanvasFrame = pCanvasFrameEnter.merge(pCanvasFrame);
 
 
         const that = this;
-        pCanvas.each(function (d: PointSegment) {
+        pCanvasFrame.select('.pCanvas').each(function (d: PointSegment) {
             const ctx: CanvasRenderingContext2D = (<HTMLCanvasElement>this)
                 .getContext('2d');
 
@@ -170,10 +180,12 @@ export class StatePictograms extends VComponent<null> {
             ctx.arc(d.ox - d.x, d.oy - d.y, 5, 0, 2 * Math.PI);
             ctx.stroke();
 
-        })
+        });
+
+        pCanvasFrame.select('div').text(d => d.word)
 
 
-        pCanvas.on('mouseenter', (d: PointSegment) => {
+        pCanvasFrame.on('mouseenter', (d: PointSegment) => {
             const details: StatePictogramsHovered = {
                 caller: this,
                 segment: d,
@@ -181,7 +193,7 @@ export class StatePictograms extends VComponent<null> {
             };
             this.eventHandler.trigger(StatePictograms.events.segmentHovered, details)
         });
-        pCanvas.on('mouseleave', (d: PointSegment) => {
+        pCanvasFrame.on('mouseleave', (d: PointSegment) => {
             const details: StatePictogramsHovered = {
                 caller: this,
                 segment: d,
@@ -189,6 +201,22 @@ export class StatePictograms extends VComponent<null> {
             };
             this.eventHandler.trigger(StatePictograms.events.segmentHovered, details)
         });
+
+        pCanvasFrame.on('click', d => {
+            const neighborIDs = this.projector.myNeighbors(d.transID, d.wordID).map(nn => nn.id);
+
+            const detail: StateProjectorClickEvent = {
+                caller: this.projector,
+                loc: this.projector.loc,
+                pointIDs: [d.id],
+                neighborIDs
+            };
+            
+            this.eventHandler
+                .trigger(StateProjector.events.clicked, detail);
+
+
+        })
 
 
         // vContext.closePath();
@@ -198,11 +226,11 @@ export class StatePictograms extends VComponent<null> {
 
     actionHighlightSegment(transID: number, wordID: number, hovered: boolean) {
         if (hovered) {
-            this.parent.selectAll('.pCanvas')
+            this.parent.selectAll('.pCanvasFrame')
                 .classed('selected',
                     (d: PointSegment) => d.wordID === wordID && d.transID === transID);
         } else {
-            this.parent.selectAll('.pCanvas')
+            this.parent.selectAll('.pCanvasFrame')
                 .classed('selected', false)
         }
 

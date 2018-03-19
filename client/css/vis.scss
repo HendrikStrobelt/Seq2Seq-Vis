@@ -303,7 +303,7 @@ $highlight-color: #d62f30;
       border-radius: 0 5px 5px 0;
     }
 
-    .show_btn{
+    .show_btn {
       padding: 6px 8px; // to adjust for borders !!
     }
 
@@ -351,13 +351,29 @@ $highlight-color: #d62f30;
   }
 }
 
-.pCanvas {
-  border: #d3d3d3 2px solid;
-  margin: 5px;
+.pCanvasFrame {
+  display: inline-block;
+  padding: 5px;
+  text-align: center;
+
+  .pCanvas {
+    border: #d3d3d3 2px solid;
+  }
+  div {
+    font-weight: bold;
+  }
 
   &.selected {
-    border: #9c605f 2px solid;
+
+    .pCanvas {
+      border: #9c605f 2px solid;
+    }
+    div{
+      color: #9c605f;
+    }
+
   }
+
 }
 
 .beamtreevis {
