@@ -8,6 +8,10 @@ import {ZoomTransform} from "d3-zoom";
 // declare function require(name:string);
 // let lasso = require('d3-lasso');
 
+export type NeighborDetail = {
+    indexID: number, distance: number, refTransID: number, refWordID: number
+}
+
 export type StateDesc = {
     id: number,
     occ: number[][] | null,
@@ -46,7 +50,8 @@ export class StateProjector extends VComponent<StateProjectorData> {
 
     protected options = {
         pos: {x: 0, y: 0},
-        css_class_main: 'state_projector'
+        css_class_main: 'state_projector',
+        keepAspectRatio: false
     };
 
     protected _current = {
@@ -121,8 +126,25 @@ export class StateProjector extends VComponent<StateProjectorData> {
     }
 
 
-    protected _wrangle(data: StateProjectorData) {
+    protected static neighborDetails(occ: number[][]): NeighborDetail[] {
 
+        return occ.map(oc => {
+            const [indexID, distance, refTransID, refWordID] = oc;
+            return {indexID, distance, refTransID, refWordID}
+        })
+
+
+    }
+
+    protected _wrangle(data: StateProjectorData) {
+        const op = this.options;
+        const cur = this._current;
+        const nDetails = StateProjector.neighborDetails;
+
+
+        /*======================================
+        determine scales and positions
+        =======================================*/
         const st = data.states;
         let [minX, maxX] = d3.extent(st.map(d => d.pos[0]));
         let [minY, maxY] = d3.extent(st.map(d => d.pos[1]));
@@ -130,30 +152,40 @@ export class StateProjector extends VComponent<StateProjectorData> {
         let diffX = maxX - minX;
         let diffY = maxY - minY;
 
+        if (op.keepAspectRatio) {
+            if (diffX > diffY) {
+                // noinspection JSSuspiciousNameCombination
+                diffY = diffX
+            } else {
+                // noinspection JSSuspiciousNameCombination
+                diffX = diffY
+            }
+        }
 
-        // if (diffX > diffY) {
-        //     diffY = diffX
-        // } else {
-        //     diffX = diffY
-        // }
+        cur.xScale.domain([minX, minX + diffX]).range([10, cur.project.w-10]);
+        cur.yScale.domain([minY, minY + diffY]).range([10, cur.project.h-10]);
 
-        const cur = this._current;
-        cur.xScale.domain([minX, minX + diffX]).range([5, cur.project.w]);
-        cur.yScale.domain([minY, minY + diffY]).range([5, cur.project.h]);
 
-        cur.loc = data.loc === 'encoder' ? 'src' : 'tgt';
+        /*======================================
+        determine neighbor information
+        =======================================*/
+        cur.loc = data.loc;
 
         cur.pivotNeighbors = {};
 
-        st.filter(d => !d.pivot).forEach(stt => stt.occ.forEach(occ => {
-            const nn = cur.pivotNeighbors[occ[2]] || {};
-            const nnn = nn[occ[3]] || [];
-            nnn.push(stt);
-            nn[occ[3]] = nnn;
-            cur.pivotNeighbors[occ[2]] = nn;
-        }));
+        // go through all non-pivot state and make them 'neighbors' to their reference
+        // translation and word
+        st.filter(d => !d.pivot).forEach(me =>
+            nDetails(me.occ).forEach(occ => {
+                const wordList = cur.pivotNeighbors[occ.refTransID] || {};
+                const neighbors = wordList[occ.refWordID] || [];
+                neighbors.push(me);
+                wordList[occ.refWordID] = neighbors;
+                cur.pivotNeighbors[occ.refTransID] = wordList;
+            }));
 
 
+        // create a list of all pivots (anchor for lines)
         cur.pivots = [];
         cur.noOfLines = st.filter(d => d.pivot && (d.pivot.word_ID == 0)).length;
         for (let pT = 0; pT < cur.noOfLines; pT++) {
@@ -179,8 +211,13 @@ export class StateProjector extends VComponent<StateProjectorData> {
 
 
     protected _render(renderData: StateProjectorData): void {
+        // shortcuts:
         const states = renderData.states;
         const cur = this._current;
+        const sX = cur.xScale;
+        const sY = cur.yScale;
+        const nDetails = StateProjector.neighborDetails;
+
 
         let pps = this.layers.main.selectAll('.pp').data(states);
         pps.exit().remove();
@@ -189,16 +226,16 @@ export class StateProjector extends VComponent<StateProjectorData> {
         ppsEnter.append('circle');
 
         pps = ppsEnter.merge(pps);
-        pps
-        // .transition()
-            .attr('transform',
-                d => `translate(${cur.xScale(d.pos[0])},${cur.yScale(d.pos[1])})`);
+        pps.attr('transform',
+            d => `translate(${sX(d.pos[0])},${sY(d.pos[1])})`);
 
         pps.select('circle').attr('r', d => d.occ.length);
 
         pps.on('mouseenter', d => {
             const allL = this.layers.main.selectAll('.hoverLine')
-                .data(d.occ.map(oc => cur.pivots[oc[2]][oc[3]]));
+                .data(nDetails(d.occ)
+                    .map(oc => cur.pivots[oc.refTransID][oc.refWordID]));
+
             allL.exit().remove();
 
             allL.enter().append('line').attr('class', 'hoverLine')
@@ -210,10 +247,10 @@ export class StateProjector extends VComponent<StateProjectorData> {
                 })
                 .merge(allL)
                 .attrs({
-                    x1: cur.xScale(d.pos[0]),
-                    y1: cur.yScale(d.pos[1]),
-                    x2: o => cur.xScale(o.pos[0]),
-                    y2: o => cur.yScale(o.pos[1])
+                    x1: sX(d.pos[0]),
+                    y1: sX(d.pos[1]),
+                    x2: o => sX(o.pos[0]),
+                    y2: o => sY(o.pos[1])
                 })
         });
         pps.on('mouseleave', () => {
@@ -241,7 +278,7 @@ export class StateProjector extends VComponent<StateProjectorData> {
         this.layers.fg.selectAll('.plPoint').remove();
         for (let pT = 0; pT < cur.noOfLines; pT++) {
             this.lineDraw(cur.pivots[pT], 'pl_' + pT,
-                cur.hasLabels ? renderData.labels[pT] : []);
+                cur.hasLabels ? renderData.labels[pT] || [] : []);
         }
 
     }
@@ -249,7 +286,7 @@ export class StateProjector extends VComponent<StateProjectorData> {
     private lineDraw(onlyPivots: StateDesc[], className: string, labels: string[]) {
         const cur = this._current;
 
-        console.log(onlyPivots, "--- onlyPivots");
+        console.log(onlyPivots, "--- onlyPivots", labels);
 
         const line = d3.line<StateDesc>()
             .x(d => cur.xScale(d.pos[0]))
@@ -279,10 +316,14 @@ export class StateProjector extends VComponent<StateProjectorData> {
         plPoints.classed('endPoint', d => d.pivot.word_ID === onlyPivots.length - 1);
 
 
-        const plLabel = this.layers.fg.selectAll(".plLabel").data(labels);
+        const plLabel = this.layers.fg.selectAll(".plLabel." + className)
+            .data(labels);
+
         plLabel.exit().remove();
 
-        const plLabelEnter = plLabel.enter().append('text').attr('class', 'plLabel');
+        const plLabelEnter = plLabel.enter()
+            .append('text')
+            .attr('class', 'plLabel '+className);
 
         plLabelEnter.merge(plLabel).attrs({
             x: (d, i) => cur.xScale(onlyPivots[i].pos[0]),
@@ -334,8 +375,14 @@ export class StateProjector extends VComponent<StateProjectorData> {
 
     }
 
-    private myNeighbors = (trans_ID, word_ID) =>
-        this._current.pivotNeighbors[trans_ID][word_ID];
+    private myNeighbors = (trans_ID, word_ID) => {
+        const trans = this._current.pivotNeighbors[trans_ID];
+        if (trans) {
+            return trans[word_ID] || [];
+        } else {
+            return []
+        }
+    }
 
 
     actionSelectPoints(point_IDs: number[]) {

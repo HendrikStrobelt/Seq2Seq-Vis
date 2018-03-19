@@ -28,7 +28,7 @@ export class PanelController {
         allNeighbors: {},
         projectedNeighbor: null,
         sentence: null,
-        translation: <Translation> null
+        translations: <Translation[]>[null, null]
     };
 
     constructor() {
@@ -46,14 +46,20 @@ export class PanelController {
     }
 
     selectProjection(key) {
+        // TODO: remove duck typing for encoder and src/tgt
+        
         this._current.projectedNeighbor = key;
-        let labels = []
-        if (key === 'encoder') labels = [this._current.translation.encoderWords];
-        else labels = [this._current.translation.decoderWords[0]];
-
+        let labels = this._current.translations.map(
+            translation => {
+                if (translation == null) return [];
+                // else:
+                if (key.startsWith('enc')) return translation.encoderWords;
+                else return translation.decoderWords[0];
+            }
+        );
         this.pm.vis.projectors.update({
             states: this._current.allNeighbors[key],
-            loc: key,
+            loc: key.startsWith('enc')?'src':'tgt',
             labels: labels
         });
         this.pm.vis.statePicto.update(null);
@@ -72,7 +78,7 @@ export class PanelController {
         this.selectProjection(cur.projectedNeighbor);
     }
 
-    update(raw_data, main = this.pm.vis.left, extra = this.pm.vis.zero) {
+    update(raw_data, main = this.pm.vis.left, extra = this.pm.vis.zero, isCompare = false) {
 
         const cur = this._current;
 
@@ -109,13 +115,17 @@ export class PanelController {
         //     row: translation.contextNeighbors[cur.beamIndex]
         // });
 
-        cur.translation = translation;
-        if (main == this.pm.vis.left) {
+
+        if (isCompare) {
+            cur.translations[1] = translation;
+        } else {
+            cur.translations[0] = translation;
+            // if (main == this.pm.vis.left) {
             this._current.sentence = translation.inputSentence;
             this.updateProjectorData(raw_data.allNeighbors);
 
 
-            const winnerBeam = translation.decoderWords[cur.beamIndex]
+            const winnerBeam = translation.decoderWords[cur.beamIndex];
 
             const btWords: string[][][] = raw_data.beam_trace_words;
             console.log(raw_data.beam_trace_words, "--- ");
@@ -124,7 +134,7 @@ export class PanelController {
             const root: BeamTreeData = {
                 name: btWords[0][0][0],
                 children: []
-            }
+            };
             allNodes[btWords[0][0][0]] = root;
 
             for (const depthList of btWords.slice(1)) {
@@ -379,7 +389,7 @@ export class PanelController {
                         const d = <{ in: any, compare: any, neighbors: any }>JSON.parse(data);
 
                         console.log(d, "--- d");
-                        this.update(d.compare, main, null);
+                        this.update(d.compare, main, null, true);
 
                         this.updateProjectorData(d.neighbors);
 
