@@ -289,24 +289,6 @@ $highlight-color: #d62f30;
     margin-bottom: 5px;
     //background-color: lightgrey;
 
-    .btn {
-      font-weight: bold;
-      padding: 8px 8px;
-      cursor: pointer;
-    }
-
-    .btn_left {
-      border-radius: 5px 0 0 5px;
-    }
-
-    .btn_right {
-      border-radius: 0 5px 5px 0;
-    }
-
-    .show_btn {
-      padding: 6px 8px; // to adjust for borders !!
-    }
-
     .show_src {
       //background-color: #adc2d9;
       border: 2px #5793d9 solid;
@@ -324,6 +306,10 @@ $highlight-color: #d62f30;
         background-color: #f9d862;
 
       }
+    }
+
+    .show_btn {
+      padding: 6px 8px; // to adjust for borders !!
     }
 
     .offset_btn {
@@ -368,7 +354,7 @@ $highlight-color: #d62f30;
     .pCanvas {
       border: #9c605f 2px solid;
     }
-    div{
+    div {
       color: #9c605f;
     }
 
@@ -396,4 +382,19 @@ $highlight-color: #d62f30;
   }
 
 }
+
+.btn {
+  font-weight: bold;
+  padding: 8px 8px;
+  cursor: pointer;
+}
+
+.btn_left {
+  border-radius: 5px 0 0 5px;
+}
+
+.btn_right {
+  border-radius: 0 5px 5px 0;
+}
+
 

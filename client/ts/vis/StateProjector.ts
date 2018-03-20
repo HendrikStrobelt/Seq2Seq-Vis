@@ -3,7 +3,7 @@ import * as d3 from 'd3'
 import * as _ from "lodash";
 import {ZoomTransform} from "d3-zoom";
 // import * as d3_lasso from 'd3-lasso'
-
+import * as concaveman from "concaveman"
 
 // declare function require(name:string);
 // let lasso = require('d3-lasso');
@@ -67,7 +67,8 @@ export class StateProjector extends VComponent<StateProjectorData> {
         project: {w: 500, h: 500},
         zoomTransform: d3.zoomIdentity,
         hasLabels: false,
-        moreNeighbors: <number[][][]>null
+        moreNeighbors: <number[][][]>null,
+        hideNN: false
     };
 
     data: StateProjectorData;
@@ -388,14 +389,14 @@ export class StateProjector extends VComponent<StateProjectorData> {
 
     }
 
-    myNeighbors = (trans_ID, word_ID) => {
+    myNeighbors = (trans_ID, word_ID): StateDesc[] => {
         const trans = this._current.pivotNeighbors[trans_ID];
         if (trans) {
             return trans[word_ID] || [];
         } else {
             return []
         }
-    }
+    };
 
 
     myNeighborIDs = (trans_ID, word_ID) => {
@@ -404,7 +405,7 @@ export class StateProjector extends VComponent<StateProjectorData> {
         } else {
             return this.myNeighbors(trans_ID, word_ID).map(d => d.id)
         }
-    }
+    };
 
 
     actionSelectPoints(point_IDs: number[]) {
@@ -426,19 +427,36 @@ export class StateProjector extends VComponent<StateProjectorData> {
             const myself = cur.pivots[trans_ID][word_ID];
             const myNeighbors = this.myNeighbors(trans_ID, word_ID);
 
-            const allL = this.layers.main.selectAll('.hoverLine')
-                .data(myNeighbors);
-            allL.exit().remove();
 
-            allL.enter().append('line').attr('class', 'hoverLine')
-                .merge(allL)
+            const points = myNeighbors.map(d => [cur.xScale(d.pos[0]), cur.yScale(d.pos[1])])
+
+            const polygon = concaveman(points)
+
+            const lGen = d3.line().curve(d3.curveLinearClosed);
+
+            const allPoly = this.layers.main
+                .selectAll('.hoverLine').data([polygon])
+
+            allPoly.exit().remove();
+            allPoly.enter().append('path').attr('class', 'hoverLine')
+                .merge(allPoly)
                 .style('opacity', 1. / (Math.sqrt(myNeighbors.length)))
-                .attrs({
-                    x1: cur.xScale(myself.pos[0]),
-                    y1: cur.yScale(myself.pos[1]),
-                    x2: o => cur.xScale(o.pos[0]),
-                    y2: o => cur.yScale(o.pos[1])
-                })
+                .attr('d', lGen)
+
+
+            // const allL = this.layers.main.selectAll('.hoverLine')
+            //     .data(myNeighbors);
+            // allL.exit().remove();
+            //
+            // allL.enter().append('line').attr('class', 'hoverLine')
+            //     .merge(allL)
+            //     .style('opacity', 1. / (Math.sqrt(myNeighbors.length)))
+            //     .attrs({
+            //         x1: cur.xScale(myself.pos[0]),
+            //         y1: cur.yScale(myself.pos[1]),
+            //         x2: o => cur.xScale(o.pos[0]),
+            //         y2: o => cur.yScale(o.pos[1])
+            //     })
         } else {
             this.layers.main.selectAll('.hoverLine').remove();
         }
