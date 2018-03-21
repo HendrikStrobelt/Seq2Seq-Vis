@@ -18,10 +18,15 @@ export type TrainDataIndexResponse = {
 export class S2SApi {
 
 
-    static translate({input}) {
+    static translate({
+                         input, partial = <string[]>[],
+                         neighbors: neighbors = ['decoder', 'encoder', 'context']
+                     }) {
         const request = Networking.ajax_request('/api/translate');
         const payload = new Map([['in', input],
-            ['neighbors', 'decoder,encoder,context']]);
+            ['neighbors', neighbors],
+            ['partial', partial]
+        ]);
 
         return request.get(payload)
     }

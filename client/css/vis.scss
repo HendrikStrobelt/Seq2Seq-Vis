@@ -72,7 +72,10 @@ $highlight-color: #d62f30;
   }
   rect {
     fill: #aaa;
-    fill-opacity: .6;
+    opacity: .6;
+  }
+  &.highlight rect {
+    @extend .rect_highlight
   }
 }
 
@@ -238,8 +241,14 @@ $highlight-color: #d62f30;
       fill: #9e9e5f;
     }
 
+    &:hover{
+      stroke: #9e605f;
+    }
+
     &.selected {
       stroke: #9c605f;
+      fill-opacity: .6;
+      stroke-width: 2px;
     }
   }
 
@@ -251,10 +260,10 @@ $highlight-color: #d62f30;
   }
 
   .endPoint {
-    fill: #9c605f !important;
+    fill: #9c605f
   }
   .startPoint {
-    fill: #7d9c5f !important;
+    fill: #7d9c5f
   }
 
   .hoverLine {

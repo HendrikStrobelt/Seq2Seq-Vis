@@ -12,7 +12,7 @@ export type WordLineHoverEvent = {
     caller: WordLine,
     word: LooseObject,
     row: number,
-    index: number,
+    col: number,
     css_class_main: string
 }
 
@@ -37,6 +37,8 @@ type WordLineRender = {
     wordBorder?: string[][],
     boxWidth?: number[][],
 }
+
+type WordCell = { row: number, col: number, word: WordToken };
 
 export class WordLine extends VComponent<WordLineData> {
 
@@ -141,43 +143,44 @@ export class WordLine extends VComponent<WordLineData> {
 
     }
 
-    actionWordHovered({d, i, hovered}) {
-        this.eventHandler.trigger(
-            WordLine.events.wordHovered,
-            {
-                hovered,
-                caller: this,
-                word: d,
-                row: d.row,
-                index: i,
-                css_class_main: this.options.css_class_main
-            })
-    }
-
-    actionWordClicked({d, i}) {
-        let selected = !(this._current.selectedWord === i);
-        this._current.selectedWord = selected ? i : null;
+    actionWordHovered(d: WordCell, i, hovered) {
+        const detail = <WordLineHoverEvent> {
+            hovered,
+            caller: this,
+            word: d,
+            row: d.row,
+            col: d.col,
+            css_class_main: this.options.css_class_main
+        }
 
         this.eventHandler.trigger(
-            WordLine.events.wordSelected,
-            {
-                selected,
-                caller: this,
-                row: d.row,
-                word: d,
-                index: i,
-                css_class_main: this.options.css_class_main
-            })
+            WordLine.events.wordHovered, detail)
+    }
+
+    actionWordClicked(d:WordCell, i) {
+        const hovered = !(this._current.selectedWord === i);
+        this._current.selectedWord = hovered ? i : null;
+
+        const detail = <WordLineHoverEvent>{
+            hovered,
+            caller: this,
+            row: d.row,
+            word: d,
+            col: d.col,
+            css_class_main: this.options.css_class_main
+        };
+        this.eventHandler.trigger(WordLine.events.wordSelected, detail)
 
     }
 
 
-    highlightWord(row: number, index: number, highlight: boolean, exclusive = false, label = 'highlight'): void {
+    highlightWord(row: number, col: number, highlight: boolean, exclusive = false, label = 'highlight'): void {
 
+        // console.log(this.options.css_class_main, this.base.selectAll(`.${this.options.css_class_main}`), "--- this.options.css_class_main, this.base.selectAll(`.${this.options.css_class_main}`)");
         // console.log(row, highlight, exclusive, label, "--- word,highlight,exclusive,label");
         this.base.selectAll(`.${this.options.css_class_main}`)
-            .classed(label, function (d: LooseObject, i: number) {
-                if ((d.row === row) && (i === index)) {
+            .classed(label, function (d: WordCell) {
+                if ((d.row === row) && (d.col === col)) {
                     return highlight;
                 } else {
                     if (exclusive) return false;
@@ -193,7 +196,7 @@ export class WordLine extends VComponent<WordLineData> {
 
         // [rows of [words of {wordRect, wordText}]]
 
-        let rows = this.base.selectAll('.word_row').data(<any[]> render.rows);
+        let rows = this.base.selectAll('.word_row').data(render.rows);
         rows.exit().remove();
         rows = rows.enter()
             .append('g').attr('class', 'word_row')
@@ -201,7 +204,11 @@ export class WordLine extends VComponent<WordLineData> {
             .attr('transform', (_, i) => `translate(${op.x_offset},${(i) * (op.box_height)})`);
 
         let words = rows.selectAll(`.${op.css_class_main}`)
-            .data((row, rowID) => row.map(word => ({row: rowID, word})));
+            .data((row, rowID) => row.map((word, col) => ({
+                row: rowID,
+                word,
+                col
+            })));
         words.exit().remove();
 
         const wordsEnter = words.enter()
@@ -220,14 +227,14 @@ export class WordLine extends VComponent<WordLineData> {
         const allWords = wordsEnter.merge(words)
             .attrs({'transform': (w: any, i) => `translate(${render.positions[w.row][i]},0)`,})
             .on('mouseenter', (d, i) => {
-                this.actionWordHovered({d, i, hovered: true})
+                this.actionWordHovered(d, i, true)
                 // this.layers.main.selectAll(`.${hoverPrefix + i}`).raise().classed('highlight', true);
             })
             .on('mouseout', (d, i) => {
-                this.actionWordHovered({d, i, hovered: false})
+                this.actionWordHovered(d, i, false)
                 // this.layers.main.selectAll(`.${hoverPrefix + i}`).classed('highlight', null);
             })
-            .on('click', (d, i) => this.actionWordClicked({d, i}))
+            .on('click', (d, i) => this.actionWordClicked(d, i))
 
 
         const allR = allWords.select('rect');

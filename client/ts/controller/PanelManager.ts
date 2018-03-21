@@ -70,7 +70,8 @@ export class PanelManager {
     };
 
     panels = {
-        projectorSelect: this._createProjectorOptions()
+        projectorSelect: this._createProjectorOptions(),
+        loadProjectButton: d3.select('#loadProject')
     }
 
     get vis() {
@@ -103,12 +104,12 @@ export class PanelManager {
     _createBeamViewPanel() {
         const parent = d3.select('#beam-view').append('svg').attrs({
             width: 1000,
-            height: 200
+            height: 250
         });
 
         return new BeamTreeVis(parent, this.eventHandler, {
             width: 1000,
-            height: 200
+            height: 250
         })
 
 

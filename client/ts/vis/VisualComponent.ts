@@ -176,7 +176,7 @@ export abstract class VComponent<DataInterface> {
 
     hideView() {
         if (!this._current.hidden) {
-            this.base.styles({
+            this.parent.transition().styles({
                 'opacity': 0,
                 'pointer-events': 'none'
             });
@@ -186,12 +186,12 @@ export abstract class VComponent<DataInterface> {
 
     unhideView() {
         if (this._current.hidden) {
-            this.base.styles({
+            this.parent.transition().styles({
                 'opacity': 1,
                 'pointer-events': null
             });
             this._current.hidden = false;
-            this.update(this.data);
+            // this.update(this.data);
 
         }
     }

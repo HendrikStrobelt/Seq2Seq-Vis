@@ -22,8 +22,9 @@ from index.annoyVectorIndex import AnnoyVectorIndex
 __author__ = 'Hendrik Strobelt, Sebastian Gehrmann'
 CONFIG_FILE_NAME = 's2s.yaml'
 projects = {}
-cache_translate = LRU(5)
-cache_compare = LRU(5)
+cache_translate = LRU(20)
+cache_neighbors = LRU(20)
+cache_compare = LRU(20)
 
 logging.basicConfig(level=logging.INFO)
 app = connexion.App(__name__)
@@ -306,10 +307,16 @@ def all_neighbors(project, translations, neighbors, p_method='tsne'):
     return res
 
 
-def translate(project, in_sentences):
+def translate(project, in_sentences, partial=[]):
     model = project.model
 
-    translations = model.translate(in_text=in_sentences)
+    translations = {}
+    for transID, in_sentence in enumerate(in_sentences):
+        par = partial[transID] if (transID < len(partial)) else []
+        par = [par] if len(par) else []
+        print(transID, in_sentence, par)
+        translations[transID] = model.translate(in_text=[in_sentence],
+                                                partial_decode=par)[0]
     tgt_dict = project.dicts['i2t']['tgt']
     for _, trans in translations.items():
         for tk in trans['beam']:
@@ -335,35 +342,34 @@ def get_translation(**request):
     current_project = list(projects.values())[0]  # type: S2SProject
 
     in_sentence = request['in']
-    neighbors = request.get('neighbors', [])
+    neighbors = request.get('neighbors', [''])
+    partials = request.get('partial', [''])
 
-    res = cache_translate.get(in_sentence)
-    if res:
-        return res
-    # for test_c in simple_cache:
-    #     if test_c['in_sentence'] == in_sentence:
-    #         hit = test_c
-    # if hit:
-    #     # move to front
-    #     simple_cache.remove(hit)
-    #     simple_cache.insert(0, hit)
-    #     return hit['res']
+    # Make empty lists empty:
+    partials = [] if partials == [''] else partials
+    neighbors = [] if neighbors == [''] else neighbors
 
-    translations = translate(current_project, [in_sentence])
+    print(in_sentence)
+    print(partials, neighbors)
 
-    print(translations[0]['beam'])
-    all_n = all_neighbors(current_project, translations, neighbors)
-    #
-    # print(neighbors,
-    #       all_n)
+    translations = cache_translate.get(in_sentence + str(partials))
+    if not translations:
+        translations = translate(current_project, [in_sentence],
+                                 partial=partials)
+        cache_translate.add(in_sentence + str(partials), translations)
+
     res = translations[0]
-    res['allNeighbors'] = all_n
 
-    cache_translate.add(in_sentence, res)
+    if len(neighbors) > 0:
+        all_n = cache_neighbors.get(
+            in_sentence + str(partials) + str(neighbors))
 
-    # simple_cache.insert(0, {'in_sentence': in_sentence, 'res': res})
-    # if len(simple_cache) > 4:
-    #     simple_cache.pop()
+        if not all_n:
+            all_n = all_neighbors(current_project, translations, neighbors)
+            cache_neighbors.add(in_sentence + str(partials) + str(neighbors),
+                                all_n)
+
+        res['allNeighbors'] = all_n
 
     return res
 
