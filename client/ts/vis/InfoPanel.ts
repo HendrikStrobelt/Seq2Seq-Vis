@@ -35,7 +35,7 @@ export class InfoPanel {
             '<span class="show_tgt show_btn btn btn_right">tgt</span>' +
             ' highlight: ' +
             '<span class="h_minus offset_btn btn btn_left">-1</span>' +
-            '<span class="h_null offset_btn btn">0</span>' +
+            '<span class="h_null offset_btn btn btn_center">0</span>' +
             '<span class="h_plus offset_btn btn btn_right">+1</span>' +
             '</div></div>')
 

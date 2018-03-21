@@ -31,12 +31,13 @@ export class S2SApi {
         return request.get(payload)
     }
 
-    static translate_compare({input, compare}) {
+    static translate_compare({input, compare,
+                                 neighbors = ['decoder', 'encoder', 'context']}) {
         const request = Networking.ajax_request('/api/translate_compare');
         const payload = new Map([
             ['in', input],
             ['compare', compare],
-            ['neighbors', 'decoder,encoder,context']]);
+            ['neighbors', neighbors]]);
 
         return request.get(payload)
     }

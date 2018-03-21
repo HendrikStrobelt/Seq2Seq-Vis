@@ -179,7 +179,7 @@ export abstract class VComponent<DataInterface> {
             this.parent.transition().styles({
                 'opacity': 0,
                 'pointer-events': 'none'
-            });
+            }).style('display', 'none');
             this._current.hidden = true;
         }
     }
@@ -188,7 +188,8 @@ export abstract class VComponent<DataInterface> {
         if (this._current.hidden) {
             this.parent.transition().styles({
                 'opacity': 1,
-                'pointer-events': null
+                'pointer-events': null,
+                'display': null
             });
             this._current.hidden = false;
             // this.update(this.data);

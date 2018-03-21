@@ -380,18 +380,20 @@ def get_translation_compare(**request):
     in_sentence = request['in']
     compare_sentence = request['compare']
     neighbors = request.get('neighbors', [])
+    neighbors = [] if neighbors == [''] else neighbors
 
-    key = in_sentence + ' VS ' + compare_sentence
+    key = in_sentence + ' VS ' + compare_sentence + str(neighbors)
 
     res = cache_compare.get(key)
     if res:
         return res
 
     translations = translate(current_project, [in_sentence, compare_sentence])
-    all_n = all_neighbors(current_project, translations, neighbors)
+    res = {'in': translations[0], 'compare': translations[1]}
 
-    res = {'in': translations[0], 'compare': translations[1],
-           'neighbors': all_n}
+    if len(neighbors) > 0:
+        all_n = all_neighbors(current_project, translations, neighbors)
+        res['neighbors'] = all_n
 
     cache_compare.add(key, res)
 

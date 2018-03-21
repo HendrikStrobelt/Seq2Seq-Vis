@@ -14,7 +14,14 @@ import {
 import * as _ from 'lodash';
 import {StatePictograms, StatePictogramsHovered} from "../vis/StatePictograms";
 import {BeamTreeData} from "../vis/BeamTree";
+import ModalDialog from "../etc/ModalDialog";
 
+
+enum ComparisonMode {
+    none, enc_diff, dec_dff
+}
+
+type ComparisonFeedBack = { in: any, compare: any, neighbors: any };
 
 export class PanelController {
     private readonly eventHandler: SimpleEventHandler;
@@ -28,7 +35,8 @@ export class PanelController {
         allNeighbors: {},
         projectedNeighbor: null,
         sentence: null,
-        translations: <Translation[]>[null, null]
+        translations: <Translation[]>[null, null],
+        comparison: <ComparisonMode> ComparisonMode.none
     };
 
     constructor() {
@@ -37,6 +45,7 @@ export class PanelController {
 
         this._init();
         this._bindEvents();
+
 
     }
 
@@ -94,8 +103,8 @@ export class PanelController {
             const allNeighborKeys = Object.keys(allNeighbors);
             if (!cur.projectedNeighbor) cur.projectedNeighbor = allNeighborKeys[0];
 
-            this.pm.panels.projectorSelect.attr('hidden', null);
-            this.pm.panels.loadProjectButton.attr('hidden', true);
+            this.pm.panels.projectorSelect.style('display', null);
+            this.pm.panels.loadProjectButton.style('display', 'none');
             this.pm.vis.statePicto.unhideView();
             this.pm.vis.projectors.unhideView();
 
@@ -106,8 +115,9 @@ export class PanelController {
 
 
         } else {
-            this.pm.panels.projectorSelect.attr('hidden', true);
-            this.pm.panels.loadProjectButton.attr('hidden', null);
+             this.pm.panels.projectorSelect.style('display', 'none');
+            this.pm.panels.loadProjectButton.style('display', null);
+
             this.pm.vis.statePicto.hideView();
             this.pm.vis.projectors.hideView();
         }
@@ -324,10 +334,8 @@ export class PanelController {
         };
 
 
-        const updateComparisonView = (data) => {
+        const updateComparisonView = (d: ComparisonFeedBack) => {
             const {main, extra} = this.pm.getMediumPanel();
-
-            const d = <{ in: any, compare: any, neighbors: any }>JSON.parse(data);
 
             // console.log(d, "--- d");
             this.update(d.compare, main, null, true);
@@ -452,8 +460,14 @@ export class PanelController {
 
                 S2SApi.translate_compare({
                     input: this._current.sentence,
-                    compare: d.sentence
-                }).then(data => updateComparisonView(data))
+                    compare: d.sentence,
+                    neighbors: []
+                }).then(data => {
+                    // TODO: ENC / DEC difference !!!
+                    this._current.comparison = ComparisonMode.enc_diff;
+                    data = <ComparisonFeedBack>JSON.parse(data);
+                    updateComparisonView(data)
+                })
 
 
             });
@@ -532,13 +546,34 @@ export class PanelController {
 
         this.pm.panels.loadProjectButton.on('click', () => {
 
-            // call with standard projections:
-            S2SApi.translate({input: this._current.sentence})
-                .then((data: string) => {
-                    const raw_data = JSON.parse(data);
-                    console.log(raw_data, "--- raw_data");
-                    this.update(raw_data);
+
+            this.pm.panels.loadProjectSpinner.style('display', null);
+
+            if (this._current.comparison === ComparisonMode.enc_diff) {
+                // then we are in compare mode
+                S2SApi.translate_compare({
+                    input: this._current.translations[0].inputSentence,
+                    compare: this._current.translations[1].inputSentence
+                }).then(data => {
+                    // TODO: ENC / DEC difference !!!
+                    this._current.comparison = ComparisonMode.enc_diff;
+                    data = <ComparisonFeedBack>JSON.parse(data);
+
+                    this.update(data.in);
+                    updateComparisonView(data)
                 })
+
+
+            } else if (this._current.comparison === ComparisonMode.none) {
+                // here in single mode
+                S2SApi.translate({input: this._current.sentence})
+                    .then((data: string) => {
+                        this.pm.panels.loadProjectSpinner.style('display', 'none');
+                        const raw_data = JSON.parse(data);
+                        console.log(raw_data, "--- raw_data");
+                        this.update(raw_data);
+                    })
+            }
 
 
         })
@@ -548,6 +583,34 @@ export class PanelController {
                 const v = this.pm.panels.projectorSelect.property('value');
                 this.selectProjection(v);
             })
+
+
+        const ec = this.pm.panels.enterComparison
+
+        ec.btn.on('click', () => {
+            const t = this._current.translations[0];
+            ModalDialog.open(ec.dialog, this.eventHandler, 400);
+            ec.enc.property('value', t.inputSentence);
+            ec.dec.property('value', t.decoderWords[0].join(' '));
+        })
+
+
+        ec.encBtn.on('click', ()=>{
+            const inSentence =ec.enc.property('value');
+            S2SApi.translate_compare({
+                    input: this._current.sentence,
+                    compare: inSentence,
+                    neighbors: []
+                }).then(data => {
+                    // TODO: ENC / DEC difference !!!
+                    this._current.comparison = ComparisonMode.enc_diff;
+                    data = <ComparisonFeedBack>JSON.parse(data);
+                    updateComparisonView(data)
+                })
+
+            ModalDialog.close(ec.dialog);
+
+        })
 
 
     }

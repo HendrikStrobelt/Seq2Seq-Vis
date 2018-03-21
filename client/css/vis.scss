@@ -241,7 +241,7 @@ $highlight-color: #d62f30;
       fill: #9e9e5f;
     }
 
-    &:hover{
+    &:hover {
       stroke: #9e605f;
     }
 
@@ -292,10 +292,10 @@ $highlight-color: #d62f30;
   }
 
   .menu {
-    padding-top: 10px;
+    //padding-top: 10px;
     padding-bottom: 10px;
-    margin-top: 5px;
-    margin-bottom: 5px;
+    //margin-top: 5px;
+    //margin-bottom: 5px;
     //background-color: lightgrey;
 
     .show_src {
@@ -396,6 +396,17 @@ $highlight-color: #d62f30;
   font-weight: bold;
   padding: 8px 8px;
   cursor: pointer;
+  background-color: lightgrey;
+  display: inline-block;
+  border-radius: 5px;
+  &:hover{
+    background-color: #c6c6c6;
+  }
+
+}
+
+.btn_center{
+  border-radius: 0;
 }
 
 .btn_left {
@@ -405,5 +416,23 @@ $highlight-color: #d62f30;
 .btn_right {
   border-radius: 0 5px 5px 0;
 }
+
+//.btn_round{
+//  border-radius: 5px;
+//}
+
+#projectorPanel {
+  .menu {
+    padding-bottom: 10px;
+  }
+  .btn_project_edges, .btn_project_nodes {
+    //border: 2px solid;
+    &.selected {
+      background-color: #9c605f;
+      color: white;
+    }
+  }
+}
+
 
 

@@ -71,7 +71,16 @@ export class PanelManager {
 
     panels = {
         projectorSelect: this._createProjectorOptions(),
-        loadProjectButton: d3.select('#loadProject')
+        loadProjectButton: d3.select('#loadProject'),
+        loadProjectSpinner: d3.select('#lPspinner'),
+        enterComparison: {
+            dialog: d3.select('#comparisonDialog'),
+            btn: d3.select('#comparison_btn'),
+            enc: d3.select('#compare_enc'),
+            encBtn: d3.select('#cmp_translate'),
+            dec: d3.select('#compare_dec'),
+            decBtn: d3.select('#cmp_partial'),
+        }
     }
 
     get vis() {
