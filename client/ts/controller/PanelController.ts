@@ -115,7 +115,7 @@ export class PanelController {
 
 
         } else {
-             this.pm.panels.projectorSelect.style('display', 'none');
+            this.pm.panels.projectorSelect.style('display', 'none');
             this.pm.panels.loadProjectButton.style('display', null);
 
             this.pm.vis.statePicto.hideView();
@@ -164,8 +164,12 @@ export class PanelController {
 
         if (isCompare) {
             cur.translations[1] = translation;
+            main.sideIndicator.classed('side_compare', true)
+                .text('compare');
         } else {
             cur.translations[0] = translation;
+            main.sideIndicator.classed('side_pivot', true)
+                .text('pivot');
             // if (main == this.pm.vis.left) {
             this._current.sentence = translation.inputSentence;
             this.updateProjectorData(raw_data.allNeighbors);
@@ -546,8 +550,9 @@ export class PanelController {
 
         this.pm.panels.loadProjectButton.on('click', () => {
 
+            console.log("-hen-- click");
 
-            this.pm.panels.loadProjectSpinner.style('display', null);
+            this.pm.panels.loadProjectSpinner.style('display', 'inline');
 
             if (this._current.comparison === ComparisonMode.enc_diff) {
                 // then we are in compare mode
@@ -559,6 +564,7 @@ export class PanelController {
                     this._current.comparison = ComparisonMode.enc_diff;
                     data = <ComparisonFeedBack>JSON.parse(data);
 
+                    this.pm.panels.loadProjectSpinner.style('display', 'none');
                     this.update(data.in);
                     updateComparisonView(data)
                 })
@@ -568,9 +574,10 @@ export class PanelController {
                 // here in single mode
                 S2SApi.translate({input: this._current.sentence})
                     .then((data: string) => {
-                        this.pm.panels.loadProjectSpinner.style('display', 'none');
                         const raw_data = JSON.parse(data);
                         console.log(raw_data, "--- raw_data");
+
+                        this.pm.panels.loadProjectSpinner.style('display', 'none');
                         this.update(raw_data);
                     })
             }
@@ -595,18 +602,18 @@ export class PanelController {
         })
 
 
-        ec.encBtn.on('click', ()=>{
-            const inSentence =ec.enc.property('value');
+        ec.encBtn.on('click', () => {
+            const inSentence = ec.enc.property('value');
             S2SApi.translate_compare({
-                    input: this._current.sentence,
-                    compare: inSentence,
-                    neighbors: []
-                }).then(data => {
-                    // TODO: ENC / DEC difference !!!
-                    this._current.comparison = ComparisonMode.enc_diff;
-                    data = <ComparisonFeedBack>JSON.parse(data);
-                    updateComparisonView(data)
-                })
+                input: this._current.sentence,
+                compare: inSentence,
+                neighbors: []
+            }).then(data => {
+                // TODO: ENC / DEC difference !!!
+                this._current.comparison = ComparisonMode.enc_diff;
+                data = <ComparisonFeedBack>JSON.parse(data);
+                updateComparisonView(data)
+            })
 
             ModalDialog.close(ec.dialog);
 

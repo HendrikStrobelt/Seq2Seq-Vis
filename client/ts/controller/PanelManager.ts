@@ -17,6 +17,7 @@ import {InfoPanel} from "../vis/InfoPanel";
 
 type VisColumn<DW=WordLine> = {
     // encoder_extra: VComponent<any>[],
+    sideIndicator: D3Sel,
     encoder_states: NeighborStates,
     encoder_words: WordLine,
     attention: AttentionVis,
@@ -30,6 +31,7 @@ type VisColumn<DW=WordLine> = {
 
 function initPanel<T=WordLine>(select): VisColumn<T> {
     return {
+        sideIndicator:null,
         selection: select,
         // encoder_extra: [],
         encoder_states: null,
@@ -57,6 +59,21 @@ export class PanelManager {
         infoPanel: <InfoPanel>null,
     };
 
+    panels = {
+        projectorSelect: this._createProjectorOptions(),
+        projectorPanel: d3.select('#projectorPanel'),
+        loadProjectButton: d3.select('#loadProject'),
+        loadProjectSpinner: d3.select('#lPspinner'),
+        enterComparison: {
+            dialog: d3.select('#comparisonDialog'),
+            btn: d3.select('#comparison_btn'),
+            enc: d3.select('#compare_enc'),
+            encBtn: d3.select('#cmp_translate'),
+            dec: d3.select('#compare_dec'),
+            decBtn: d3.select('#cmp_partial'),
+        }
+    }
+
     private _vis = {
         zero: <VisColumn<BarList>> initPanel(d3.select('.col0')),
         left: initPanel(d3.select('.col1')),
@@ -69,19 +86,7 @@ export class PanelManager {
         beamView: this._createBeamViewPanel()
     };
 
-    panels = {
-        projectorSelect: this._createProjectorOptions(),
-        loadProjectButton: d3.select('#loadProject'),
-        loadProjectSpinner: d3.select('#lPspinner'),
-        enterComparison: {
-            dialog: d3.select('#comparisonDialog'),
-            btn: d3.select('#comparison_btn'),
-            enc: d3.select('#compare_enc'),
-            encBtn: d3.select('#cmp_translate'),
-            dec: d3.select('#compare_dec'),
-            decBtn: d3.select('#cmp_partial'),
-        }
-    }
+
 
     get vis() {
         return this._vis;
@@ -113,12 +118,12 @@ export class PanelManager {
     _createBeamViewPanel() {
         const parent = d3.select('#beam-view').append('svg').attrs({
             width: 1000,
-            height: 250
+            height: 150
         });
 
         return new BeamTreeVis(parent, this.eventHandler, {
             width: 1000,
-            height: 250
+            height: 150
         })
 
 
@@ -130,7 +135,9 @@ export class PanelManager {
             height: 30
         });
 
-        return new StateProjector(parent, this.eventHandler, {})
+        const sp = new StateProjector(parent, this.eventHandler, {});
+        sp.setHideElement(this.panels.projectorPanel);
+        return sp;
 
 
     }
@@ -276,6 +283,8 @@ export class PanelManager {
         //     }
         // });
 
+
+
         visColumn.encoder_words = this._createWordLine({
             col: visColumn.selection,
             className: 'encoder_words',
@@ -315,7 +324,8 @@ export class PanelManager {
                 // data_access: d => d.decoder.length ? [d.decoder[this._current.topN]] : []
             }
         });
-
+        visColumn.sideIndicator = visColumn.selection.append('div').classed('sideIndicator',true)
+            .text('side');
 
         // visColumn.decoder_states = this._createNeighborStates({
         //     col: visColumn.selection,

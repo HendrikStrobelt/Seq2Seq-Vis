@@ -1,10 +1,15 @@
 @import "global";
 
 $encoder-color-ref: #4363aa;
-$encoder-color: #5ba2ec;
-$decoder-color: #f9d862;
+//$encoder-color: #5ba2ec;
+$encoder-color: #98b7d9;
+$decoder-color: #f5de93;
 $attn-color: #6c7067;
-$highlight-color: #d62f30;
+$highlight-color: #f0454a;
+
+$pivot-color: #4e9c57;
+$compare-color: #9c6d9b;
+
 
 .rect_highlight {
   stroke: $highlight-color;
@@ -25,6 +30,24 @@ $highlight-color: #d62f30;
   font-weight: bold;
   pointer-events: none;
 }
+.sideIndicator{
+  padding: 5px;
+  text-align: center;
+  border-top: 3px solid;
+  font-weight: bold;
+  //color: $main-color;
+}
+.side_pivot{
+  //background-color: rgba( $pivot-color, .3);
+  border-top-color: $pivot-color;
+  color: $pivot-color;
+}
+
+.side_compare{
+  //background-color: rgba( $compare-color, .3);
+  border-top-color: $compare-color;
+  color: $compare-color;
+}
 
 .inWord {
   text {
@@ -32,7 +55,7 @@ $highlight-color: #d62f30;
   }
   rect {
     fill: $encoder-color;
-    fill-opacity: .9;
+    //fill-opacity: .9;
   }
 
   &.selected {
@@ -58,7 +81,7 @@ $highlight-color: #d62f30;
   }
   rect {
     fill: $decoder-color;
-    fill-opacity: 1;
+    //fill-opacity: 1;
   }
 
   &.highlight rect {
@@ -71,8 +94,8 @@ $highlight-color: #d62f30;
     @extend .measureWord
   }
   rect {
-    fill: #aaa;
-    opacity: .6;
+    fill: #cccccc;
+    //opacity: .6;
   }
   &.highlight rect {
     @extend .rect_highlight
@@ -217,7 +240,7 @@ $highlight-color: #d62f30;
       opacity: .9;
     }
     &.selected {
-      stroke: #9c605f;
+      stroke: $highlight-color;
       stroke-width: 2px;
       opacity: 1;
     }
@@ -225,28 +248,28 @@ $highlight-color: #d62f30;
   }
   .pl {
     fill: none;
-    stroke: cadetblue;
+    stroke: $pivot-color;
     stroke-width: 2px;
-    stroke-opacity: .3;
+    stroke-opacity: .4;
     &.pl_1 {
-      stroke: #9e9e5f;
+      stroke: $compare-color;
     }
 
   }
 
   .plPoint {
-    fill: cadetblue;
-    fill-opacity: .3;
+    fill: $pivot-color;
+    fill-opacity: .4;
     &.pl_1 {
-      fill: #9e9e5f;
+      fill: $compare-color;
     }
 
     &:hover {
-      stroke: #9e605f;
+      stroke: $highlight-color;
     }
 
     &.selected {
-      stroke: #9c605f;
+      stroke: $highlight-color;
       fill-opacity: .6;
       stroke-width: 2px;
     }
@@ -268,7 +291,7 @@ $highlight-color: #d62f30;
 
   .hoverLine {
     fill: none;
-    stroke: #9c605f;
+    stroke: $highlight-color;
     opacity: .1;
     stroke-width: 2px;
     pointer-events: none;
@@ -276,8 +299,9 @@ $highlight-color: #d62f30;
   }
 
   .highlightRect {
-    stroke: #9c605f;
-    stroke-width: 2px;
+    stroke: $highlight-color;
+    stroke-width: 1px;
+    stroke-dasharray: 1,2 ;
     fill: none;
     stroke-opacity: .5;
   }
@@ -300,19 +324,19 @@ $highlight-color: #d62f30;
 
     .show_src {
       //background-color: #adc2d9;
-      border: 2px #5793d9 solid;
+      border: 2px $encoder-color solid;
 
       &.selected {
-        background-color: #5793d9;
+        background-color: $encoder-color;
 
       }
 
     }
     .show_tgt {
-      border: 2px #f9d862 solid;
+      border: 2px $decoder-color solid;
 
       &.selected {
-        background-color: #f9d862;
+        background-color: $decoder-color;
 
       }
     }
@@ -322,9 +346,9 @@ $highlight-color: #d62f30;
     }
 
     .offset_btn {
-      background-color: lightgrey;
+      //background-color: lightgrey;
       &.selected {
-        background-color: #9c605f;
+        background-color: $highlight-color;
       }
     }
 
@@ -332,17 +356,19 @@ $highlight-color: #d62f30;
 
   .src {
     padding: 3px;
-    background-color: rgba(87, 147, 217, 0.39);
+    background-color: rgba($encoder-color, .7);
   }
   .tgt {
     padding: 3px;
-    background-color: rgba(233, 200, 97, 0.42);
+    background-color: rgba($decoder-color, .7);
   }
 
   .highlight {
-    padding: 1px;
+    padding: 1px 4px 1px 4px;
     color: white;
-    background-color: #9c605f;
+    background-color: rgba($highlight-color, .7);
+    //border: $highlight-color 2px solid;
+
   }
 }
 
@@ -353,6 +379,7 @@ $highlight-color: #d62f30;
 
   .pCanvas {
     border: #d3d3d3 2px solid;
+    border-radius: 5px;
   }
   div {
     font-weight: bold;
@@ -361,10 +388,10 @@ $highlight-color: #d62f30;
   &.selected {
 
     .pCanvas {
-      border: #9c605f 2px solid;
+      border: $highlight-color 2px solid;
     }
     div {
-      color: #9c605f;
+      color: $highlight-color;
     }
 
   }
@@ -381,19 +408,19 @@ $highlight-color: #d62f30;
   }
   .link {
     fill: none;
-    stroke: #5793d9;
+    stroke: #e6e6e6;
     stroke-width: 2px;
-    opacity: .5;
     &.topBeam {
-      stroke: #9c605f;
-      stroke-width: 3px;
+      stroke: #cccccc;
+      stroke-width: 5px;
     }
   }
 
 }
 
 .btn {
-  font-weight: bold;
+  //font-weight: normal;
+  font-size: 9pt;
   padding: 8px 8px;
   cursor: pointer;
   background-color: lightgrey;
@@ -428,7 +455,7 @@ $highlight-color: #d62f30;
   .btn_project_edges, .btn_project_nodes {
     //border: 2px solid;
     &.selected {
-      background-color: #9c605f;
+      background-color: #767676;
       color: white;
     }
   }

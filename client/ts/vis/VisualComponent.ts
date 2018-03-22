@@ -44,7 +44,7 @@ export abstract class VComponent<DataInterface> {
     protected base: D3Sel;
     protected layers: { main?: D3Sel, fg?: D3Sel, bg?: D3Sel, [key: string]: D3Sel };
     protected eventHandler: SimpleEventHandler;
-    protected _current: { hidden: boolean, [key: string]: any };
+    protected _current: { hidden: boolean, hideElement?: D3Sel | null; [key: string]: any };
     protected data: any;
     protected renderData: any;
 
@@ -174,9 +174,14 @@ export abstract class VComponent<DataInterface> {
     // === CONVENIENCE ====
 
 
+    setHideElement(hE: D3Sel) {
+        this._current.hideElement = hE;
+    }
+
     hideView() {
         if (!this._current.hidden) {
-            this.parent.transition().styles({
+            const hE = this._current.hideElement || this.parent;
+            hE.transition().styles({
                 'opacity': 0,
                 'pointer-events': 'none'
             }).style('display', 'none');
@@ -186,7 +191,8 @@ export abstract class VComponent<DataInterface> {
 
     unhideView() {
         if (this._current.hidden) {
-            this.parent.transition().styles({
+            const hE = this._current.hideElement || this.parent;
+            hE.transition().styles({
                 'opacity': 1,
                 'pointer-events': null,
                 'display': null
