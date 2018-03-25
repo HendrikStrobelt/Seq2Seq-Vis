@@ -232,7 +232,7 @@ export class PanelController {
             let beamColors: string[][] = [];
             let beamValues: number[][] = [];
             const top_predict = translation.decoderWords[0];
-            console.log(top_predict, "--- top_predict");
+            // console.log(top_predict, "--- top_predict");
 
             for (const j in _.range(raw_data.beam[0].length)) {
                 const ro: string[] = [];
