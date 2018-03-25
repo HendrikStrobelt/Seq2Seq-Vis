@@ -35,8 +35,7 @@
 <!--</div>-->
 
 <div class="header">
-    <div style="padding: 0px 6px;">Start entering some English text (space and
-        enter trigger request)...
+    <div style="padding: 0px 6px;">Start entering some encoder sentence (enter triggers request)...
     </div>
     <div><input type="text" class="full_width_input" id="query_input"/></div>
 </div>
@@ -56,7 +55,7 @@
         </div>
 
         <div id="make_pivot_btn" class="btn" style="margin-top: 5px;">
-            swap pivot and compare
+            <i class="fa fa-arrows-h" aria-hidden="true" style="font-size: 32pt;color: #767676; font-weight: 100;"></i>
         </div>
     </div>
     <div class="col2 column"
@@ -101,7 +100,7 @@
 <!--MODAL DIALOGS-->
 
 <div class="modalDialog" id="comparisonDialog" hidden>
-    <h2> Type comparison sentence:</h2>
+    <h2> Enter space separated sequence for comparison:</h2>
     <div class="uiRow">
         <label for="compare_enc">Encoder:</label>
         <input type="text" class="textInput" id="compare_enc">

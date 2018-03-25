@@ -71,7 +71,8 @@ export class PanelManager {
             encBtn: d3.select('#cmp_translate'),
             dec: d3.select('#compare_dec'),
             decBtn: d3.select('#cmp_partial'),
-        }
+        },
+        swapBtn: d3.select('#make_pivot_btn')
     }
 
     private _vis = {

@@ -36,7 +36,8 @@ export class PanelController {
         projectedNeighbor: null,
         sentence: null,
         translations: <Translation[]>[null, null],
-        comparison: <ComparisonMode> ComparisonMode.none
+        comparison: <ComparisonMode> ComparisonMode.none,
+        rawData: [null, null] // TODO: should be removed and merged with translations
     };
 
     constructor() {
@@ -101,7 +102,7 @@ export class PanelController {
 
         if (allNeighbors) {
             const allNeighborKeys = Object.keys(allNeighbors);
-            if (!cur.projectedNeighbor) cur.projectedNeighbor = allNeighborKeys[0];
+            if (!cur.projectedNeighbor) cur.projectedNeighbor = (allNeighborKeys.indexOf('decoder')>-1)?'decoder':allNeighborKeys[0];
 
             this.pm.panels.projectorSelect.style('display', null);
             this.pm.panels.loadProjectButton.style('display', 'none');
@@ -165,10 +166,12 @@ export class PanelController {
 
         if (isCompare) {
             cur.translations[1] = translation;
+            cur.rawData[1] = raw_data;
             main.sideIndicator.classed('side_compare', true)
                 .text('compare');
         } else {
             cur.translations[0] = translation;
+            cur.rawData[0] = raw_data;
             main.sideIndicator.classed('side_pivot', true)
                 .text('pivot');
             // if (main == this.pm.vis.left) {
@@ -621,7 +624,7 @@ export class PanelController {
 
 
         ec.encBtn.on('click', () => {
-            const inSentence = ec.enc.property('value');
+            const inSentence = ec.enc.property('value').trim();
             S2SApi.translate_compare({
                 input: this._current.sentence,
                 compare: inSentence,
@@ -634,6 +637,40 @@ export class PanelController {
             })
 
             ModalDialog.close(ec.dialog);
+
+        })
+
+        ec.decBtn.on('click', () => {
+            const inSentence = (<string> ec.dec.property('value')).trim();
+            S2SApi.translate(
+                {
+                    input: this._current.translations[0].inputSentence,
+                    partial: [inSentence],
+                    neighbors: []
+                }).then(data => {
+                this._current.comparison = ComparisonMode.enc_diff;
+                data = JSON.parse(data);
+
+                // TODO: make nice and work with updateCOmparisonVoew
+                const {main, extra} = this.pm.getMediumPanel();
+                this.update(data, main, null, true);
+
+                // this.updateProjectorData(data.neighbors);
+            })
+
+            ModalDialog.close(ec.dialog);
+
+        })
+
+
+        this.pm.panels.swapBtn.on('click', () => {
+            const comp = this._current.rawData[1];
+            const pivot = this._current.rawData[0];
+
+            this.update(comp);
+            const {main, extra} = this.pm.getMediumPanel();
+            this.update(pivot, main, null, true);
+
 
         })
 
