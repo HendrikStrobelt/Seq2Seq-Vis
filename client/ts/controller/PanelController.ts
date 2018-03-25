@@ -124,6 +124,7 @@ export class PanelController {
 
     }
 
+
     update(raw_data, main = this.pm.vis.left, extra = this.pm.vis.zero, isCompare = false) {
 
         const cur = this._current;
@@ -181,19 +182,28 @@ export class PanelController {
             // console.log(raw_data.beam_trace_words, "--- ");
             const allNodes: { [key: string]: BeamTreeData } = {};
 
+            //TODO: This is a terrible hack :)
+            const withStartToken = btWords[0][0][0] === '<s>';
+
+
             const root: BeamTreeData = {
                 name: btWords[0][0][0],
                 children: []
             };
             allNodes[btWords[0][0][0]] = root;
 
-            for (const depthList of btWords.slice(1)) {
+            for (const depthList of btWords.slice(withStartToken ? 1 : 0)) {
                 for (const subBeam of depthList) {
                     const [nodeName] = subBeam.slice(-1);
                     const rootName = subBeam.slice(0, -1).join('||');
                     const nodeID = subBeam.join('||');
 
-                    const topBeam = _.isEqual(subBeam.slice(1), winnerBeam.slice(0, subBeam.length - 1));
+                    let topBeam = null;
+                    if (withStartToken) {
+                        topBeam = _.isEqual(subBeam.slice(1), winnerBeam.slice(0, subBeam.length - 1));
+                    } else {
+                        topBeam = _.isEqual(subBeam.slice(0), winnerBeam.slice(0, subBeam.length));
+                    }
 
                     const node: BeamTreeData = {
                         name: nodeName,
@@ -219,6 +229,7 @@ export class PanelController {
             let beamColors: string[][] = [];
             let beamValues: number[][] = [];
             const top_predict = translation.decoderWords[0];
+            console.log(top_predict, "--- top_predict");
 
             for (const j in _.range(raw_data.beam[0].length)) {
                 const ro: string[] = [];
@@ -228,8 +239,9 @@ export class PanelController {
                     const w = raw_data.beam[i][j].word;
                     ro.push(w);
 
-                    if (w == top_predict[i]) {
-                        roCol.push('#3c3c3c')
+
+                    if (w === top_predict[i]) {
+                        roCol.push('#ccc2a3')
                     } else {
                         roCol.push(null)
                     }
@@ -251,7 +263,11 @@ export class PanelController {
             const boxWidth = beamValues.map(row => row.map(value => bwScale(value)))
 
 
-            main.beam.update({wordRows: beamWords, boxWidth})
+            main.beam.update({
+                wordRows: beamWords,
+                boxWidth,
+                wordFill: beamColors
+            })
         }
 
 
@@ -447,6 +463,8 @@ export class PanelController {
                     }).then(data => {
                     data = JSON.parse(data);
                     console.log(data, "--- data");
+
+                    this.update(data);
                 })
                 // .map((w, i) => (i === d.col) ? d.word.word.text : w)
             }
