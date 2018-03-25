@@ -124,11 +124,11 @@ export class InfoPanel {
         let tSel = this.infoPanel.selectAll(".translation").data(data.translations);
         tSel.exit().remove();
 
-        const tEnter = tSel.enter().append('div').attr('class', 'translation');//.style('display', 'table-row');
+        const tEnter = tSel.enter().append('div').attr('class', 'translation').style('display', 'table-row');
         tEnter.html('<div style="display:table-cell;width: 30px; ">' +
             '<i class="fa fa-star-o starIt" aria-hidden="true"></i>&nbsp;<i class="fa fa-trash-o trashIt" aria-hidden="true"></i>' +
             '</div><div style="display: table-cell;">' +
-            '<div class="src"></div><div class="tgt"></div>' +
+            '<div class="src"></div><div class="tgt"></div><div style="padding-top: 10px;"></div>' +
             '</div>');
 
         tSel = tEnter.merge(tSel).order();
