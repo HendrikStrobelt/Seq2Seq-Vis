@@ -10,7 +10,6 @@ $highlight-color: #f0454a;
 $pivot-color: #4e9c57;
 $compare-color: #9c6d9b;
 
-
 .rect_highlight {
   stroke: $highlight-color;
   stroke-width: 2px;
@@ -30,20 +29,22 @@ $compare-color: #9c6d9b;
   font-weight: bold;
   pointer-events: none;
 }
-.sideIndicator{
+
+.sideIndicator {
   padding: 5px;
   text-align: center;
   border-top: 3px solid;
   font-weight: bold;
   //color: $main-color;
 }
-.side_pivot{
+
+.side_pivot {
   //background-color: rgba( $pivot-color, .3);
   border-top-color: $pivot-color;
   color: $pivot-color;
 }
 
-.side_compare{
+.side_compare {
   //background-color: rgba( $compare-color, .3);
   border-top-color: $compare-color;
   color: $compare-color;
@@ -301,7 +302,7 @@ $compare-color: #9c6d9b;
   .highlightRect {
     stroke: $highlight-color;
     stroke-width: 1px;
-    stroke-dasharray: 1,2 ;
+    stroke-dasharray: 1, 2;
     fill: none;
     stroke-opacity: .5;
   }
@@ -311,8 +312,22 @@ $compare-color: #9c6d9b;
 .info_panel {
 
   .translation {
+    .fa{
+      color: lightgrey;
+
+      &.selected{
+        color: #4a4a4a;
+      }
+      &:hover{
+        color: black;
+      }
+
+
+    }
+
+
     font-weight: bold;
-    padding-bottom: 8px;
+    margin-bottom: 8px;
   }
 
   .menu {
@@ -355,12 +370,25 @@ $compare-color: #9c6d9b;
   }
 
   .src {
-    padding: 3px;
-    background-color: rgba($encoder-color, .7);
+    padding: 3px 3px 3px 0;
+    border: $encoder-color solid 1px;
+    margin-bottom: 1px;
+    &::before {
+      content: "";
+      padding: 3px 3px 3px 12px;
+      margin-right: 3px;
+      background-color: $encoder-color;
+    }
   }
   .tgt {
-    padding: 3px;
-    background-color: rgba($decoder-color, .7);
+    padding: 3px 3px 3px 0;
+    border: $decoder-color solid 1px;
+    &::before {
+      content: "";
+      padding: 3px 3px 3px 12px;
+      margin-right: 3px;
+      background-color: $decoder-color;
+    }
   }
 
   .highlight {
@@ -426,13 +454,13 @@ $compare-color: #9c6d9b;
   background-color: lightgrey;
   display: inline-block;
   border-radius: 5px;
-  &:hover{
+  &:hover {
     background-color: #c6c6c6;
   }
 
 }
 
-.btn_center{
+.btn_center {
   border-radius: 0;
 }
 
