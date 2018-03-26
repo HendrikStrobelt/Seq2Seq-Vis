@@ -61,11 +61,11 @@ $compare-color: #9c6d9b;
 
   &.selected {
     text {
-      fill: lightgray;
+      fill: #ffffff;
     }
 
     rect {
-      fill: $encoder-color-ref;
+      fill: #f0454a;
       fill-opacity: 1;
     }
   }
@@ -87,6 +87,18 @@ $compare-color: #9c6d9b;
 
   &.highlight rect {
     @extend .rect_highlight
+  }
+
+
+  &.selected {
+    text {
+      fill: #fff;
+    }
+
+    rect {
+      fill: #f0454a;
+      fill-opacity: 1;
+    }
   }
 }
 
@@ -458,6 +470,11 @@ $compare-color: #9c6d9b;
     background-color: #c6c6c6;
   }
 
+ &.selected {
+      background-color: #767676;
+      color: white;
+    }
+
 }
 
 .btn_center {
@@ -472,6 +489,9 @@ $compare-color: #9c6d9b;
   border-radius: 0 5px 5px 0;
 }
 
+
+
+
 //.btn_round{
 //  border-radius: 5px;
 //}
@@ -480,13 +500,13 @@ $compare-color: #9c6d9b;
   .menu {
     padding-bottom: 10px;
   }
-  .btn_project_edges, .btn_project_nodes {
-    //border: 2px solid;
-    &.selected {
-      background-color: #767676;
-      color: white;
-    }
-  }
+  //.btn_project_edges, .btn_project_nodes {
+  //  //border: 2px solid;
+  //  &.selected {
+  //    background-color: #767676;
+  //    color: white;
+  //  }
+  //}
 }
 
 

@@ -72,8 +72,13 @@ export class PanelManager {
             dec: d3.select('#compare_dec'),
             decBtn: d3.select('#cmp_partial'),
         },
-        swapBtn: d3.select('#make_pivot_btn')
-    }
+        swapBtn: d3.select('#make_pivot_btn'),
+        wordMode:{
+            wordBtn: d3.select('#word_vector_fix_btn'),
+            attnBtn: d3.select('#attn_fix_btn'),
+            attnApplyBtn: d3.select('#apply_attn')
+        }
+    };
 
     private _vis = {
         zero: <VisColumn<BarList>> initPanel(d3.select('.col0')),

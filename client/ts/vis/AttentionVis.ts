@@ -149,16 +149,16 @@ export class AttentionVis extends VComponent<AttentionVisData> {
 
     }
 
-    actionHighlightEdges(index: number, type: VertexType, highlight: boolean) {
+    actionHighlightEdges(index: number, type: VertexType, highlight: boolean, className = 'highlight') {
 
         if (highlight) {
             this.base.selectAll(`.${this.options.css_class_main}`)
-                .classed('highlight', d => {
+                .classed(className, d => {
                     return (<Edge>d).edge[type] === index;
                 })
         } else {
             this.base.selectAll(`.${this.options.css_class_main}`)
-                .classed('highlight', false)
+                .classed(className, false)
 
         }
 

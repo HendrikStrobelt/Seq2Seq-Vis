@@ -21,6 +21,10 @@ enum ComparisonMode {
     none, enc_diff, dec_dff
 }
 
+enum WordClickMode {
+    word, attn
+}
+
 type ComparisonFeedBack = { in: any, compare: any, neighbors: any };
 
 export class PanelController {
@@ -37,7 +41,12 @@ export class PanelController {
         sentence: null,
         translations: <Translation[]>[null, null],
         comparison: <ComparisonMode> ComparisonMode.none,
-        rawData: [null, null] // TODO: should be removed and merged with translations
+        // rawData: [null, null], // TODO: should be removed and merged with translations
+        wordClickMode: WordClickMode.word,
+        attnChange: {
+            selected: <number>-1,
+            changes: <{ [key: number]: { [key: number]: number } }>{}
+        }
     };
 
     constructor() {
@@ -102,7 +111,7 @@ export class PanelController {
 
         if (allNeighbors) {
             const allNeighborKeys = Object.keys(allNeighbors);
-            if (!cur.projectedNeighbor) cur.projectedNeighbor = (allNeighborKeys.indexOf('decoder')>-1)?'decoder':allNeighborKeys[0];
+            if (!cur.projectedNeighbor) cur.projectedNeighbor = (allNeighborKeys.indexOf('decoder') > -1) ? 'decoder' : allNeighborKeys[0];
 
             this.pm.panels.projectorSelect.style('display', null);
             this.pm.panels.loadProjectButton.style('display', 'none');
@@ -126,13 +135,13 @@ export class PanelController {
     }
 
 
-    update(raw_data, main = this.pm.vis.left, extra = this.pm.vis.zero, isCompare = false) {
+    update(translation: Translation, main = this.pm.vis.left, extra = this.pm.vis.zero, isCompare = false) {
 
         const cur = this._current;
 
 
         //=== translation object with convenience functions
-        const translation = new Translation(raw_data);
+        // const translation = new Translation(raw_data);
         translation.filterAttention(.75);
 
         //=== update words:
@@ -166,22 +175,20 @@ export class PanelController {
 
         if (isCompare) {
             cur.translations[1] = translation;
-            cur.rawData[1] = raw_data;
             main.sideIndicator.classed('side_compare', true)
                 .text('compare');
         } else {
             cur.translations[0] = translation;
-            cur.rawData[0] = raw_data;
             main.sideIndicator.classed('side_pivot', true)
                 .text('pivot');
             // if (main == this.pm.vis.left) {
             this._current.sentence = translation.inputSentence;
-            this.updateProjectorData(raw_data.allNeighbors);
+            this.updateProjectorData(translation.allNeighbors);
 
 
             const winnerBeam = translation.decoderWords[cur.beamIndex];
 
-            const btWords: string[][][] = raw_data.beam_trace_words;
+            const btWords: string[][][] = translation.beam_trace_words;
             // console.log(raw_data.beam_trace_words, "--- ");
             const allNodes: { [key: string]: BeamTreeData } = {};
 
@@ -234,12 +241,12 @@ export class PanelController {
             const top_predict = translation.decoderWords[0];
             // console.log(top_predict, "--- top_predict");
 
-            for (const j in _.range(raw_data.beam[0].length)) {
+            for (const j in _.range(translation.beam[0].length)) {
                 const ro: string[] = [];
                 const roCol: string[] = [];
                 const bv: number[] = [];
-                for (const i in raw_data.beam) {
-                    const w = raw_data.beam[i][j].word;
+                for (const i in translation.beam) {
+                    const w = translation.beam[i][j].word;
                     ro.push(w);
 
 
@@ -249,7 +256,7 @@ export class PanelController {
                         roCol.push(null)
                     }
 
-                    bv.push(raw_data.beam[i][j].score)
+                    bv.push(translation.beam[i][j].score)
                 }
                 beamWords.push(ro);
                 beamColors.push(roCol);
@@ -361,13 +368,18 @@ export class PanelController {
             const {main, extra} = this.pm.getMediumPanel();
 
             // console.log(d, "--- d");
-            this.update(d.compare, main, null, true);
+            this.update(new Translation(d.compare), main, null, true);
 
             this.updateProjectorData(d.neighbors);
         }
 
         const actionWordHovered = (d: WordLineHoverEvent) => {
             // console.log(d,"--- d");
+
+            // return if decoder word is fixed
+            if (this._current.wordClickMode === WordClickMode.attn &&
+                this._current.attnChange.selected > -1) return;
+
             d.caller.highlightWord(d.row, d.col, d.hovered);
 
             const {vType, col} = determinePanelType(d.caller);
@@ -404,49 +416,103 @@ export class PanelController {
 
         this.eventHandler.bind(WordLine.events.wordHovered, actionWordHovered);
 
+
+        const openWordCloud = ({input, loc, limit, allWords, replaceIndex}) => {
+            S2SApi.closeWords({input, loc, limit})
+                .then(data => {
+
+
+                    const word_data = JSON.parse(data);
+                    // this.updateAndShowWordProjector(word_data);
+                    if (loc === 'src') {
+                        const pivot = allWords.join(' ');
+
+                        const compare = word_data.word.map(wd => {
+                            return allWords.map((aw, wi) =>
+                                (wi === replaceIndex) ? wd : aw).join(' ');
+                        })
+
+                        S2SApi.compareTranslation({pivot, compare})
+                            .then(data => {
+                                word_data["compare"] = JSON.parse(data)["compare"];
+                                // this.updateAndShowWordList(word_data);
+                                this.updateAndShowWordProjector(word_data);
+                            })
+
+                    } else {
+                        // this.updateAndShowWordList(word_data);
+                        this.updateAndShowWordProjector(word_data);
+                    }
+
+
+                })
+                .catch(error => console.log(error, "--- error"));
+
+        }
+
+
         this.eventHandler.bind(WordLine.events.wordSelected, (d: WordLineHoverEvent, e) => {
             if (d.caller === vis.left.encoder_words
                 || d.caller === vis.left.decoder_words) {
 
                 let loc = 'src';
+                let vType = AttentionVis.VERTEX_TYPE.Encoder;
                 if (d.caller === vis.left.decoder_words) {
-                    loc = 'tgt'
+                    loc = 'tgt';
+                    vType = AttentionVis.VERTEX_TYPE.Decoder;
                 }
 
-                d.caller.highlightWord(d.row, d.col, d.hovered, true, 'selected');
 
-                const allWords = d.caller.firstRowPlainWords;
+                if (this._current.wordClickMode === WordClickMode.word) {
+                    d.caller.highlightWord(d.row, d.col, d.hovered, true, 'selected');
+                    openWordCloud({
+                        input: d.word.word.text,
+                        loc,
+                        limit: 20,
+                        allWords: d.caller.firstRowPlainWords,
+                        replaceIndex: d.col
+                    })
 
-                S2SApi.closeWords({input: d.word.word.text, loc, limit: 20})
-                    .then(data => {
-
-
-                        const word_data = JSON.parse(data);
-                        // this.updateAndShowWordProjector(word_data);
-                        const replaceIndex = d.col;
-                        if (loc === 'src') {
-                            const pivot = allWords.join(' ');
-
-                            const compare = word_data.word.map(wd => {
-                                return allWords.map((aw, wi) =>
-                                    (wi === replaceIndex) ? wd : aw).join(' ');
-                            })
-
-                            S2SApi.compareTranslation({pivot, compare})
-                                .then(data => {
-                                    word_data["compare"] = JSON.parse(data)["compare"];
-                                    // this.updateAndShowWordList(word_data);
-                                    this.updateAndShowWordProjector(word_data);
-                                })
-
+                } else if (this._current.wordClickMode === WordClickMode.attn) {
+                    const aChg = this._current.attnChange;
+                    if (loc === 'tgt') {
+                        if (aChg.selected != d.col) {
+                            aChg.selected = d.col;
+                            d.caller.highlightWord(d.row, d.col, true, true, 'selected');
+                            this.pm.vis.left.attention
+                                .actionHighlightEdges(d.col, vType, true, 'highlight');
                         } else {
-                            // this.updateAndShowWordList(word_data);
-                            this.updateAndShowWordProjector(word_data);
+                            aChg.selected = -1;
+                            d.caller.highlightWord(d.row, d.col, false, true, 'selected');
+                            this.pm.vis.left.attention
+                                .actionHighlightEdges(d.col, vType, false, 'highlight');
                         }
 
+                    }
 
-                    })
-                    .catch(error => console.log(error, "--- error"));
+                    if (loc === 'src') {
+                        if (aChg.selected > -1) {
+                            const a =this._current.translations[0]
+                                .increaseAttn(aChg.selected, d.col);
+
+                            this.pm.panels.wordMode.attnApplyBtn.style('display',null);
+
+                            console.log(a, aChg.selected, d.col,"--- a, aChg.selected, d.col");
+                            
+                            this.update(this._current.translations[0]);
+                            this.pm.vis.left.decoder_words.highlightWord(0, aChg.selected, true, true, 'selected');
+                            this.pm.vis.left.attention
+                                .actionHighlightEdges(aChg.selected, AttentionVis.VERTEX_TYPE.Decoder, true, 'highlight');
+                            console.log("-hen-- AAAAJ");
+
+                        } else {
+                            alert('Please select a decoder word first. ' +
+                                'Then you can increase weights respective weights by clicking on encoder');
+                        }
+                    }
+
+
+                }
 
 
             }
@@ -467,12 +533,20 @@ export class PanelController {
                     data = JSON.parse(data);
                     console.log(data, "--- data");
 
-                    this.update(data);
+                    this.update(new Translation(data));
                 })
                 // .map((w, i) => (i === d.col) ? d.word.word.text : w)
             }
 
 
+        });
+
+
+        this.pm.panels.wordMode.attnApplyBtn.on('click',()=>{
+            console.log(" ATTN --- ");
+
+            this.pm.panels.wordMode.attnApplyBtn.style('display','none');
+            
         });
 
 
@@ -586,7 +660,7 @@ export class PanelController {
                     data = <ComparisonFeedBack>JSON.parse(data);
 
                     this.pm.panels.loadProjectSpinner.style('display', 'none');
-                    this.update(data.in);
+                    this.update(new Translation(data.in));
                     updateComparisonView(data)
                 })
 
@@ -599,7 +673,7 @@ export class PanelController {
                         console.log(raw_data, "--- raw_data");
 
                         this.pm.panels.loadProjectSpinner.style('display', 'none');
-                        this.update(raw_data);
+                        this.update(new Translation(raw_data));
                     })
             }
 
@@ -610,10 +684,10 @@ export class PanelController {
             .on('change', () => {
                 const v = this.pm.panels.projectorSelect.property('value');
                 this.selectProjection(v);
-            })
+            });
 
 
-        const ec = this.pm.panels.enterComparison
+        const ec = this.pm.panels.enterComparison;
 
         ec.btn.on('click', () => {
             const t = this._current.translations[0];
@@ -653,7 +727,7 @@ export class PanelController {
 
                 // TODO: make nice and work with updateCOmparisonVoew
                 const {main, extra} = this.pm.getMediumPanel();
-                this.update(data, main, null, true);
+                this.update(new Translation(data), main, null, true);
 
                 // this.updateProjectorData(data.neighbors);
             })
@@ -664,15 +738,28 @@ export class PanelController {
 
 
         this.pm.panels.swapBtn.on('click', () => {
-            const comp = this._current.rawData[1];
-            const pivot = this._current.rawData[0];
+            if (!this._current.translations[1]) return;
+            const comp = this._current.translations[1];
+            const pivot = this._current.translations[0];
 
             this.update(comp);
             const {main, extra} = this.pm.getMediumPanel();
             this.update(pivot, main, null, true);
 
+        });
 
-        })
+
+        this.pm.panels.wordMode.attnBtn.on('click', () => {
+            this.pm.panels.wordMode.attnBtn.classed('selected', true);
+            this.pm.panels.wordMode.wordBtn.classed('selected', false);
+            this._current.wordClickMode = WordClickMode.attn
+        });
+
+        this.pm.panels.wordMode.wordBtn.on('click', () => {
+            this.pm.panels.wordMode.attnBtn.classed('selected', false);
+            this.pm.panels.wordMode.wordBtn.classed('selected', true);
+            this._current.wordClickMode = WordClickMode.word
+        });
 
 
     }

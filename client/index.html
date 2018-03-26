@@ -35,7 +35,8 @@
 <!--</div>-->
 
 <div class="header">
-    <div style="padding: 0px 6px;">Start entering some encoder sentence (enter triggers request)...
+    <div style="padding: 0px 6px;">Start entering some encoder sentence (enter
+        triggers request)...
     </div>
     <div><input type="text" class="full_width_input" id="query_input"/></div>
 </div>
@@ -51,11 +52,23 @@
     </div>
     <div class="col_for_btn column"
          style="border-left: 3px #4a4a4a;vertical-align: middle;">
-        <div id="comparison_btn" class="btn"> compare sentence
-        </div>
 
-        <div id="make_pivot_btn" class="btn" style="margin-top: 5px;">
-            <i class="fa fa-arrows-h" aria-hidden="true" style="font-size: 32pt;color: #767676; font-weight: 100;"></i>
+        <div id="reset_attn" class="btn" style="display:none;">reset attn</div>
+        <div id="apply_attn" class="btn" style="display:none;">apply attn</div>
+
+        <div style=""><i class="fa fa-arrow-left" aria-hidden="true"></i> change:</div>
+        <div style="display: table">
+            <div id="word_vector_fix_btn" class="btn btn_left word_mode selected" style="display: table-cell">word</div>
+            <div id="attn_fix_btn" class="btn btn_right word_mode" style="display: table-cell">attn</div>
+        </div>
+        <div style="padding-top: 5px;"><i class="fa fa-arrow-right" aria-hidden="true"></i>compare:</div>
+
+        <div id="comparison_btn" class="btn"> sentence
+        </div>
+        <div style="padding-top: 5px;">swap:</div>
+        <div id="make_pivot_btn" class="btn" >
+            <i class="fa fa-arrows-h" aria-hidden="true"
+               style="font-size: 16pt;color: #767676; font-weight: 100;"></i>
         </div>
     </div>
     <div class="col2 column"

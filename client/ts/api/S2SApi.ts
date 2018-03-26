@@ -2,6 +2,7 @@ import {Networking} from "../etc/Networking";
 import {LooseObject} from "../etc/LocalTypes";
 import {WordLineData} from "../vis/WordLine";
 import {AttentionVisData} from "../vis/AttentionVis";
+import * as _ from "lodash";
 
 export type TrainDataIndexResponse = {
     ids: number[],
@@ -31,8 +32,10 @@ export class S2SApi {
         return request.get(payload)
     }
 
-    static translate_compare({input, compare,
-                                 neighbors = ['decoder', 'encoder', 'context']}) {
+    static translate_compare({
+                                 input, compare,
+                                 neighbors = ['decoder', 'encoder', 'context']
+                             }) {
         const request = Networking.ajax_request('/api/translate_compare');
         const payload = new Map([
             ['in', input],
@@ -100,8 +103,39 @@ export class Translation {
 
     public _current: LooseObject;
 
+    private attention_save = null;
+
     constructor(result) {
         this._result = result;
+        this.attention_save = _.cloneDeep(this.attn);
+    }
+
+
+    public increaseAttn(decPos, encPos, beam = 0, factor = .1) {
+
+        const curAttn = this._result.attn[beam][decPos];
+        const l = curAttn.length;
+
+        const cost = _.sum(curAttn)- curAttn[encPos];
+
+        for (const i in _.range(l)) {
+
+            if (i == encPos) {
+                console.log("-hen-- encPOS ");
+                curAttn[i] += factor
+            } else {
+                curAttn[i] -= curAttn[i]*factor / cost;
+                curAttn[i] = Math.max(curAttn[i], 0);
+            }
+        }
+
+        this.filterAttention();
+
+        return curAttn;
+    }
+
+    public resetAttn(decPos, beam = 0) {
+        this._result.attn[beam][decPos] = this.attention_save[beam][decPos];
     }
 
 
@@ -151,6 +185,18 @@ export class Translation {
                 w => w.token))
     }
 
+
+    get allNeighbors() {
+        return this._result.allNeighbors;
+    }
+
+    get beam_trace_words() {
+        return this._result.beam_trace_words;
+    }
+
+    get beam() {
+        return this._result.beam;
+    }
 
     get result() {
         return this._result;

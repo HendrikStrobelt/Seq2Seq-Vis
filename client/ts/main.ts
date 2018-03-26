@@ -18,16 +18,14 @@ window.onload = () => {
     const panelCtrl = new PanelController();
 
 
-
-
     //    --- EVENTS ---
 
     const translate = (value) => {
-        S2SApi.translate({input: value, neighbors:[]})
+        S2SApi.translate({input: value, neighbors: []})
             .then((data: string) => {
                 const raw_data = JSON.parse(data);
                 console.log(raw_data, "--- raw_data");
-                panelCtrl.update(raw_data);
+                panelCtrl.update(new Translation(raw_data));
                 panelCtrl.cleanPanels();
 
 
@@ -61,7 +59,7 @@ window.onload = () => {
         .on('keypress', () => {
             const keycode = d3.event.keyCode;
             if (d3.event instanceof KeyboardEvent
-            && (keycode === 13 ) //|| keycode === 32
+                && (keycode === 13) //|| keycode === 32
             ) {
 
                 // updateDebounced();
