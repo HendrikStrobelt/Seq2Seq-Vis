@@ -128,8 +128,8 @@ export class BeamTreeVis extends VComponent<BeamTreeData> {
     protected _wrangle(data: BeamTreeData) {
 
         if (data.maxDepth>0){
-            this.parent.attr('width', data.maxDepth * 90);
-            this.options.width = data.maxDepth * 90;
+            this.parent.attr('width', data.maxDepth * 70);
+            this.options.width = data.maxDepth * 70;
         }
 
         return data.root;
