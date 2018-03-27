@@ -6,13 +6,18 @@ import {SVGMeasurements} from "../etc/SVGplus";
 
 
 export interface BeamTreeData {
-    children: BeamTreeData[]
+    root: BeamTree,
+    maxDepth: number
+}
+
+export interface BeamTree {
+    children: BeamTree[]
     name: string
     topBeam?: boolean
 
 }
 
-type NodeType = HierarchyPointNode<BeamTreeData>;
+type NodeType = HierarchyPointNode<BeamTree>;
 
 export class BeamTreeVis extends VComponent<BeamTreeData> {
     protected options = {
@@ -35,10 +40,12 @@ export class BeamTreeVis extends VComponent<BeamTreeData> {
 
     }
 
-    protected _render(renderData: BeamTreeData): void {
+    protected _render(renderData: BeamTree): void {
         const op = this.options;
 
         const root = d3.hierarchy(renderData, d => d.children);
+        console.log(root, "--- root");
+
         const treeGen = d3.tree().size([op.height - 10, op.width - 100])
 
 
@@ -120,8 +127,12 @@ export class BeamTreeVis extends VComponent<BeamTreeData> {
 
     protected _wrangle(data: BeamTreeData) {
 
+        if (data.maxDepth>0){
+            this.parent.attr('width', data.maxDepth * 90);
+            this.options.width = data.maxDepth * 90;
+        }
 
-        return data;
+        return data.root;
     }
 
 }

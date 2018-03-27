@@ -13,7 +13,7 @@ import {
 } from "../vis/StateProjector";
 import * as _ from 'lodash';
 import {StatePictograms, StatePictogramsHovered} from "../vis/StatePictograms";
-import {BeamTreeData} from "../vis/BeamTree";
+import {BeamTreeData, BeamTree} from "../vis/BeamTree";
 import ModalDialog from "../etc/ModalDialog";
 
 
@@ -190,13 +190,13 @@ export class PanelController {
 
             const btWords: string[][][] = translation.beam_trace_words;
             // console.log(raw_data.beam_trace_words, "--- ");
-            const allNodes: { [key: string]: BeamTreeData } = {};
+            const allNodes: { [key: string]: BeamTree } = {};
 
             //TODO: This is a terrible hack :)
             const withStartToken = btWords[0][0][0] === '<s>';
 
 
-            const root: BeamTreeData = {
+            const root: BeamTree = {
                 name: btWords[0][0][0],
                 children: []
             };
@@ -215,7 +215,7 @@ export class PanelController {
                         topBeam = _.isEqual(subBeam.slice(0), winnerBeam.slice(0, subBeam.length));
                     }
 
-                    const node: BeamTreeData = {
+                    const node: BeamTree = {
                         name: nodeName,
                         children: [],
                         topBeam
@@ -230,7 +230,7 @@ export class PanelController {
             }
 
 
-            this.pm.vis.beamView.update(root)
+            this.pm.vis.beamView.update({root, maxDepth:btWords.length})
 
         }
 
@@ -546,7 +546,7 @@ export class PanelController {
             console.log(" ATTN --- ");
 
             this.pm.panels.wordMode.attnApplyBtn.style('display','none');
-            
+
         });
 
 
