@@ -3,7 +3,7 @@
 import argparse
 import os
 import time
-
+os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
 import connexion
 import logging
 

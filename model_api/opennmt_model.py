@@ -14,6 +14,7 @@ import onmt
 import onmt.ModelConstructor
 import onmt.modules
 
+
 PAD_WORD = '<blank>'
 UNK = 0
 BOS_WORD = '<s>'
@@ -91,7 +92,6 @@ def translate_opts(parser):
                        help='Window stride for spectrogram in seconds')
     group.add_argument('-window', default='hamming',
                        help='Window type for spectrogram generation')
-
 
 def model_opts(parser):
     """
@@ -243,8 +243,8 @@ class ONMTmodelAPI():
             cuda=self.opt.cuda,
             beam_trace=self.opt.dump_beam != "")
 
-    def translate(self, in_text, partial_decode=[], k=5, attn=None,
-                  dump_data=False, roundTo=5):
+
+    def translate(self, in_text, partial_decode=[], attn_overwrite=[], k=5, attn=None, dump_data=False):
         """
         in_text: list of strings
         partial_decode: list of strings, not implemented yet
@@ -261,19 +261,17 @@ class ONMTmodelAPI():
 
         if dump_data:
             # Code to extract the source and target dict
-            with open("data/src.dict", 'w') as f:
+            with open("s2s/src.dict", 'w') as f:
                 for w, ix in self.translator.fields['src'].vocab.stoi.items():
                     f.write(str(ix) + " " + w + "\n")
-            with open("data/tgt.dict", 'w') as f:
+            with open("s2s/tgt.dict", 'w') as f:
                 for w, ix in self.translator.fields['tgt'].vocab.stoi.items():
                     f.write(str(ix) + " " + w + "\n")
-            with h5py.File("data/embs.h5", 'w') as f:
-                f.create_dataset("encoder", data=
-                self.translator.model.encoder.embeddings.emb_luts[
-                    0].weight.data.numpy())
-                f.create_dataset("decoder", data=
-                self.translator.model.decoder.embeddings.emb_luts[
-                    0].weight.data.numpy())
+            with h5py.File("s2s/embs.h5", 'w') as f:
+                f.create_dataset("encoder", data=self.translator.model.encoder.embeddings.emb_luts[0].weight.data.numpy())
+                f.create_dataset("decoder", data=self.translator.model.decoder.embeddings.emb_luts[0].weight.data.numpy())
+
+
 
         # Use written file as input to dataset builder
         data = onmt.io.build_dataset(
@@ -315,16 +313,15 @@ class ONMTmodelAPI():
                 curr_part.append(vocab.stoi[tok])
             partial.append(curr_part)
 
-        reply = {}  # todo: should become a list
+        reply = {}
 
         # Only has one batch, but indexing does not work
         for batch in test_data:
             batch_data = self.translator.translate_batch(
                 batch, data, return_states=True,
-                partial=partial)
+                partial=partial, attn_overwrite=attn_overwrite)
             translations = builder.from_batch(batch_data)
             # iteratres over items in batch
-            rr = lambda x: [(round(xx, roundTo)) for xx in x]
             for transIx, trans in enumerate(translations):
                 context = batch_data['context'][:, transIx, :]
                 print(trans.pred_sents)
@@ -333,31 +330,27 @@ class ONMTmodelAPI():
                 encoderRes = []
                 for token, state in zip(in_text[transIx].split(), context):
                     encoderRes.append({'token': token,
-                                       'state': rr(list(state.data))
+                                       'state': list(state.data)
                                        })
                 res['encoder'] = encoderRes
+
                 # # Fill decoder Result
                 decoderRes = []
                 attnRes = []
-
                 for ix, p in enumerate(trans.pred_sents[:k]):
                     if p:
                         topIx = []
                         topIxAttn = []
                         for token, attn, state, cstar in zip(p,
                                                              trans.attns[ix],
-                                                             batch_data[
-                                                                 "target_states"][
-                                                                 transIx][ix],
-                                                             batch_data[
-                                                                 'target_cstar'][
-                                                                 transIx][ix]):
+                                                             batch_data["target_states"][transIx][ix],
+                                                             batch_data['target_cstar'][transIx][ix]):
                             currentDec = {}
                             currentDec['token'] = token
-                            currentDec['state'] = rr(list(state.data))
-                            currentDec['context'] = rr(list(cstar.data))
+                            currentDec['state'] = list(state.data)
+                            currentDec['cstar'] = list(cstar.data)
                             topIx.append(currentDec)
-                            topIxAttn.append(rr(list(attn)))
+                            topIxAttn.append(list(attn))
                             # if t in ['.', '!', '?']:
                             #     break
                         decoderRes.append(topIx)
@@ -365,39 +358,44 @@ class ONMTmodelAPI():
                 res['scores'] = list(np.array(trans.pred_scores))[:k]
                 res['decoder'] = decoderRes
                 res['attn'] = attnRes
-                # todo: make nice...
-                convert_to_py = lambda x: {"pred": x['pred'].item(),
-                                           "score": x[
-                                               'score'].item(),
-                                           "state": rr(list(map(lambda s: s.item(),
-                                                        x['state'])))
-                                           }
+                res['beam'] = batch_data['beam'][transIx]
                 res['beam_trace'] = batch_data['beam_trace'][transIx]
-                res['beam'] = list(map(lambda t:
-                                       list(map(convert_to_py,
-                                                t)),
-                                       batch_data['beam'][transIx]))
                 reply[transIx] = res
         return reply
 
 
 def main():
-    # model = ONMTmodelAPI("data/model_en_de_20.49.pt")
-    model = ONMTmodelAPI(
-        "processing/s2s_iwslt_ende/baseline-brnn.en-de.s154_acc_61.58_ppl_7.43_e21.pt")
+    # model = ONMTmodelAPI("model/date_acc_100.00_ppl_1.00_e7.pt")
+    model = ONMTmodelAPI("../S2Splay/model_api/processing/s2s_iwslt_ende/baseline-brnn.en-de.s154_acc_61.58_ppl_7.43_e21.pt")
+    # Simple Case
+    # reply = model.translate(["This is a test ."], dump_data=False)
+    # Case with attn overwrite OR partial
+    reply = model.translate(["this is madness ."], attn_overwrite=[{2:0}])
+    # reply = model.translate(["this is madness ."], partial_decode=["das ist"])
+    # Complex Case with attn and partial
+    # reply = model.translate(["this is madness ."],
+    #                         attn_overwrite=[{2:0}],
+    #                         partial_decode=["das ist"])
 
-    # reply = model.translate(["This is a test ."])
-    reply = model.translate(["This", "That"])
-    print("______")
-    # reply = model.translate(["This is a test ."], partial_decode=["Dies ist"])
+    # Cases with multiple
+    # reply = model.translate(["This is a test .", "and another one ."])
+    # Partial
     # reply = model.translate(["This is a test .", "this is a second test ."],
     #                          partial_decode=["Dies ist", "Ein zweiter"])
+    # Attn overwrite
+    # reply = model.translate(["this is madness .", "i am awesome ."],
+    #                         attn_overwrite=[{2:0}, {}])
+    # All together - phew
+    # reply = model.translate(["this is madness .", "i am awesome ."],
+    #                         partial_decode=["heute ist", "du bist"],
+    #                         attn_overwrite=[{2:0}, {2:2}])
 
-    print(len(reply[0]['decoder']))
-    print(len(reply[0]['decoder'][0]))
-    print(reply[0]['beam_trace'])
-
-    # print(json.dumps(reply, indent=2, sort_keys=True))
+    # Debug options
+    # print("______")
+    # print(len(reply[0]['decoder']))
+    # print(len(reply[0]['decoder'][0]))
+    # print(reply[0]['beam_trace'])
+    #print(json.dumps(reply, indent=2, sort_keys=True))
 
 if __name__ == "__main__":
     main()
