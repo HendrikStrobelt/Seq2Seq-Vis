@@ -2,16 +2,22 @@ import {VComponent} from "./VisualComponent";
 import * as d3 from "d3";
 import {HierarchyPointNode} from "d3-hierarchy";
 import {DefaultLinkObject} from "d3-shape";
+import {SVGMeasurements} from "../etc/SVGplus";
 
 
 export interface BeamTreeData {
-    children: BeamTreeData[]
+    root: BeamTree,
+    maxDepth: number
+}
+
+export interface BeamTree {
+    children: BeamTree[]
     name: string
     topBeam?: boolean
 
 }
 
-type NodeType = HierarchyPointNode<BeamTreeData>;
+type NodeType = HierarchyPointNode<BeamTree>;
 
 export class BeamTreeVis extends VComponent<BeamTreeData> {
     protected options = {
@@ -19,24 +25,39 @@ export class BeamTreeVis extends VComponent<BeamTreeData> {
         width: 600,
         height: 600
     };
+    private textMeasure: SVGMeasurements;
+
 
     constructor(d3Parent, eventHandler?, options: {} = {}) {
         super(d3Parent, eventHandler);
         this.superInit(options, true)
+
     }
 
     protected _init() {
+
+        this.textMeasure = new SVGMeasurements(this.base, 'node')
+
     }
 
-    protected _render(renderData: BeamTreeData): void {
+    protected _render(renderData: BeamTree): void {
         const op = this.options;
 
         const root = d3.hierarchy(renderData, d => d.children);
+        console.log(root, "--- root");
+
         const treeGen = d3.tree().size([op.height - 10, op.width - 100])
 
 
         const nodes = <NodeType[]> treeGen(root).descendants();
         const links = <NodeType[]> treeGen(root).descendants().slice(1);
+
+        console.log(nodes, "--- nodes");
+        const wordWidth = <{ [key: string]: number }>{};
+        nodes.forEach(node => {
+            const n = node.data.name;
+            wordWidth[n] = this.textMeasure.textLength(n);
+        })
 
 
         // bad habbit, but todo:
@@ -45,17 +66,17 @@ export class BeamTreeVis extends VComponent<BeamTreeData> {
 
 
         let i = 0;
-        var node = this.layers.main.selectAll('g.node')
+        let nodeEls = this.layers.main.selectAll('g.node')
             .data(nodes, function (d: any) {
                 return d.id || (d.id = ++i);
             });
 
         // Enter any new modes at the parent's previous position.
-        var nodeEnter = node.enter().append('g')
+        const nodeEnter = nodeEls.enter().append('g')
             .attr('class', 'node')
             .attr("transform", function (d) {
                 return "translate(" + (d.y + 5) + "," + (d.x + 5) + ")";
-            }).classed('topBeam', d => d.data.topBeam)
+            }).classed('topBeam', d => d.data.topBeam);
 
 
         // // Add Circle for the nodes
@@ -66,12 +87,23 @@ export class BeamTreeVis extends VComponent<BeamTreeData> {
         //         return "blue"; //d._children ? "lightsteelblue" : "#fff";
         //     }).append('title').text((d) => d.data.name);
 
+        nodeEnter.append('rect').style('fill', 'white');
         nodeEnter.append('text')
             .attr('class', 'node_text')
             .styles({
                 // 'text-anchor': 'middle',
                 'dominant-baseline': "middle"
-            })
+            });
+        nodeEls = nodeEnter.merge(nodeEls);
+
+        nodeEls.select('rect').attrs({
+            x: -2,//d => -wordWidth[d.data.name] / 2 - 2,
+            width: d => wordWidth[d.data.name] + 4,
+            height: 6,
+            y: -3
+        });
+
+        nodeEls.select('text')
             .text((d) => d.data.name);
 
 
@@ -95,8 +127,12 @@ export class BeamTreeVis extends VComponent<BeamTreeData> {
 
     protected _wrangle(data: BeamTreeData) {
 
+        if (data.maxDepth>0){
+            this.parent.attr('width', data.maxDepth * 70);
+            this.options.width = data.maxDepth * 70;
+        }
 
-        return data;
+        return data.root;
     }
 
 }

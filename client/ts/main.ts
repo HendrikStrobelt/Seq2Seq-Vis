@@ -5,6 +5,7 @@ import {PanelController} from "./controller/PanelController";
 import {S2SApi, Translation} from "./api/S2SApi";
 import '../css/main.scss'
 import URLHandler from "./etc/URLHandler";
+import ModalDialog from "./etc/ModalDialog";
 
 
 window.onload = () => {
@@ -20,11 +21,11 @@ window.onload = () => {
     //    --- EVENTS ---
 
     const translate = (value) => {
-        S2SApi.translate({input: value})
+        S2SApi.translate({input: value, neighbors: []})
             .then((data: string) => {
                 const raw_data = JSON.parse(data);
                 console.log(raw_data, "--- raw_data");
-                panelCtrl.update(raw_data);
+                panelCtrl.update(new Translation(raw_data));
                 panelCtrl.cleanPanels();
 
 
@@ -58,11 +59,11 @@ window.onload = () => {
         .on('keypress', () => {
             const keycode = d3.event.keyCode;
             if (d3.event instanceof KeyboardEvent
-            //&& (keycode === 13 || keycode === 32)
+                && (keycode === 13) //|| keycode === 32
             ) {
 
-                updateDebounced();
-                // updateAllVis();
+                // updateDebounced();
+                updateAllVis();
             }
         })
 

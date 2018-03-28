@@ -244,7 +244,7 @@ export class StateProjector extends VComponent<StateProjectorData> {
         pps.attr('transform',
             d => `translate(${sX(d.pos[0])},${sY(d.pos[1])})`);
 
-        pps.select('circle').attr('r', d => d.occ.length);
+        pps.select('circle').attr('r', d => Math.sqrt(2*d.occ.length));
 
         pps.on('mouseenter', d => {
             const allL = this.layers.main.selectAll('.hoverLine')

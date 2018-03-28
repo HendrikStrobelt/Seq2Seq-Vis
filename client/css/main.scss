@@ -93,7 +93,26 @@ svg {
   display: block;
 }
 
-.scrollable{
+.scrollable {
   width: 100%;
   overflow: auto;
+}
+
+select {
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10px' height='10px'><polyline points='0,0 10,0 5,10'/></svg>");
+  background-color: lightgrey;
+  background-repeat: no-repeat;
+  background-position: right 5px top 9px;
+  background-size: 7px 7px;
+  padding: 12px;
+  width: auto;
+  //font-size:16px;
+  //font-weight: bold;
+  //text-align:center;
+  //text-shadow:0 -1px 0 rgba(0, 0, 0, 0.25);
+  border-radius: 5px;
+  -webkit-border-radius: 5px;
+  -webkit-appearance: none;
+  border: 0;
+  outline: 0;
 }

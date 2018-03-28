@@ -13,8 +13,19 @@ import {
 } from "../vis/StateProjector";
 import * as _ from 'lodash';
 import {StatePictograms, StatePictogramsHovered} from "../vis/StatePictograms";
-import {BeamTreeData} from "../vis/BeamTree";
+import {BeamTreeData, BeamTree} from "../vis/BeamTree";
+import ModalDialog from "../etc/ModalDialog";
 
+
+enum ComparisonMode {
+    none, enc_diff, dec_dff
+}
+
+enum WordClickMode {
+    word, attn
+}
+
+type ComparisonFeedBack = { in: any, compare: any, neighbors: any };
 
 export class PanelController {
     private readonly eventHandler: SimpleEventHandler;
@@ -28,7 +39,14 @@ export class PanelController {
         allNeighbors: {},
         projectedNeighbor: null,
         sentence: null,
-        translations: <Translation[]>[null, null]
+        translations: <Translation[]>[null, null],
+        comparison: <ComparisonMode> ComparisonMode.none,
+        // rawData: [null, null], // TODO: should be removed and merged with translations
+        wordClickMode: WordClickMode.word,
+        attnChange: {
+            selected: <number>-1,
+            changes: <{ [key: number]: { [key: number]: number } }>{}
+        }
     };
 
     constructor() {
@@ -37,6 +55,7 @@ export class PanelController {
 
         this._init();
         this._bindEvents();
+
 
     }
 
@@ -90,21 +109,39 @@ export class PanelController {
 
         cur.allNeighbors = allNeighbors;
 
-        const allNeighborKeys = Object.keys(allNeighbors);
-        if (!cur.projectedNeighbor) cur.projectedNeighbor = allNeighborKeys[0];
+        if (allNeighbors) {
+            const allNeighborKeys = Object.keys(allNeighbors);
+            if (!cur.projectedNeighbor) cur.projectedNeighbor = (allNeighborKeys.indexOf('decoder') > -1) ? 'decoder' : allNeighborKeys[0];
 
-        this.pm.updateProjectionSelectField(allNeighborKeys, cur.projectedNeighbor);
+            this.pm.panels.projectorSelect.style('display', null);
+            this.pm.panels.loadProjectButton.style('display', 'none');
+            this.pm.vis.statePicto.unhideView();
+            this.pm.vis.projectors.unhideView();
 
-        this.selectProjection(cur.projectedNeighbor);
+
+            this.pm.updateProjectionSelectField(allNeighborKeys, cur.projectedNeighbor);
+
+            this.selectProjection(cur.projectedNeighbor);
+
+
+        } else {
+            this.pm.panels.projectorSelect.style('display', 'none');
+            this.pm.panels.loadProjectButton.style('display', null);
+
+            this.pm.vis.statePicto.hideView();
+            this.pm.vis.projectors.hideView();
+        }
+
     }
 
-    update(raw_data, main = this.pm.vis.left, extra = this.pm.vis.zero, isCompare = false) {
+
+    update(translation: Translation, main = this.pm.vis.left, extra = this.pm.vis.zero, isCompare = false) {
 
         const cur = this._current;
 
 
         //=== translation object with convenience functions
-        const translation = new Translation(raw_data);
+        // const translation = new Translation(raw_data);
         translation.filterAttention(.75);
 
         //=== update words:
@@ -138,34 +175,47 @@ export class PanelController {
 
         if (isCompare) {
             cur.translations[1] = translation;
+            main.sideIndicator.classed('side_compare', true)
+                .text('compare');
         } else {
             cur.translations[0] = translation;
+            main.sideIndicator.classed('side_pivot', true)
+                .text('pivot');
             // if (main == this.pm.vis.left) {
             this._current.sentence = translation.inputSentence;
-            this.updateProjectorData(raw_data.allNeighbors);
+            this.updateProjectorData(translation.allNeighbors);
 
 
             const winnerBeam = translation.decoderWords[cur.beamIndex];
 
-            const btWords: string[][][] = raw_data.beam_trace_words;
-            console.log(raw_data.beam_trace_words, "--- ");
-            const allNodes: { [key: string]: BeamTreeData } = {};
+            const btWords: string[][][] = translation.beam_trace_words;
+            // console.log(raw_data.beam_trace_words, "--- ");
+            const allNodes: { [key: string]: BeamTree } = {};
 
-            const root: BeamTreeData = {
+            //TODO: This is a terrible hack :)
+            const withStartToken = btWords[0][0][0] === '<s>';
+
+
+            const root: BeamTree = {
                 name: btWords[0][0][0],
                 children: []
             };
             allNodes[btWords[0][0][0]] = root;
 
-            for (const depthList of btWords.slice(1)) {
+            for (const depthList of btWords.slice(withStartToken ? 1 : 0)) {
                 for (const subBeam of depthList) {
                     const [nodeName] = subBeam.slice(-1);
                     const rootName = subBeam.slice(0, -1).join('||');
                     const nodeID = subBeam.join('||');
 
-                    const topBeam = _.isEqual(subBeam.slice(1), winnerBeam.slice(0, subBeam.length - 1));
+                    let topBeam = null;
+                    if (withStartToken) {
+                        topBeam = _.isEqual(subBeam.slice(1), winnerBeam.slice(0, subBeam.length - 1));
+                    } else {
+                        topBeam = _.isEqual(subBeam.slice(0), winnerBeam.slice(0, subBeam.length));
+                    }
 
-                    const node: BeamTreeData = {
+                    const node: BeamTree = {
                         name: nodeName,
                         children: [],
                         topBeam
@@ -180,7 +230,7 @@ export class PanelController {
             }
 
 
-            this.pm.vis.beamView.update(root)
+            this.pm.vis.beamView.update({root, maxDepth:btWords.length})
 
         }
 
@@ -189,22 +239,24 @@ export class PanelController {
             let beamColors: string[][] = [];
             let beamValues: number[][] = [];
             const top_predict = translation.decoderWords[0];
+            // console.log(top_predict, "--- top_predict");
 
-            for (const j in _.range(raw_data.beam[0].length)) {
+            for (const j in _.range(translation.beam[0].length)) {
                 const ro: string[] = [];
                 const roCol: string[] = [];
                 const bv: number[] = [];
-                for (const i in raw_data.beam) {
-                    const w = raw_data.beam[i][j].word;
+                for (const i in translation.beam) {
+                    const w = translation.beam[i][j].word;
                     ro.push(w);
 
-                    if (w == top_predict[i]) {
-                        roCol.push('#3c3c3c')
+
+                    if (w === top_predict[i]) {
+                        roCol.push('#ccc2a3')
                     } else {
                         roCol.push(null)
                     }
 
-                    bv.push(raw_data.beam[i][j].score)
+                    bv.push(translation.beam[i][j].score)
                 }
                 beamWords.push(ro);
                 beamColors.push(roCol);
@@ -221,7 +273,11 @@ export class PanelController {
             const boxWidth = beamValues.map(row => row.map(value => bwScale(value)))
 
 
-            main.beam.update({wordRows: beamWords, boxWidth})
+            main.beam.update({
+                wordRows: beamWords,
+                boxWidth,
+                wordFill: beamColors
+            })
         }
 
 
@@ -269,7 +325,7 @@ export class PanelController {
 
     updateAndShowWordProjector(data) {
         const wp = this.pm.getWordProjector();
-        console.log(data, "--- data");
+        // console.log(data, "--- data");
         wp.update(data);
     }
 
@@ -308,91 +364,190 @@ export class PanelController {
         };
 
 
-        this.eventHandler.bind(WordLine.events.wordSelected, (d, e) => {
-            if (d.caller === vis.left.encoder_words
-                || d.caller === vis.left.decoder_words) {
+        const updateComparisonView = (d: ComparisonFeedBack) => {
+            const {main, extra} = this.pm.getMediumPanel();
 
-                let loc = 'src';
-                if (d.caller === vis.left.decoder_words) {
-                    loc = 'tgt'
-                }
+            // console.log(d, "--- d");
+            this.update(new Translation(d.compare), main, null, true);
 
-                d.caller.highlightWord(d.row, d.index, d.selected, true, 'selected');
-
-                const allWords = d.caller.firstRowPlainWords;
-
-                S2SApi.closeWords({input: d.word.word.text, loc, limit: 20})
-                    .then(data => {
-
-
-                        const word_data = JSON.parse(data);
-                        // this.updateAndShowWordProjector(word_data);
-                        const replaceIndex = d.index;
-                        if (loc === 'src') {
-                            const pivot = allWords.join(' ');
-
-                            const compare = word_data.word.map(wd => {
-                                return allWords.map((aw, wi) =>
-                                    (wi === replaceIndex) ? wd : aw).join(' ');
-                            })
-
-                            S2SApi.compareTranslation({pivot, compare})
-                                .then(data => {
-                                    word_data["compare"] = JSON.parse(data)["compare"];
-                                    // this.updateAndShowWordList(word_data);
-                                    this.updateAndShowWordProjector(word_data);
-                                })
-
-                        } else {
-                            // this.updateAndShowWordList(word_data);
-                            this.updateAndShowWordProjector(word_data);
-                        }
-
-
-                    })
-                    .catch(error => console.log(error, "--- error"));
-
-
-            }
-
-
-        })
+            this.updateProjectorData(d.neighbors);
+        }
 
         const actionWordHovered = (d: WordLineHoverEvent) => {
-            d.caller.highlightWord(d.row, d.index, d.hovered);
+            // console.log(d,"--- d");
+
+            // return if decoder word is fixed
+            if (this._current.wordClickMode === WordClickMode.attn &&
+                this._current.attnChange.selected > -1) return;
+
+            d.caller.highlightWord(d.row, d.col, d.hovered);
 
             const {vType, col} = determinePanelType(d.caller);
             let transID = 0;
             if (col != this.pm.vis.left) {
-                col.attention.actionHighlightEdges(d.index, vType, d.hovered);
+                col.attention.actionHighlightEdges(d.col, vType, d.hovered);
                 transID = 1;
             }
-            this.pm.vis.left.attention.actionHighlightEdges(d.index, vType, d.hovered);
+            this.pm.vis.left.attention.actionHighlightEdges(d.col, vType, d.hovered);
 
 
             const proj = this.pm.vis.projectors;
             const pictos = this.pm.vis.statePicto;
 
-            if (vType === AttentionVis.VERTEX_TYPE.Encoder &&
-                proj.loc === 'src') {
+            if (proj.current.hidden === false) {
+                if (vType === AttentionVis.VERTEX_TYPE.Encoder &&
+                    proj.loc === 'src') {
 
-                proj.actionHoverPivot(transID, d.index, d.hovered);
-                pictos.actionHighlightSegment(transID, d.index, d.hovered);
+                    proj.actionHoverPivot(transID, d.col, d.hovered);
+                    pictos.actionHighlightSegment(transID, d.col, d.hovered);
 
+                }
+                else if (vType === AttentionVis.VERTEX_TYPE.Decoder &&
+                    proj.loc === 'tgt') {
+
+                    proj.actionHoverPivot(transID, d.col, d.hovered);
+                    pictos.actionHighlightSegment(transID, d.col, d.hovered);
+
+                }
             }
-            else if (vType === AttentionVis.VERTEX_TYPE.Decoder &&
-                proj.loc === 'tgt') {
 
-                proj.actionHoverPivot(transID, d.index, d.hovered);
-                pictos.actionHighlightSegment(transID, d.index, d.hovered);
 
-            }
+        };
 
+        this.eventHandler.bind(WordLine.events.wordHovered, actionWordHovered);
+
+
+        const openWordCloud = ({input, loc, limit, allWords, replaceIndex}) => {
+            S2SApi.closeWords({input, loc, limit})
+                .then(data => {
+
+
+                    const word_data = JSON.parse(data);
+                    // this.updateAndShowWordProjector(word_data);
+                    if (loc === 'src') {
+                        const pivot = allWords.join(' ');
+
+                        const compare = word_data.word.map(wd => {
+                            return allWords.map((aw, wi) =>
+                                (wi === replaceIndex) ? wd : aw).join(' ');
+                        })
+
+                        S2SApi.compareTranslation({pivot, compare})
+                            .then(data => {
+                                word_data["compare"] = JSON.parse(data)["compare"];
+                                // this.updateAndShowWordList(word_data);
+                                this.updateAndShowWordProjector(word_data);
+                            })
+
+                    } else {
+                        // this.updateAndShowWordList(word_data);
+                        this.updateAndShowWordProjector(word_data);
+                    }
+
+
+                })
+                .catch(error => console.log(error, "--- error"));
 
         }
 
 
-        this.eventHandler.bind(WordLine.events.wordHovered, actionWordHovered)
+        this.eventHandler.bind(WordLine.events.wordSelected, (d: WordLineHoverEvent, e) => {
+            if (d.caller === vis.left.encoder_words
+                || d.caller === vis.left.decoder_words) {
+
+                let loc = 'src';
+                let vType = AttentionVis.VERTEX_TYPE.Encoder;
+                if (d.caller === vis.left.decoder_words) {
+                    loc = 'tgt';
+                    vType = AttentionVis.VERTEX_TYPE.Decoder;
+                }
+
+
+                if (this._current.wordClickMode === WordClickMode.word) {
+                    d.caller.highlightWord(d.row, d.col, d.hovered, true, 'selected');
+                    openWordCloud({
+                        input: d.word.word.text,
+                        loc,
+                        limit: 20,
+                        allWords: d.caller.firstRowPlainWords,
+                        replaceIndex: d.col
+                    })
+
+                } else if (this._current.wordClickMode === WordClickMode.attn) {
+                    const aChg = this._current.attnChange;
+                    if (loc === 'tgt') {
+                        if (aChg.selected != d.col) {
+                            aChg.selected = d.col;
+                            d.caller.highlightWord(d.row, d.col, true, true, 'selected');
+                            this.pm.vis.left.attention
+                                .actionHighlightEdges(d.col, vType, true, 'highlight');
+                        } else {
+                            aChg.selected = -1;
+                            d.caller.highlightWord(d.row, d.col, false, true, 'selected');
+                            this.pm.vis.left.attention
+                                .actionHighlightEdges(d.col, vType, false, 'highlight');
+                        }
+
+                    }
+
+                    if (loc === 'src') {
+                        if (aChg.selected > -1) {
+                            const a =this._current.translations[0]
+                                .increaseAttn(aChg.selected, d.col);
+
+                            this.pm.panels.wordMode.attnApplyBtn.style('display',null);
+
+                            console.log(a, aChg.selected, d.col,"--- a, aChg.selected, d.col");
+                            
+                            this.update(this._current.translations[0]);
+                            this.pm.vis.left.decoder_words.highlightWord(0, aChg.selected, true, true, 'selected');
+                            this.pm.vis.left.attention
+                                .actionHighlightEdges(aChg.selected, AttentionVis.VERTEX_TYPE.Decoder, true, 'highlight');
+                            console.log("-hen-- AAAAJ");
+
+                        } else {
+                            alert('Please select a decoder word first. ' +
+                                'Then you can increase weights respective weights by clicking on encoder');
+                        }
+                    }
+
+
+                }
+
+
+            }
+
+
+            else if (d.caller === vis.left.beam) {
+
+
+                const partialDec = this._current.translations[0]
+                    .decoderWords[0].slice(0, d.col).join(' ') + ' ' + d.word.word.text
+
+                S2SApi.translate(
+                    {
+                        input: this._current.translations[0].inputSentence,
+                        partial: [partialDec],
+                        neighbors: []
+                    }).then(data => {
+                    data = JSON.parse(data);
+                    console.log(data, "--- data");
+
+                    this.update(new Translation(data));
+                })
+                // .map((w, i) => (i === d.col) ? d.word.word.text : w)
+            }
+
+
+        });
+
+
+        this.pm.panels.wordMode.attnApplyBtn.on('click',()=>{
+            console.log(" ATTN --- ");
+
+            this.pm.panels.wordMode.attnApplyBtn.style('display','none');
+
+        });
 
 
         this.eventHandler.bind(WordProjector.events.wordClicked,
@@ -404,24 +559,17 @@ export class PanelController {
 
                 S2SApi.translate_compare({
                     input: this._current.sentence,
-                    compare: d.sentence
+                    compare: d.sentence,
+                    neighbors: []
                 }).then(data => {
-
-                        const {main, extra} = this.pm.getMediumPanel();
-
-                        const d = <{ in: any, compare: any, neighbors: any }>JSON.parse(data);
-
-                        console.log(d, "--- d");
-                        this.update(d.compare, main, null, true);
-
-                        this.updateProjectorData(d.neighbors);
+                    // TODO: ENC / DEC difference !!!
+                    this._current.comparison = ComparisonMode.enc_diff;
+                    data = <ComparisonFeedBack>JSON.parse(data);
+                    updateComparisonView(data)
+                })
 
 
-                    }
-                )
-
-
-            })
+            });
 
         this.eventHandler.bind(StateProjector.events.clicked,
             (d: StateProjectorClickEvent) => {
@@ -464,6 +612,7 @@ export class PanelController {
                 visRoot.attention.actionHighlightEdges(wordID, vType, hovered);
             }
 
+            // shouldn't happen when views are hidden:
             this.pm.vis.projectors.actionHoverPivot(transID, wordID, hovered);
             this.pm.vis.statePicto.actionHighlightSegment(transID, wordID, hovered)
 
@@ -494,12 +643,123 @@ export class PanelController {
             }
         )
 
+        this.pm.panels.loadProjectButton.on('click', () => {
+
+            console.log("-hen-- click");
+
+            this.pm.panels.loadProjectSpinner.style('display', 'inline');
+
+            if (this._current.comparison === ComparisonMode.enc_diff) {
+                // then we are in compare mode
+                S2SApi.translate_compare({
+                    input: this._current.translations[0].inputSentence,
+                    compare: this._current.translations[1].inputSentence
+                }).then(data => {
+                    // TODO: ENC / DEC difference !!!
+                    this._current.comparison = ComparisonMode.enc_diff;
+                    data = <ComparisonFeedBack>JSON.parse(data);
+
+                    this.pm.panels.loadProjectSpinner.style('display', 'none');
+                    this.update(new Translation(data.in));
+                    updateComparisonView(data)
+                })
+
+
+            } else if (this._current.comparison === ComparisonMode.none) {
+                // here in single mode
+                S2SApi.translate({input: this._current.sentence})
+                    .then((data: string) => {
+                        const raw_data = JSON.parse(data);
+                        console.log(raw_data, "--- raw_data");
+
+                        this.pm.panels.loadProjectSpinner.style('display', 'none');
+                        this.update(new Translation(raw_data));
+                    })
+            }
+
+
+        })
 
         this.pm.panels.projectorSelect
             .on('change', () => {
                 const v = this.pm.panels.projectorSelect.property('value');
                 this.selectProjection(v);
+            });
+
+
+        const ec = this.pm.panels.enterComparison;
+
+        ec.btn.on('click', () => {
+            const t = this._current.translations[0];
+            ModalDialog.open(ec.dialog, this.eventHandler, 400);
+            ec.enc.property('value', t.inputSentence);
+            ec.dec.property('value', t.decoderWords[0].join(' '));
+        })
+
+
+        ec.encBtn.on('click', () => {
+            const inSentence = ec.enc.property('value').trim();
+            S2SApi.translate_compare({
+                input: this._current.sentence,
+                compare: inSentence,
+                neighbors: []
+            }).then(data => {
+                // TODO: ENC / DEC difference !!!
+                this._current.comparison = ComparisonMode.enc_diff;
+                data = <ComparisonFeedBack>JSON.parse(data);
+                updateComparisonView(data)
             })
+
+            ModalDialog.close(ec.dialog);
+
+        })
+
+        ec.decBtn.on('click', () => {
+            const inSentence = (<string> ec.dec.property('value')).trim();
+            S2SApi.translate(
+                {
+                    input: this._current.translations[0].inputSentence,
+                    partial: [inSentence],
+                    neighbors: []
+                }).then(data => {
+                this._current.comparison = ComparisonMode.enc_diff;
+                data = JSON.parse(data);
+
+                // TODO: make nice and work with updateCOmparisonVoew
+                const {main, extra} = this.pm.getMediumPanel();
+                this.update(new Translation(data), main, null, true);
+
+                // this.updateProjectorData(data.neighbors);
+            })
+
+            ModalDialog.close(ec.dialog);
+
+        })
+
+
+        this.pm.panels.swapBtn.on('click', () => {
+            if (!this._current.translations[1]) return;
+            const comp = this._current.translations[1];
+            const pivot = this._current.translations[0];
+
+            this.update(comp);
+            const {main, extra} = this.pm.getMediumPanel();
+            this.update(pivot, main, null, true);
+
+        });
+
+
+        this.pm.panels.wordMode.attnBtn.on('click', () => {
+            this.pm.panels.wordMode.attnBtn.classed('selected', true);
+            this.pm.panels.wordMode.wordBtn.classed('selected', false);
+            this._current.wordClickMode = WordClickMode.attn
+        });
+
+        this.pm.panels.wordMode.wordBtn.on('click', () => {
+            this.pm.panels.wordMode.attnBtn.classed('selected', false);
+            this.pm.panels.wordMode.wordBtn.classed('selected', true);
+            this._current.wordClickMode = WordClickMode.word
+        });
 
 
     }

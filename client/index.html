@@ -35,8 +35,8 @@
 <!--</div>-->
 
 <div class="header">
-    <div style="padding: 0px 6px;">Start entering some English text (space and
-        enter trigger request)...
+    <div style="padding: 0px 6px;">Start entering some encoder sentence (enter
+        triggers request)...
     </div>
     <div><input type="text" class="full_width_input" id="query_input"/></div>
 </div>
@@ -50,7 +50,31 @@
     <div class="col1 column" style="padding-left: 5px;">
         <!--<svg id="vis" width="500" height="500"></svg>-->
     </div>
-    <div class="col2 column" style="border-left: 3px #4a4a4a;"></div>
+    <div class="col_for_btn column"
+         style="border-left: 3px #4a4a4a;vertical-align: middle;">
+
+        <div id="reset_attn" class="btn" style="display:none;">reset attn</div>
+        <div id="apply_attn" class="btn" style="display:none;">apply attn</div>
+
+        <div style=""><i class="fa fa-arrow-left" aria-hidden="true"></i> change:</div>
+        <div style="display: table">
+            <div id="word_vector_fix_btn" class="btn btn_left word_mode selected" style="display: table-cell">word</div>
+            <div id="attn_fix_btn" class="btn btn_right word_mode" style="display: table-cell">attn</div>
+        </div>
+        <div style="padding-top: 5px;"><i class="fa fa-arrow-right" aria-hidden="true"></i>compare:</div>
+
+        <div id="comparison_btn" class="btn"> sentence
+        </div>
+        <div style="padding-top: 5px;">swap:</div>
+        <div id="make_pivot_btn" class="btn" >
+            <i class="fa fa-arrows-h" aria-hidden="true"
+               style="font-size: 16pt;color: #767676; font-weight: 100;"></i>
+        </div>
+    </div>
+    <div class="col2 column"
+         style="border-left: 3px #4a4a4a;vertical-align: middle;">
+
+    </div>
     <div class="col3 column" style="padding-left: 25px;">
         <!--<svg width="100" height="100"><rect width="50" height="50"></rect></svg>-->
     </div>
@@ -60,15 +84,62 @@
 
 <div id="beam-view"></div>
 
-<select id="projectorSelect"></select>
+<button id="loadProject" style="margin: 5px" class="btn"> explore neighborhoods
+</button>
+<i id='lPspinner' class="fa fa-spinner fa-spin"
+   style="font-size:24px; display:none;"></i>
+<select id="projectorSelect"
+        style="padding: 5px; margin: 5px;display:none;"></select>
+
+
 <div class="scrollable">
     <div id="statePictos" style="white-space: nowrap; padding: 5px;"></div>
 </div>
 
 <div>
-    <div class='column' id="projectorPanel" style="padding: 10px"></div>
+    <div class='column' id="projectorPanel" style="padding: 10px">
+        <div class="menu">
+            show:
+            <div class="btn btn_left btn_project_edges selected">edges</div>
+            <div class="btn btn_right btn_project_nodes selected">nodes</div>
+        </div>
+    </div>
 
     <div class="col5 column"></div>
+
+</div>
+
+
+<!--MODAL DIALOGS-->
+
+<div class="modalDialog" id="comparisonDialog" hidden>
+    <h2> Enter space separated sequence for comparison:</h2>
+    <div class="uiRow">
+        <label for="compare_enc">Encoder:</label>
+        <input type="text" class="textInput" id="compare_enc">
+        <div style="margin-top: 5px; text-align: end;">
+            <button class="btn" id="cmp_translate"> translate</button>
+        </div>
+    </div>
+
+
+    <div class="uiRow">
+        <label for="compare_dec">Decoder:</label>
+        <input type="text" class="textInput" id="compare_dec">
+        <div style="margin-top: 5px; text-align: end;">
+            <button class="btn" id="cmp_partial"> partial decode</button>
+        </div>
+    </div>
+
+    <!--<div id='pd_results' class="uiRow" style="max-height: 300px; overflow: auto;">-->
+
+    <!--</div>-->
+
+    <div class="uiRow" style="text-align: end;">
+        <button class="btn uiCancel"> cancel</button>
+        <!--<button class="uiButton uiSubmit"> accept</button>-->
+    </div>
+
 
 </div>
 

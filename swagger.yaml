@@ -24,6 +24,7 @@ paths:
       parameters:
         - $ref: '#/parameters/inSentence'
         - $ref: '#/parameters/neighbors'
+        - $ref: '#/parameters/partial'
       responses:
         200:
           description: Return Translation and meta data
@@ -50,6 +51,7 @@ paths:
       parameters:
         - $ref: '#/parameters/inSentence'
         - $ref: '#/parameters/compareSentences'
+        - $ref: '#/parameters/partial'
       responses:
         200:
           description: Return Translations and distances
@@ -182,6 +184,14 @@ parameters:
   neighbors:
     name: neighbors
     description: list of dimensions to add neighbors to
+    in: query
+    type: array
+    items:
+      type: string
+    required: false
+  partial:
+    name: partial
+    description: partial translate for decoder
     in: query
     type: array
     items:

@@ -38,7 +38,7 @@ export class StatePictograms extends VComponent<null> {
     colors = {
         bg: '#fffdfa',
         pp: {c: 'black', a: 0.3},
-        pl: {w: 2, a: .3, c: ['#5F9EA0', '#9e9e5f']},
+        pl: {w: 2, a: .3, c: ['#4e9c57', '#9c6d9b']},
         select: {w: 2, c: '#9c605f'}
     }
 

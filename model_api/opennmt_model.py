@@ -359,6 +359,14 @@ class ONMTmodelAPI():
                 res['decoder'] = decoderRes
                 res['attn'] = attnRes
                 res['beam'] = batch_data['beam'][transIx]
+                # todo: make nice...
+                convert_to_py = lambda x: {"pred": x['pred'].item(),
+                                           "score": x[
+                                               'score'].item(),
+                                           "state": rr(
+                                               list(map(lambda s: s.item(),
+                                                        x['state'])))
+                                           }
                 res['beam_trace'] = batch_data['beam_trace'][transIx]
                 reply[transIx] = res
         return reply
@@ -396,6 +404,7 @@ def main():
     # print(len(reply[0]['decoder'][0]))
     # print(reply[0]['beam_trace'])
     #print(json.dumps(reply, indent=2, sort_keys=True))
+
 
 if __name__ == "__main__":
     main()
