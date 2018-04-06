@@ -3,7 +3,8 @@
 import argparse
 import os
 import time
-os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
+
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 import connexion
 import logging
 
@@ -307,7 +308,7 @@ def all_neighbors(project, translations, neighbors, p_method='tsne'):
     return res
 
 
-def translate(project, in_sentences, partial=[]):
+def translate(project, in_sentences, partial=[], attn_overwrite=[]):
     model = project.model
 
     translations = {}
@@ -316,7 +317,9 @@ def translate(project, in_sentences, partial=[]):
         par = [par] if len(par) else []
         print(transID, in_sentence, par)
         translations[transID] = model.translate(in_text=[in_sentence],
-                                                partial_decode=par)[0]
+                                                partial_decode=par,
+                                                attn_overwrite=attn_overwrite)[
+            0]
     tgt_dict = project.dicts['i2t']['tgt']
     for _, trans in translations.items():
         for tk in trans['beam']:
@@ -344,25 +347,43 @@ def get_translation(**request):
     in_sentence = request['in']
     neighbors = request.get('neighbors', [''])
     partials = request.get('partial', [''])
+    force_attn = request.get('force_attn', [''])
 
     # Make empty lists empty:
     partials = [] if partials == [''] else partials
     neighbors = [] if neighbors == [''] else neighbors
+    force_attn = [] if force_attn == [''] else force_attn
 
+    attn_overwrite = []
+    if force_attn:
+        att = {}
+        is_key = True
+        key = None
+        for v in force_attn:
+            if is_key:
+                key = v
+            else:
+                att[key] = v
+            is_key = not is_key
+        attn_overwrite.append(att)
+
+    print(force_attn, attn_overwrite, 'fa')
     print(in_sentence)
     print(partials, neighbors)
 
-    translations = cache_translate.get(in_sentence + str(partials))
+    translations = None
+    # translations = cache_translate.get(in_sentence + str(partials) + str(force_attn))
     if not translations:
         translations = translate(current_project, [in_sentence],
-                                 partial=partials)
+                                 partial=partials,
+                                 attn_overwrite=attn_overwrite)
         cache_translate.add(in_sentence + str(partials), translations)
 
     res = translations[0]
 
     if len(neighbors) > 0:
         all_n = cache_neighbors.get(
-            in_sentence + str(partials) + str(neighbors))
+            in_sentence + str(partials) + str(force_attn) + str(neighbors))
 
         if not all_n:
             all_n = all_neighbors(current_project, translations, neighbors)

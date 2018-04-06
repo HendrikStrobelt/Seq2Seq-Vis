@@ -25,6 +25,7 @@ paths:
         - $ref: '#/parameters/inSentence'
         - $ref: '#/parameters/neighbors'
         - $ref: '#/parameters/partial'
+        - $ref: '#/parameters/force_attn'
       responses:
         200:
           description: Return Translation and meta data
@@ -194,8 +195,17 @@ parameters:
     description: partial translate for decoder
     in: query
     type: array
+    collectionFormat: pipes
     items:
       type: string
+    required: false
+  force_attn:
+    name: force_attn
+    description: force attention
+    in: query
+    type: array
+    items:
+      type: integer
     required: false
 
 

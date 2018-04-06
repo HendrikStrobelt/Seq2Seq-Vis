@@ -130,6 +130,10 @@ export class BeamTreeVis extends VComponent<BeamTreeData> {
         if (data.maxDepth>0){
             this.parent.attr('width', data.maxDepth * 70);
             this.options.width = data.maxDepth * 70;
+
+            const h = Math.max(Math.sqrt(data.maxDepth/10) *150, 150);
+            this.parent.attr('height', h);
+            this.options.height = h;
         }
 
         return data.root;

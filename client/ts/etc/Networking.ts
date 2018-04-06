@@ -55,8 +55,11 @@ export class Networking {
                 if (args && (method === 'POST' || method === 'GET' || method === 'PUT')) {
                     uri += '?';
                     args.forEach((value, key) => {
-                            uri += '&';
-                            uri += encodeURIComponent(key) + '=' + encodeURIComponent(value);
+                            if (value) {
+                                uri += '&';
+                                uri += encodeURIComponent(key) + '=' + encodeURIComponent(value);
+                            }
+
                         }
                     )
                 }

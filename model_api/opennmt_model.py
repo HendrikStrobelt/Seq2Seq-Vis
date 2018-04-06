@@ -244,7 +244,8 @@ class ONMTmodelAPI():
             beam_trace=self.opt.dump_beam != "")
 
 
-    def translate(self, in_text, partial_decode=[], attn_overwrite=[], k=5, attn=None, dump_data=False):
+    def translate(self, in_text, partial_decode=[], attn_overwrite=[], k=5,
+                  attn=None, dump_data=False, roundTo=5):
         """
         in_text: list of strings
         partial_decode: list of strings, not implemented yet
@@ -317,11 +318,13 @@ class ONMTmodelAPI():
 
         # Only has one batch, but indexing does not work
         for batch in test_data:
+            print(attn_overwrite, 'over')
             batch_data = self.translator.translate_batch(
                 batch, data, return_states=True,
                 partial=partial, attn_overwrite=attn_overwrite)
             translations = builder.from_batch(batch_data)
             # iteratres over items in batch
+            rr = lambda x: [(round(xx, roundTo)) for xx in x]
             for transIx, trans in enumerate(translations):
                 context = batch_data['context'][:, transIx, :]
                 print(trans.pred_sents)
@@ -330,7 +333,7 @@ class ONMTmodelAPI():
                 encoderRes = []
                 for token, state in zip(in_text[transIx].split(), context):
                     encoderRes.append({'token': token,
-                                       'state': list(state.data)
+                                       'state': rr(list(state.data))
                                        })
                 res['encoder'] = encoderRes
 
@@ -347,10 +350,10 @@ class ONMTmodelAPI():
                                                              batch_data['target_cstar'][transIx][ix]):
                             currentDec = {}
                             currentDec['token'] = token
-                            currentDec['state'] = list(state.data)
-                            currentDec['cstar'] = list(cstar.data)
+                            currentDec['state'] = rr(list(state.data))
+                            currentDec['cstar'] = rr(list(cstar.data))
                             topIx.append(currentDec)
-                            topIxAttn.append(list(attn))
+                            topIxAttn.append(rr(list(attn)))
                             # if t in ['.', '!', '?']:
                             #     break
                         decoderRes.append(topIx)
@@ -358,7 +361,7 @@ class ONMTmodelAPI():
                 res['scores'] = list(np.array(trans.pred_scores))[:k]
                 res['decoder'] = decoderRes
                 res['attn'] = attnRes
-                res['beam'] = batch_data['beam'][transIx]
+                # res['beam'] = batch_data['beam'][transIx]
                 # todo: make nice...
                 convert_to_py = lambda x: {"pred": x['pred'].item(),
                                            "score": x[
@@ -367,6 +370,10 @@ class ONMTmodelAPI():
                                                list(map(lambda s: s.item(),
                                                         x['state'])))
                                            }
+                res['beam'] = list(map(lambda t:
+                                       list(map(convert_to_py,
+                                                t)),
+                                       batch_data['beam'][transIx]))
                 res['beam_trace'] = batch_data['beam_trace'][transIx]
                 reply[transIx] = res
         return reply

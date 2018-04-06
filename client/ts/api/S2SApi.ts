@@ -20,13 +20,22 @@ export class S2SApi {
 
 
     static translate({
-                         input, partial = <string[]>[],
-                         neighbors: neighbors = ['decoder', 'encoder', 'context']
+                         input, partial = <string[]>[],force_attn = <{[key:number]:number}>{},
+                         neighbors: neighbors = ['decoder', 'encoder'] //, 'context'
                      }) {
         const request = Networking.ajax_request('/api/translate');
+
+        let force_attn_array = null;
+        for (const key in force_attn){
+            if (!force_attn_array) force_attn_array=[];
+            force_attn_array.push(key);
+            force_attn_array.push(force_attn[key]);
+        }
+
         const payload = new Map([['in', input],
             ['neighbors', neighbors],
-            ['partial', partial]
+            ['partial', partial],
+            ['force_attn', force_attn_array]
         ]);
 
         return request.get(payload)
@@ -34,7 +43,7 @@ export class S2SApi {
 
     static translate_compare({
                                  input, compare,
-                                 neighbors = ['decoder', 'encoder', 'context']
+                                 neighbors = ['decoder', 'encoder'] //, 'context'
                              }) {
         const request = Networking.ajax_request('/api/translate_compare');
         const payload = new Map([

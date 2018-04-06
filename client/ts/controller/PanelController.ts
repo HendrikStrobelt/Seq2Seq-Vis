@@ -45,7 +45,7 @@ export class PanelController {
         wordClickMode: WordClickMode.word,
         attnChange: {
             selected: <number>-1,
-            changes: <{ [key: number]: { [key: number]: number } }>{}
+            changes: <{ [key: number]: number }>{}//<{ [key: number]: { [key: number]: number } }>{}
         }
     };
 
@@ -230,7 +230,7 @@ export class PanelController {
             }
 
 
-            this.pm.vis.beamView.update({root, maxDepth:btWords.length})
+            this.pm.vis.beamView.update({root, maxDepth: btWords.length})
 
         }
 
@@ -492,13 +492,15 @@ export class PanelController {
 
                     if (loc === 'src') {
                         if (aChg.selected > -1) {
-                            const a =this._current.translations[0]
+                            const a = this._current.translations[0]
                                 .increaseAttn(aChg.selected, d.col);
 
-                            this.pm.panels.wordMode.attnApplyBtn.style('display',null);
+                            aChg.changes[aChg.selected] = _.indexOf(a, _.max(a));
 
-                            console.log(a, aChg.selected, d.col,"--- a, aChg.selected, d.col");
-                            
+                            this.pm.panels.wordMode.attnApplyBtn.style('display', null);
+
+                            console.log(a, aChg.selected, d.col, "--- a, aChg.selected, d.col");
+
                             this.update(this._current.translations[0]);
                             this.pm.vis.left.decoder_words.highlightWord(0, aChg.selected, true, true, 'selected');
                             this.pm.vis.left.attention
@@ -521,9 +523,13 @@ export class PanelController {
             else if (d.caller === vis.left.beam) {
 
 
+                
+                
                 const partialDec = this._current.translations[0]
-                    .decoderWords[0].slice(0, d.col).join(' ') + ' ' + d.word.word.text
+                    .decoderWords[0].slice(0, d.col).join(' ') + ' ' + d.word.word.text;
 
+
+                this.pm.closeAllRight();
                 S2SApi.translate(
                     {
                         input: this._current.translations[0].inputSentence,
@@ -534,6 +540,8 @@ export class PanelController {
                     console.log(data, "--- data");
 
                     this.update(new Translation(data));
+                    actionWordHovered(d);
+
                 })
                 // .map((w, i) => (i === d.col) ? d.word.word.text : w)
             }
@@ -542,10 +550,28 @@ export class PanelController {
         });
 
 
-        this.pm.panels.wordMode.attnApplyBtn.on('click',()=>{
-            console.log(" ATTN --- ");
+        this.pm.panels.wordMode.attnApplyBtn.on('click', () => {
 
-            this.pm.panels.wordMode.attnApplyBtn.style('display','none');
+            this.pm.panels.wordMode.attnApplyBtn.style('display', 'none');
+
+            const minIndex = _.min(Object.keys(this._current.attnChange.changes).map(d => +d));
+            const partialDec = this._current.translations[0]
+                    .decoderWords[0].slice(0, minIndex).join(' ')
+
+
+            S2SApi.translate(
+                {
+                    input: this._current.translations[0].inputSentence,
+                    partial: [partialDec],
+                    neighbors: [],
+                    force_attn: this._current.attnChange.changes
+                }).then(data => {
+                data = JSON.parse(data);
+                console.log(data, "--- data");
+
+                this.update(new Translation(data));
+            })
+
 
         });
 
