@@ -14,7 +14,7 @@ type Edge = {
     edge: number[]
 }
 
-enum VertexType {Encoder = 0, Decoder = 1}
+enum VertexType {src = 0, tgt = 1}
 
 /**
  * Input to render()
@@ -93,7 +93,7 @@ export class AttentionVis extends VComponent<AttentionVisData> {
             })
         });
 
-        return {edges: _.flatten(inPositionGraph), maxPos};
+        return {edges: _.flatten(inPositionGraph).filter(d => d.width > 0), maxPos};
 
     }
 
@@ -107,12 +107,6 @@ export class AttentionVis extends VComponent<AttentionVisData> {
             data.inPos,
             data.outPos
         );
-
-
-        // const {edges, maxPos} = this._createGraph(data.attnFiltered[data._current.topN],
-        //     this.options.max_bundle_width,
-        //     data._current.inWords, data._current.outWords,
-        //     data._current.inWordPos, data._current.outWordPos);
 
         this.parent.attrs({
             width: maxPos + 5 + this.options.x_offset, //reserve

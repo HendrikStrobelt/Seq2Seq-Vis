@@ -344,21 +344,21 @@ export class PanelController {
         const determinePanelType = caller => {
             if ((caller === vis.left.encoder_words)) //_.includes(vis.left.encoder_extra, caller)
                 return {
-                    vType: AttentionVis.VERTEX_TYPE.Encoder,
+                    vType: AttentionVis.VERTEX_TYPE.src,
                     col: vis.left
                 };
             else if ((caller === vis.middle.encoder_words))
                 return {
-                    vType: AttentionVis.VERTEX_TYPE.Encoder,
+                    vType: AttentionVis.VERTEX_TYPE.src,
                     col: vis.middle
                 };
             else if ((caller === vis.middle.decoder_words))
                 return {
-                    vType: AttentionVis.VERTEX_TYPE.Decoder,
+                    vType: AttentionVis.VERTEX_TYPE.tgt,
                     col: vis.middle
                 };
             else return {
-                    vType: AttentionVis.VERTEX_TYPE.Decoder,
+                    vType: AttentionVis.VERTEX_TYPE.tgt,
                     col: vis.left
                 };
         };
@@ -395,14 +395,14 @@ export class PanelController {
             const pictos = this.pm.vis.statePicto;
 
             if (proj.current.hidden === false) {
-                if (vType === AttentionVis.VERTEX_TYPE.Encoder &&
+                if (vType === AttentionVis.VERTEX_TYPE.src &&
                     proj.loc === 'src') {
 
                     proj.actionHoverPivot(transID, d.col, d.hovered);
                     pictos.actionHighlightSegment(transID, d.col, d.hovered);
 
                 }
-                else if (vType === AttentionVis.VERTEX_TYPE.Decoder &&
+                else if (vType === AttentionVis.VERTEX_TYPE.tgt &&
                     proj.loc === 'tgt') {
 
                     proj.actionHoverPivot(transID, d.col, d.hovered);
@@ -456,10 +456,10 @@ export class PanelController {
                 || d.caller === vis.left.decoder_words) {
 
                 let loc = 'src';
-                let vType = AttentionVis.VERTEX_TYPE.Encoder;
+                let vType = AttentionVis.VERTEX_TYPE.src;
                 if (d.caller === vis.left.decoder_words) {
                     loc = 'tgt';
-                    vType = AttentionVis.VERTEX_TYPE.Decoder;
+                    vType = AttentionVis.VERTEX_TYPE.tgt;
                 }
 
 
@@ -504,7 +504,7 @@ export class PanelController {
                             this.update(this._current.translations[0]);
                             this.pm.vis.left.decoder_words.highlightWord(0, aChg.selected, true, true, 'selected');
                             this.pm.vis.left.attention
-                                .actionHighlightEdges(aChg.selected, AttentionVis.VERTEX_TYPE.Decoder, true, 'highlight');
+                                .actionHighlightEdges(aChg.selected, AttentionVis.VERTEX_TYPE.tgt, true, 'highlight');
                             console.log("-hen-- AAAAJ");
 
                         } else {
@@ -623,13 +623,13 @@ export class PanelController {
                                 wordID: number, hovered: boolean) => {
             const panels = [this.pm.vis.left, this.pm.vis.middle];
 
-            let vType = AttentionVis.VERTEX_TYPE.Encoder;
+            let vType = AttentionVis.VERTEX_TYPE.src;
 
             const visRoot = panels[transID];
             if (loc === 'src') {
                 visRoot.encoder_words.highlightWord(0, wordID, hovered)
             } else {
-                vType = AttentionVis.VERTEX_TYPE.Decoder;
+                vType = AttentionVis.VERTEX_TYPE.tgt;
                 visRoot.decoder_words.highlightWord(0, wordID, hovered)
             }
 
