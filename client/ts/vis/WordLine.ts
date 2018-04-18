@@ -124,7 +124,6 @@ export class WordLine extends VComponent<WordLineData> {
             width: d3.max(allLengths) + 6,
             height: rows.length * (op.box_height) - 2
         });
-        // todo: update SVG (parent) size
 
         this._current.selectedWord = null;
         this._current.clearSelections = true;
@@ -143,7 +142,7 @@ export class WordLine extends VComponent<WordLineData> {
 
     }
 
-    actionWordHovered(d: WordCell, i, hovered) {
+    private hoverWord(d: WordCell, i, hovered) {
         const detail = <WordLineHoverEvent> {
             hovered,
             caller: this,
@@ -157,7 +156,7 @@ export class WordLine extends VComponent<WordLineData> {
             WordLine.events.wordHovered, detail)
     }
 
-    actionWordClicked(d:WordCell, i) {
+    private clickWord(d: WordCell, i) {
         const hovered = !(this._current.selectedWord === i);
         this._current.selectedWord = hovered ? i : null;
 
@@ -174,7 +173,7 @@ export class WordLine extends VComponent<WordLineData> {
     }
 
 
-    highlightWord(row: number, col: number, highlight: boolean, exclusive = false, label = 'highlight'): void {
+    actionHighlightWord(row: number, col: number, highlight: boolean, exclusive = false, label = 'highlight'): void {
 
         // console.log(this.options.css_class_main, this.base.selectAll(`.${this.options.css_class_main}`), "--- this.options.css_class_main, this.base.selectAll(`.${this.options.css_class_main}`)");
         // console.log(row, highlight, exclusive, label, "--- word,highlight,exclusive,label");
@@ -226,15 +225,9 @@ export class WordLine extends VComponent<WordLineData> {
         /**** UPDATE ***/
         const allWords = wordsEnter.merge(words)
             .attrs({'transform': (w: any, i) => `translate(${render.positions[w.row][i]},0)`,})
-            .on('mouseenter', (d, i) => {
-                this.actionWordHovered(d, i, true)
-                // this.layers.main.selectAll(`.${hoverPrefix + i}`).raise().classed('highlight', true);
-            })
-            .on('mouseout', (d, i) => {
-                this.actionWordHovered(d, i, false)
-                // this.layers.main.selectAll(`.${hoverPrefix + i}`).classed('highlight', null);
-            })
-            .on('click', (d, i) => this.actionWordClicked(d, i))
+            .on('mouseenter', (d, i) => this.hoverWord(d, i, true))
+            .on('mouseout', (d, i) => this.hoverWord(d, i, false))
+            .on('click', (d, i) => this.clickWord(d, i));
 
 
         const allR = allWords.select('rect');
@@ -263,7 +256,7 @@ export class WordLine extends VComponent<WordLineData> {
 
 
         if (this._current.clearSelections) {
-            this.highlightWord(-1, -1, false,
+            this.actionHighlightWord(-1, -1, false,
                 true, 'selected');
             this._current.clearSelections = false;
         }

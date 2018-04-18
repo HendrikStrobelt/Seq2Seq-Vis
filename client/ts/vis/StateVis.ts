@@ -86,7 +86,6 @@ export class StateVis extends VComponent<StateVisData> {
             this.layers.axis.classed("axis state_axis", true)
                 .call(yAxis).selectAll('*');
             this.layers.axis.attrs({
-                // transform: `translate(${x(renderData.states[0].length - 1) + 3},0)`
                 transform: `translate(${op.x_offset + op.cell_width * .5 - 3},0)`
             })
         } else {

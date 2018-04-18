@@ -2,11 +2,7 @@ import {VComponent} from "./VisualComponent";
 import * as d3 from 'd3'
 import * as _ from "lodash";
 import {ZoomTransform} from "d3-zoom";
-// import * as d3_lasso from 'd3-lasso'
 import * as concaveman from "concaveman"
-
-// declare function require(name:string);
-// let lasso = require('d3-lasso');
 
 export type NeighborDetail = {
     indexID: number, distance: number, refTransID: number, refWordID: number

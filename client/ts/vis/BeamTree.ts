@@ -1,7 +1,7 @@
-import {VComponent} from "./VisualComponent";
 import * as d3 from "d3";
+import {VComponent} from "./VisualComponent";
+
 import {HierarchyPointNode} from "d3-hierarchy";
-import {DefaultLinkObject} from "d3-shape";
 import {SVGMeasurements} from "../etc/SVGplus";
 
 
@@ -71,21 +71,13 @@ export class BeamTreeVis extends VComponent<BeamTreeData> {
                 return d.id || (d.id = ++i);
             });
 
+
         // Enter any new modes at the parent's previous position.
         const nodeEnter = nodeEls.enter().append('g')
             .attr('class', 'node')
             .attr("transform", function (d) {
                 return "translate(" + (d.y + 5) + "," + (d.x + 5) + ")";
             }).classed('topBeam', d => d.data.topBeam);
-
-
-        // // Add Circle for the nodes
-        // nodeEnter.append('circle')
-        //     .attr('class', 'node')
-        //     .attr('r', 3)
-        //     .style("fill", function (d) {
-        //         return "blue"; //d._children ? "lightsteelblue" : "#fff";
-        //     }).append('title').text((d) => d.data.name);
 
         nodeEnter.append('rect').style('fill', 'white');
         nodeEnter.append('text')
@@ -127,6 +119,7 @@ export class BeamTreeVis extends VComponent<BeamTreeData> {
 
     protected _wrangle(data: BeamTreeData) {
 
+        //TODO: maybe find a better heuristic ?
         if (data.maxDepth>0){
             this.parent.attr('width', data.maxDepth * 70);
             this.options.width = data.maxDepth * 70;

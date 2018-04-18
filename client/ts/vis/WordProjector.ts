@@ -34,7 +34,7 @@ export class WordProjector extends VComponent<any> {
     }
 
     options = {
-        pos:{x:0,y:0},
+        pos: {x: 0, y: 0},
         height: 400,
         width: 500,
         css_class_main: 'wp_vis',
@@ -45,7 +45,7 @@ export class WordProjector extends VComponent<any> {
             words: d => d.word,
             compare: d => d.compare
         },
-        text_measurer:null
+        text_measurer: null
     };
 
 
@@ -105,10 +105,6 @@ export class WordProjector extends VComponent<any> {
         return _.sortBy(_.zipWith(words, scores, norm_pos, compare,
             (word, score, pos, compare) => ({word, score, pos, compare})),
             (d: { word, score, pos, compare }) => -d.score);
-
-
-        // return _.zipWith(words, scores, norm_pos,
-        //   (word, score, pos) => ({word, score, pos}));
     }
 
     _render(renderData: wordObj[]) {
@@ -125,22 +121,61 @@ export class WordProjector extends VComponent<any> {
 
         const xscale = d3.scaleLinear().range([30, op.width - 30]);
         const yscale = d3.scaleLinear().range([10, op.height - 10]);
-        const scoreExtent = d3.extent(renderData.map(d => d.score))
+        const scoreExtent = d3.extent(renderData.map(d => d.score));
         const wordScale = d3.scaleLinear().domain(scoreExtent).range([10, 12]);
 
+        // use webcola to remove rectangle overlap.
+        const newPos = this.removeOverlap(renderData, wordScale, xscale, yscale, op.text_measurer);
 
-        const ofree = []
+        const allWords = wordEnter.merge(word);
+        allWords.attr('transform',
+            d => `translate(${newPos[d.word].cx}, ${newPos[d.word].cy})`);
+        allWords.on('click', d => this.clickWord(d));
+        allWords.classed('query', (d, i) => i == 0)
+
+
+        allWords.select('rect').attrs({
+            width: (d, i) => newPos[d.word].w,
+            height: (d, i) => newPos[d.word].h - 2,
+            x: (d, i) => -newPos[d.word].w * .5,
+            y: (d, i) => -newPos[d.word].h * .5 + 1,
+        });
+        allWords.select('text')
+            .text(d => d.word)
+            .style('font-size', d => wordScale(d.score) + 'pt');
+
+        if (this._current.has_compare) {
+            const bd_max = _.max(<number[]>renderData.map(d => d.compare.dist));
+            const bd_scale = d3.scaleLinear<string, string>().domain([0, bd_max])
+                .range(['#ffffff', '#63676e']); //TODO: hard-coded range ??
+            allWords.select('rect').style('fill', d => {
+                return bd_scale(d.compare.dist)
+            })
+
+        }
+
+
+        if (this._current.clearHighlights) {
+            this.highlightWord(null, false);
+            this._current.clearHighlights = false;
+        }
+
+
+    }
+
+    private removeOverlap(renderData: wordObj[], wordScale, xscale, yscale, text_measurer: SVGMeasurements) {
+        const ofree = [];
 
         for (const rd of renderData) {
             const w = rd.word;
             const height = wordScale(rd.score);
-            const x = xscale(rd.pos[0])
-            const y = yscale(rd.pos[1])
+            const x = xscale(rd.pos[0]);
+            const y = yscale(rd.pos[1]);
 
-            const width = op.text_measurer.textLength(w, 'font-size:' + height + 'pt;')
-            // console.log(w,height,x,y,width,"--- w,height,x,y,width");
+            const width = text_measurer.textLength(w, 'font-size:' + height + 'pt;');
 
-            ofree.push(new cola.Rectangle(x - width / 2 - 4, x + width / 2 + 4, y - height / 2 - 3, y + height / 2 + 3))
+            ofree.push(new cola.Rectangle(x - width / 2 - 4, x + width / 2 + 4,
+                y - height / 2 - 3, y + height / 2 + 3))
 
         }
 
@@ -156,47 +191,7 @@ export class WordProjector extends VComponent<any> {
                 h: (d.Y - d.y)
             }
         });
-
-
-        // console.log(ofree,"--- ofree");
-
-
-        //TODO: BAD HACK - -should not be using indices
-
-        const allWords = wordEnter.merge(word);
-        allWords.attr('transform',
-            (d, i) => `translate(${newPos[d.word].cx}, ${newPos[d.word].cy})`);
-        allWords.on('click', d => this.actionClickWord(d));
-
-
-        allWords.select('rect').attrs({
-            width: (d, i) => newPos[d.word].w,
-            height: (d, i) => newPos[d.word].h - 2,
-            x: (d, i) => -newPos[d.word].w * .5,
-            y: (d, i) => -newPos[d.word].h * .5 + 1,
-        });
-        allWords.select('text')
-            .text(d => d.word)
-            .style('font-size', d => wordScale(d.score) + 'pt')
-
-        if (this._current.has_compare) {
-            const bd_max = _.max(<number[]>renderData.map(d => d.compare.dist));
-            const bd_scale = d3.scaleLinear<string, string>().domain([0, bd_max])
-                .range(['#ffffff', '#63676e']);
-            allWords.select('rect').style('fill', d => {
-                // console.log(d,"--- d");
-                return bd_scale(d.compare.dist)
-            })
-
-        }
-
-
-        if (this._current.clearHighlights) {
-            this.highlightWord(null, false);
-            this._current.clearHighlights = false;
-        }
-
-
+        return newPos;
     }
 
     highlightWord(word: string, highlight: boolean, exclusive = true, label = 'selected'): void {
@@ -221,7 +216,7 @@ export class WordProjector extends VComponent<any> {
     }
 
 
-    actionClickWord(d: wordObj) {
+    private clickWord(d: wordObj) {
         this.eventHandler.trigger(WordProjector.events.wordClicked, {
             caller: this,
             wordObj: d,

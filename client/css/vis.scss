@@ -89,7 +89,6 @@ $compare-color: #9c6d9b;
     @extend .rect_highlight
   }
 
-
   &.selected {
     text {
       fill: #fff;
@@ -166,7 +165,14 @@ $compare-color: #9c6d9b;
   font-weight: bold;
 
   rect {
-    fill: $main-color;
+    fill: lightgrey; //$main-color;
+  }
+
+  .query {
+    rect {
+      fill: none;
+
+    }
   }
 
   .word {
@@ -324,19 +330,17 @@ $compare-color: #9c6d9b;
 .info_panel {
 
   .translation {
-    .fa{
+    .fa {
       color: lightgrey;
 
-      &.selected{
+      &.selected {
         color: #4a4a4a;
       }
-      &:hover{
+      &:hover {
         color: black;
       }
 
-
     }
-
 
     font-weight: bold;
     margin-bottom: 8px;
@@ -470,10 +474,10 @@ $compare-color: #9c6d9b;
     background-color: #c6c6c6;
   }
 
- &.selected {
-      background-color: #767676;
-      color: white;
-    }
+  &.selected {
+    background-color: #767676;
+    color: white;
+  }
 
 }
 
@@ -488,9 +492,6 @@ $compare-color: #9c6d9b;
 .btn_right {
   border-radius: 0 5px 5px 0;
 }
-
-
-
 
 //.btn_round{
 //  border-radius: 5px;

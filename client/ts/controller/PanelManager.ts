@@ -8,7 +8,6 @@ import {WordProjector} from "../vis/WordProjector";
 import {SimpleEventHandler} from "../etc/SimpleEventHandler";
 import {D3Sel} from "../etc/LocalTypes";
 import * as _ from "lodash";
-import {NeighborStates} from "../vis/NeighborStates";
 import {StateProjector} from "../vis/StateProjector";
 import {StatePictograms} from "../vis/StatePictograms";
 import {BeamTreeVis} from "../vis/BeamTree";
@@ -18,13 +17,13 @@ import {InfoPanel} from "../vis/InfoPanel";
 type VisColumn<DW=WordLine> = {
     // encoder_extra: VComponent<any>[],
     sideIndicator: D3Sel,
-    encoder_states: NeighborStates,
+    // encoder_states: NeighborStates,
     encoder_words: WordLine,
     attention: AttentionVis,
     decoder_words: DW,
     beam: DW,
-    context: NeighborStates,
-    decoder_states: NeighborStates,
+    // context: NeighborStates,
+    // decoder_states: NeighborStates,
     // decoder_extra: VComponent<any>[],
     selection: D3Sel
 }
@@ -34,13 +33,13 @@ function initPanel<T=WordLine>(select): VisColumn<T> {
         sideIndicator:null,
         selection: select,
         // encoder_extra: [],
-        encoder_states: null,
+        // encoder_states: null,
         encoder_words: null,
         attention: null,
         decoder_words: null,
         beam: null,
-        context: null,
-        decoder_states: null,
+        // context: null,
+        // decoder_states: null,
         // decoder_extra: []
     }
 };
@@ -433,11 +432,6 @@ export class PanelManager {
         return new StateVis(svg, this.eventHandler, options);
     }
 
-    _createNeighborStates({col, className, options, divStyles = {}}) {
-        const svg = PanelManager._standardSVGPanel({col, className, divStyles});
-
-        return new NeighborStates(svg, this.eventHandler, options)
-    }
 
 
     _createAttention({col, className, options, divStyles = null}) {
@@ -471,7 +465,7 @@ export class PanelManager {
             this._current.wordProjector = this._createWordProjector({
                 col: this._vis.right.selection,
                 className: "word_projector",
-                divStyles: {'padding-top': '105px'},
+                divStyles: {},
                 options: {}
             })
         }

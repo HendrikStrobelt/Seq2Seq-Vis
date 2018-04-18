@@ -5,15 +5,13 @@ import * as d3 from "d3";
 export interface InfoPanelData {
     translations: { src: string[], tgt: string[] }[],
     highlights: {
-        on: string, //'tgt' | 'src'
+        loc: string, //'tgt' | 'src'
         indices: number[]
     }
 }
 
 export class InfoPanel {
     private infoPanel: D3Sel;
-    private tgt: D3Sel;
-    private src: D3Sel;
 
     current = {
         highlightOffset: 0,
@@ -53,8 +51,7 @@ export class InfoPanel {
         });
 
         this.offset_btns.on('click', function () {
-            const v = +d3.select(this).text();
-            that.current.highlightOffset = v;
+            that.current.highlightOffset = +d3.select(this).text();
             that.updateMenu();
             that.actionUpdateCurrent();
         });
@@ -87,10 +84,10 @@ export class InfoPanel {
         const allT = this.infoPanel.selectAll(".translation");
 
         allT.select('.src').html((d: any, i) =>
-            this.renderHighlight(d.src, data.highlights.on === 'src' ? data.highlights.indices[i]+cur.highlightOffset : -1))
+            this.renderHighlight(d.src, data.highlights.loc === 'src' ? data.highlights.indices[i] + cur.highlightOffset : -1))
             .attr('hidden', cur.display.src ? null : true);
         allT.select('.tgt').html((d: any, i) =>
-            this.renderHighlight(d.tgt, data.highlights.on === 'tgt' ? data.highlights.indices[i]+cur.highlightOffset : -1))
+            this.renderHighlight(d.tgt, data.highlights.loc === 'tgt' ? data.highlights.indices[i] + cur.highlightOffset : -1))
             .attr('hidden', cur.display.tgt ? null : true);
 
         // allT.select('.starIt').classed('selected', true);
@@ -117,8 +114,6 @@ export class InfoPanel {
 
 
     update(data: InfoPanelData) {
-        const cur = this.current;
-
         this.data = data;
 
         let tSel = this.infoPanel.selectAll(".translation").data(data.translations);
@@ -126,21 +121,14 @@ export class InfoPanel {
 
         const tEnter = tSel.enter().append('div').attr('class', 'translation').style('display', 'table-row');
         tEnter.html('<div style="display:table-cell;width: 30px; ">' +
-            '<i class="fa fa-star-o starIt" aria-hidden="true"></i>&nbsp;<i class="fa fa-trash-o trashIt" aria-hidden="true"></i>' +
+            // '<i class="fa fa-star-o starIt" aria-hidden="true"></i>&nbsp;<i class="fa fa-trash-o trashIt" aria-hidden="true"></i>' +
             '</div><div style="display: table-cell;">' +
             '<div class="src"></div><div class="tgt"></div><div style="padding-top: 10px;"></div>' +
             '</div>');
 
-        tSel = tEnter.merge(tSel).order();
+        tEnter.merge(tSel).order();
 
         this.actionUpdateCurrent();
-
-        // tSel.select('.src').html((d, i) =>
-        //     this.renderHighlight(d.src, data.highlights.on === 'src' ? data.highlights.indices[i] : -1))
-        //     .attr('hidden', cur.display.src ? null : true);
-        // tSel.select('.tgt').html((d, i) =>
-        //     this.renderHighlight(d.tgt, data.highlights.on === 'tgt' ? data.highlights.indices[i] : -1))
-        //     .attr('hidden', cur.display.tgt ? null : true);
 
     }
 

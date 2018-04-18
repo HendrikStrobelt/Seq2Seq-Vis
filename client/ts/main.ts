@@ -1,25 +1,17 @@
 import * as d3 from "d3"
-import * as _ from "lodash";
 
 import {PanelController} from "./controller/PanelController";
-import {S2SApi, Translation} from "./api/S2SApi";
+import {S2SApi} from "./api/S2SApi";
 import '../css/main.scss'
 import URLHandler from "./etc/URLHandler";
-import ModalDialog from "./etc/ModalDialog";
+import {Translation} from "./api/Translation";
 
 
 window.onload = () => {
-    // let svg = d3.selectAll('#vis');
-    //
-    //
-    // const globalEvents = new SimpleEventHandler(svg.node());
-    // const sv = new S2SAttention({parent: svg, eventHandler: globalEvents});
-
     const panelCtrl = new PanelController();
 
 
     //    --- EVENTS ---
-
     const translate = (value) => {
         S2SApi.translate({input: value, neighbors: []})
             .then((data: string) => {
@@ -42,7 +34,7 @@ window.onload = () => {
         URLHandler.setURLParam('in', value, false);
         translate(value);
     };
-    const updateDebounced = _.debounce(updateAllVis, 1000);
+    // const updateDebounced = _.debounce(updateAllVis, 1000);
 
 
     /* ****************
@@ -61,13 +53,13 @@ window.onload = () => {
             if (d3.event instanceof KeyboardEvent
                 && (keycode === 13) //|| keycode === 32
             ) {
-
                 // updateDebounced();
                 updateAllVis();
             }
-        })
+        });
 
 
+    // TODO: needed ?
     function windowResize() {
         const width = window.innerWidth;
         const height = window.innerHeight

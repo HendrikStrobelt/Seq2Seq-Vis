@@ -1,9 +1,10 @@
-import {VComponent} from "./VisualComponent";
 import * as d3 from "d3";
 import * as _ from "lodash";
+
+import {VComponent} from "./VisualComponent";
+
 import {SimpleEventHandler} from "../etc/SimpleEventHandler";
 import {D3Sel} from "../etc/LocalTypes";
-import {Translation} from "../api/S2SApi";
 
 
 type Edge = {

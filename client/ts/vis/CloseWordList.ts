@@ -7,6 +7,7 @@ import {D3Sel, LooseObject} from "../etc/LocalTypes";
 
 type WordListType = LooseObject[];
 
+//TODO: Remove if not needed !!
 export class CloseWordList extends VComponent<any> {
 
     options = {
