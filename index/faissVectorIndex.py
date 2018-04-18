@@ -7,8 +7,9 @@ import faiss
 
 class FaissVectorIndex:
 
-    def __init__(self, file_name, dim_vector=500):
+    def __init__(self, file_name, dim_vector=500, sentence_max_len=50):
         self.u = faiss.read_index(file_name)  # type: faiss.Index
+        self.sentence_max_length = sentence_max_len
 
     def get_closest(self, ix, k=10, ignore_same_tgt=False,
                     include_distances=False, use_vectors=False):
@@ -81,7 +82,7 @@ class FaissVectorIndex:
         return self.u.reconstruct(ix_c)
 
     def search_to_sentence_index(self, index):
-        return index // 50, index % 50
+        return index // self.sentence_max_length, index % self.sentence_max_length
 
     def sentence_to_search_index(self, sentence, pos_in_sent):
-        return sentence * 50 + pos_in_sent
+        return sentence * self.sentence_max_length + pos_in_sent

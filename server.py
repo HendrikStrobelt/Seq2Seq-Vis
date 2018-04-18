@@ -88,19 +88,6 @@ def closest_vector_n(index, v, r=5):
 
     return res
 
-
-def closest_vector(index, v, r=5):
-    res = index.get_closest(v, k=12,
-                            ignore_same_tgt=False,
-                            include_distances=True,
-                            use_vectors=True)
-
-    # if r > 1:
-    #     res = [(xx[0], round(xx[1])) for xx in res]
-
-    return res
-
-
 def project_states(vectors, p_method='pca', anchors=None):
     pca = P_METHODS[p_method]
 
@@ -430,52 +417,52 @@ def extract_attn(x):
     return np.array(x['attn'][0])
 
 
-def compare_translation(**request):
-    pivot = request["in"]
-    compare = request["compare"]
-    neighbors = request.get('neighbors', [])
-
-    current_project = list(projects.values())[0]
-    model = current_project.model
-
-    # trans_all = model.translate(in_text=[pivot]+compare)
-
-    pivot_res = translate(current_project, [pivot])[0]
-    pivot_attn = extract_attn(pivot_res)
-    pivot_attn_l = pivot_attn.shape[0]
-
-    # compare.append(pivot)
-    compare_t = translate(current_project, compare)
-
-    res = []
-    index_orig = 0
-    for cc_t_key in compare_t:
-        # cc_t = model.translate(in_text=[cc])[0]
-        cc_t = compare_t[cc_t_key]
-        cc_attn = extract_attn(cc_t)
-        dist = 10
-        if cc_attn.shape[0] > 0:
-            max_0 = max(cc_attn.shape[0], pivot_attn.shape[0])
-            max_1 = max(cc_attn.shape[1], pivot_attn.shape[1])
-
-            cc__a = np.zeros(shape=(max_0, max_1))
-            cc__a[:cc_attn.shape[0], :cc_attn.shape[1]] = cc_attn
-
-            cc__b = np.zeros(shape=(max_0, max_1))
-            cc__b[:pivot_attn.shape[0], :pivot_attn.shape[1]] = pivot_attn
-
-            dist = np.linalg.norm(cc__a - cc__b)
-
-        res.append({
-            "sentence": extract_sentence(cc_t),
-            "attn": extract_attn(cc_t).tolist(),
-            "attn_padding": (cc__a - cc__b).tolist(),
-            "orig": compare[index_orig],
-            "dist": dist
-        })
-        index_orig += 1
-
-    return {"compare": res, "pivot": extract_sentence(pivot_res)}
+# def compare_translation(**request):
+#     pivot = request["in"]
+#     compare = request["compare"]
+#     neighbors = request.get('neighbors', [])
+#
+#     current_project = list(projects.values())[0]
+#     model = current_project.model
+#
+#     # trans_all = model.translate(in_text=[pivot]+compare)
+#
+#     pivot_res = translate(current_project, [pivot])[0]
+#     pivot_attn = extract_attn(pivot_res)
+#     pivot_attn_l = pivot_attn.shape[0]
+#
+#     # compare.append(pivot)
+#     compare_t = translate(current_project, compare)
+#
+#     res = []
+#     index_orig = 0
+#     for cc_t_key in compare_t:
+#         # cc_t = model.translate(in_text=[cc])[0]
+#         cc_t = compare_t[cc_t_key]
+#         cc_attn = extract_attn(cc_t)
+#         dist = 10
+#         if cc_attn.shape[0] > 0:
+#             max_0 = max(cc_attn.shape[0], pivot_attn.shape[0])
+#             max_1 = max(cc_attn.shape[1], pivot_attn.shape[1])
+#
+#             cc__a = np.zeros(shape=(max_0, max_1))
+#             cc__a[:cc_attn.shape[0], :cc_attn.shape[1]] = cc_attn
+#
+#             cc__b = np.zeros(shape=(max_0, max_1))
+#             cc__b[:pivot_attn.shape[0], :pivot_attn.shape[1]] = pivot_attn
+#
+#             dist = np.linalg.norm(cc__a - cc__b)
+#
+#         res.append({
+#             "sentence": extract_sentence(cc_t),
+#             "attn": extract_attn(cc_t).tolist(),
+#             "attn_padding": (cc__a - cc__b).tolist(),
+#             "orig": compare[index_orig],
+#             "dist": dist
+#         })
+#         index_orig += 1
+#
+#     return {"compare": res, "pivot": extract_sentence(pivot_res)}
 
 
 P_METHODS = {

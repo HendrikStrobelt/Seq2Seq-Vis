@@ -61,15 +61,15 @@ export class S2SApi {
             .get(payload)
     }
 
-    static compareTranslation({pivot, compare}) {
-        const request = Networking.ajax_request('/api/compare_translation');
-        const payload = new Map([
-            ['in', pivot],
-            ['compare', compare.join('|')]]);
-
-        return request
-            .get(payload)
-    }
+    // static compareTranslation({pivot, compare}) {
+    //     const request = Networking.ajax_request('/api/compare_translation');
+    //     const payload = new Map([
+    //         ['in', pivot],
+    //         ['compare', compare.join('|')]]);
+    //
+    //     return request
+    //         .get(payload)
+    // }
 
     static trainDataIndices(indices: number[], loc: string) {
         //http://0.0.0.0:8080/api/train_data_for_index?indices=123%2C333&loc=src

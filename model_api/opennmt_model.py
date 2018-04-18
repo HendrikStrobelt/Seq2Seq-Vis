@@ -2,7 +2,9 @@
 from __future__ import division, unicode_literals
 import argparse
 import codecs
+import io
 import json
+from itertools import chain
 
 import h5py
 import torch
@@ -13,7 +15,7 @@ import onmt.translate
 import onmt
 import onmt.ModelConstructor
 import onmt.modules
-
+from onmt.io import TextDataset
 
 PAD_WORD = '<blank>'
 UNK = 0
@@ -92,6 +94,7 @@ def translate_opts(parser):
                        help='Window stride for spectrogram in seconds')
     group.add_argument('-window', default='hamming',
                        help='Window type for spectrogram generation')
+
 
 def model_opts(parser):
     """
@@ -243,7 +246,6 @@ class ONMTmodelAPI():
             cuda=self.opt.cuda,
             beam_trace=self.opt.dump_beam != "")
 
-
     def translate(self, in_text, partial_decode=[], attn_overwrite=[], k=5,
                   attn=None, dump_data=False, roundTo=5):
         """
@@ -256,9 +258,9 @@ class ONMTmodelAPI():
         # Set batch size to number of requested translations
         self.opt.batch_size = len(in_text)
         # Workaround until we have API that does not require files
-        with codecs.open("tmp.txt", "w", "utf-8") as f:
-            for line in in_text:
-                f.write(line + "\n")
+        # with codecs.open("tmp.txt", "w", "utf-8") as f:
+        #     for line in in_text:
+        #         f.write(line + "\n")
 
         if dump_data:
             # Code to extract the source and target dict
@@ -269,21 +271,34 @@ class ONMTmodelAPI():
                 for w, ix in self.translator.fields['tgt'].vocab.stoi.items():
                     f.write(str(ix) + " " + w + "\n")
             with h5py.File("s2s/embs.h5", 'w') as f:
-                f.create_dataset("encoder", data=self.translator.model.encoder.embeddings.emb_luts[0].weight.data.numpy())
-                f.create_dataset("decoder", data=self.translator.model.decoder.embeddings.emb_luts[0].weight.data.numpy())
-
-
+                f.create_dataset("encoder", data=
+                self.translator.model.encoder.embeddings.emb_luts[
+                    0].weight.data.numpy())
+                f.create_dataset("decoder", data=
+                self.translator.model.decoder.embeddings.emb_luts[
+                    0].weight.data.numpy())
 
         # Use written file as input to dataset builder
-        data = onmt.io.build_dataset(
-            self.fields, self.opt.data_type,
-            "tmp.txt", self.opt.tgt,
-            src_dir=self.opt.src_dir,
-            sample_rate=self.opt.sample_rate,
-            window_size=self.opt.window_size,
-            window_stride=self.opt.window_stride,
-            window=self.opt.window,
-            use_filter_pred=False)
+        # data = onmt.io.build_dataset(
+        #     self.fields, self.opt.data_type,
+        #     "tmp.txt", self.opt.tgt,
+        #     src_dir=self.opt.src_dir,
+        #     sample_rate=self.opt.sample_rate,
+        #     window_size=self.opt.window_size,
+        #     window_stride=self.opt.window_stride,
+        #     window=self.opt.window,
+        #     use_filter_pred=False)
+
+        (src_examples_iter, num_src_feats) = \
+            ONMTmodelAPI.make_text_examples_nfeats_tpl('\n'.join(in_text), 0,
+                                                       'src')
+
+        data = TextDataset(self.fields, src_examples_iter, None,
+                           num_src_feats, 0,
+                           src_seq_length=0,
+                           tgt_seq_length=0,
+                           dynamic_dict=True,
+                           use_filter_pred=False)
 
         # Iterating over the single batch... torchtext requirement
         test_data = onmt.io.OrderedIterator(
@@ -346,8 +361,12 @@ class ONMTmodelAPI():
                         topIxAttn = []
                         for token, attn, state, cstar in zip(p,
                                                              trans.attns[ix],
-                                                             batch_data["target_states"][transIx][ix],
-                                                             batch_data['target_cstar'][transIx][ix]):
+                                                             batch_data[
+                                                                 "target_states"][
+                                                                 transIx][ix],
+                                                             batch_data[
+                                                                 'target_cstar'][
+                                                                 transIx][ix]):
                             currentDec = {}
                             currentDec['token'] = token
                             currentDec['state'] = rr(list(state.data))
@@ -378,14 +397,65 @@ class ONMTmodelAPI():
                 reply[transIx] = res
         return reply
 
+    @staticmethod
+    def textDataFromString(data, truncate, side):
+        with io.StringIO(data) as corpus_file:
+            for i, line in enumerate(corpus_file):
+                line = line.strip().split()
+                if truncate:
+                    line = line[:truncate]
+
+                words, feats, n_feats = \
+                    TextDataset.extract_text_features(line)
+
+                example_dict = {side: words, "indices": i}
+                if feats:
+                    prefix = side + "_feat_"
+                    example_dict.update((prefix + str(j), f)
+                                        for j, f in enumerate(feats))
+                yield example_dict, n_feats
+
+    @staticmethod
+    def make_text_examples_nfeats_tpl(data, truncate, side):
+        """
+        Args:
+            path (str): location of a src or tgt file.
+            truncate (int): maximum sequence length (0 for unlimited).
+            side (str): "src" or "tgt".
+
+        Returns:
+            (example_dict iterator, num_feats) tuple.
+
+
+         src_examples_iter, num_src_feats = \
+            TextDataset.make_text_examples_nfeats_tpl(
+                src_path, src_seq_length_trunc, "src")
+        """
+        assert side in ['src', 'tgt']
+
+        # All examples have same number of features, so we peek first one
+        # to get the num_feats.
+        examples_nfeats_iter = \
+            ONMTmodelAPI.textDataFromString(data, truncate, side)
+
+        first_ex = next(examples_nfeats_iter)
+        num_feats = first_ex[1]
+
+        # Chain back the first element - we only want to peek it.
+        examples_nfeats_iter = chain([first_ex], examples_nfeats_iter)
+        examples_iter = (ex for ex, nfeats in examples_nfeats_iter)
+
+        return (examples_iter, num_feats)
+
 
 def main():
     # model = ONMTmodelAPI("model/date_acc_100.00_ppl_1.00_e7.pt")
-    model = ONMTmodelAPI("../S2Splay/model_api/processing/s2s_iwslt_ende/baseline-brnn.en-de.s154_acc_61.58_ppl_7.43_e21.pt")
+    model = ONMTmodelAPI(
+        "../S2Splay/model_api/processing/s2s_iwslt_ende/baseline-brnn.en-de.s154_acc_61.58_ppl_7.43_e21.pt")
     # Simple Case
     # reply = model.translate(["This is a test ."], dump_data=False)
     # Case with attn overwrite OR partial
-    reply = model.translate(["this is madness ."], attn_overwrite=[{2:0}])
+    reply = model.translate(["this is madness ."], attn_overwrite=[{2: 0}])
     # reply = model.translate(["this is madness ."], partial_decode=["das ist"])
     # Complex Case with attn and partial
     # reply = model.translate(["this is madness ."],
@@ -410,7 +480,7 @@ def main():
     # print(len(reply[0]['decoder']))
     # print(len(reply[0]['decoder'][0]))
     # print(reply[0]['beam_trace'])
-    #print(json.dumps(reply, indent=2, sort_keys=True))
+    # print(json.dumps(reply, indent=2, sort_keys=True))
 
 
 if __name__ == "__main__":

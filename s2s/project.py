@@ -93,15 +93,15 @@ class S2SProject:
                 src = self.ix2text(src_in, self.dicts['i2t']['src'], tokIx)
                 tgt = self.ix2text(tgt_in, self.dicts['i2t']['tgt'])
 
-            attn = self.train_data['attn'][sentIx]
-            src_len = compute_sent_length(src_in)
-            tgt_len = compute_sent_length(tgt_in)
-            attn = attn[:tgt_len, :src_len]
+            # attn = self.train_data['attn'][sentIx]
+            # src_len = compute_sent_length(src_in)
+            # tgt_len = compute_sent_length(tgt_in)
+            # attn = attn[:tgt_len, :src_len]
 
             res.append({'src': src, 'tgt': tgt,
                         'src_words': ix2words(src_in, self.dicts['i2t']['src']),
                         'tgt_words': ix2words(tgt_in, self.dicts['i2t']['tgt']),
-                        'attn': attn.tolist(),
+                        # 'attn': attn.tolist(),
                         'sentId': sentIx, 'tokenId': tokIx})
         # print(src)
         # print(tgt)

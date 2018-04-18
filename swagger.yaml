@@ -44,18 +44,18 @@ paths:
         200:
           description: fun
 
-  /compare_translation:
-    get:
-      tags: [Translate, All]
-      operationId: server.compare_translation
-      summary: Compare Translation and Data for sentences
-      parameters:
-        - $ref: '#/parameters/inSentence'
-        - $ref: '#/parameters/compareSentences'
-        - $ref: '#/parameters/partial'
-      responses:
-        200:
-          description: Return Translations and distances
+#  /compare_translation:
+#    get:
+#      tags: [Translate, All]
+#      operationId: server.compare_translation
+#      summary: Compare Translation and Data for sentences
+#      parameters:
+#        - $ref: '#/parameters/inSentence'
+#        - $ref: '#/parameters/compareSentences'
+#        - $ref: '#/parameters/partial'
+#      responses:
+#        200:
+#          description: Return Translations and distances
 #          schema:
 #            $ref: '#/definitions/Translation'
   /close_words:
