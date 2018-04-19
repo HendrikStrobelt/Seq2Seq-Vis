@@ -34,10 +34,10 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--nodebug", default=True)
 parser.add_argument("--port", default="8080")
 parser.add_argument("--nocache", default=False)
-parser.add_argument("-dir", type=str, default=os.path.abspath('model_api/data'))
-parser.add_argument('-api', type=str, default='pytorch',
-                    choices=['pytorch', 'lua'],
-                    help="""The API to use.""")
+parser.add_argument("--dir", type=str, default=os.path.abspath('model_api/data'))
+# parser.add_argument('-api', type=str, default='pytorch',
+#                     choices=['pytorch', 'lua'],
+#                     help="""The API to use.""")
 args = parser.parse_args()
 
 print(args)
