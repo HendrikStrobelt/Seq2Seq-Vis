@@ -57,7 +57,8 @@ python3 server.py --dir 0316-fakedates/
 go here: [http://localhost:8080/client/index.html?in=M a r c h _ 0 3 , 1  9 9 9](http://localhost:8080/client/index.html?in=M%20a%20r%20c%20h%20_%200%203%20,%20%201%209%209%209)
 
 You should see:
-![output for dates dataset](docs/pics/s2s_dates_01.png)
+
+<img src="docs/pics/s2s_dates_01.png" width="400">
 
 Enjoy exploring !
 
