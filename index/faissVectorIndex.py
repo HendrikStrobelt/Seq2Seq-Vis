@@ -1,7 +1,7 @@
 import numpy as np
 import sys
 
-sys.path.append('faiss')
+# sys.path.append('faiss')
 import faiss
 
 
