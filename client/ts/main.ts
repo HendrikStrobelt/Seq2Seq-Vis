@@ -16,9 +16,10 @@ window.onload = () => {
         S2SApi.translate({input: value, neighbors: []})
             .then((data: string) => {
                 const raw_data = JSON.parse(data);
-                console.log(raw_data, "--- raw_data");
+                panelCtrl.clearCompare();
                 panelCtrl.update(new Translation(raw_data));
                 panelCtrl.cleanPanels();
+
 
 
                 $('#spinner').hide();
@@ -72,6 +73,18 @@ window.onload = () => {
     $(window).resize(windowResize);
 
     windowResize();
+
+
+    S2SApi.project_info(null).then((data) =>{
+
+        data = JSON.parse(data);
+
+        panelCtrl.updateProjectInfo(data);
+
+
+    })
+
+
 
 
 };

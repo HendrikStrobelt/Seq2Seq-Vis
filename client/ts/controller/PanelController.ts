@@ -67,6 +67,8 @@ export class PanelController {
     selectProjection(key) {
         // TODO: remove duck typing for encoder and src/tgt
 
+        this.pm.setVisibilityNeighborPanels(true);
+
         this._current.projectedNeighbor = key;
         let labels = this._current.translations.map(
             translation => {
@@ -132,6 +134,11 @@ export class PanelController {
             this.pm.vis.projectors.hideView();
         }
 
+    }
+
+    clearCompare() {
+        this._current.translations[1] = null;
+        this._current.comparison = ComparisonMode.none;
     }
 
     update(translation: Translation, main = this.pm.vis.left, extra = this.pm.vis.zero, isCompare = false) {
@@ -320,9 +327,11 @@ export class PanelController {
         this.pm.removeMediumPanel();
     }
 
-    updateAndShowWordProjector(data) {
+    updateAndShowWordProjector(data, loc) {
+        this.pm.setVisibilityNeighborPanels(false);
         const wp = this.pm.getWordProjector();
         console.log(data, "--- WP_data");
+        wp.options.loc = loc;
         wp.update(data);
     }
 
@@ -331,6 +340,13 @@ export class PanelController {
         wl.update(data);
     }
 
+
+    updateProjectInfo(info) {
+
+        if (!info.has_neighbors) {
+            this.pm.panels.loadProjectButton.style('display', 'none');
+        }
+    }
 
     _bindEvents() {
 
@@ -437,8 +453,27 @@ export class PanelController {
                     //         })
                     //
                     // } else {
-                        // this.updateAndShowWordList(word_data);
-                        this.updateAndShowWordProjector(word_data);
+                    // this.updateAndShowWordList(word_data);
+
+                    if (loc === 'src') {
+                        word_data.compare = word_data.word.map(wd => {
+
+                            return {
+                                orig: allWords.map((aw, wi) =>
+                                    (wi === replaceIndex) ? wd : aw).join(' ')
+                            };
+                        })
+                        // word_data.compare = {orig: }
+                    } else {
+                        word_data.compare = word_data.word.map(wd => {
+
+                            return {
+                                orig: allWords.map((aw, wi) =>
+                                    (wi === replaceIndex) ? wd : (wi < replaceIndex) ? aw : '').join(' ').trim()
+                            };
+                        })
+                    }
+                    this.updateAndShowWordProjector(word_data, loc);
                     // }
 
 
@@ -502,11 +537,11 @@ export class PanelController {
                             this.pm.vis.left.decoder_words.actionHighlightWord(0, aChg.selected, true, true, 'selected');
                             this.pm.vis.left.attention
                                 .actionHighlightEdges(aChg.selected, AttentionVis.VERTEX_TYPE.tgt, true, 'highlight');
-                            console.log("-hen-- AAAAJ");
+
 
                         } else {
                             alert('Please select a decoder word first. ' +
-                                'Then you can increase weights respective weights by clicking on encoder');
+                                'Then you can increase respective weights by clicking on encoder');
                         }
                     }
 
@@ -520,8 +555,6 @@ export class PanelController {
             else if (d.caller === vis.left.beam) {
 
 
-                
-                
                 const partialDec = this._current.translations[0]
                     .decoderWords[0].slice(0, d.col).join(' ') + ' ' + d.word.word.text;
 
@@ -553,7 +586,7 @@ export class PanelController {
 
             const minIndex = _.min(Object.keys(this._current.attnChange.changes).map(d => +d));
             const partialDec = this._current.translations[0]
-                    .decoderWords[0].slice(0, minIndex).join(' ')
+                .decoderWords[0].slice(0, minIndex).join(' ')
 
 
             S2SApi.translate(
@@ -579,17 +612,34 @@ export class PanelController {
                 d.caller.highlightWord(d.word, true,
                     true, 'selected');
 
+                const loc = d.caller.options.loc;
 
-                S2SApi.translate_compare({
-                    input: this._current.sentence,
-                    compare: d.sentence,
-                    neighbors: []
-                }).then(data => {
-                    // TODO: ENC / DEC difference !!!
-                    this._current.comparison = ComparisonMode.enc_diff;
-                    data = <ComparisonFeedBack>JSON.parse(data);
-                    updateComparisonView(data)
-                })
+
+                if (loc === 'src') {
+                    S2SApi.translate_compare({
+                        input: this._current.sentence,
+                        compare: d.sentence,
+                        neighbors: []
+                    }).then(data => {
+                        // TODO: ENC / DEC difference !!!
+                        this._current.comparison = ComparisonMode.enc_diff;
+                        data = <ComparisonFeedBack>JSON.parse(data);
+                        updateComparisonView(data)
+                    })
+
+                } else {
+                    S2SApi.translate({
+                        input: this._current.sentence,
+                        // compare: d.sentence,
+                        partial: [d.sentence],
+                        neighbors: []
+                    }).then(data => {
+                        // TODO: ENC / DEC difference !!!
+                        this._current.comparison = ComparisonMode.none;
+                        data = new Translation(JSON.parse(data));
+                        this.update(data)
+                    })
+                }
 
 
             });

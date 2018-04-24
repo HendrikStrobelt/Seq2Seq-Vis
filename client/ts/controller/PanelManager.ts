@@ -76,7 +76,9 @@ export class PanelManager {
             wordBtn: d3.select('#word_vector_fix_btn'),
             attnBtn: d3.select('#attn_fix_btn'),
             attnApplyBtn: d3.select('#apply_attn')
-        }
+        },
+        statePictoPanel: d3.select('#statePictos')
+
     };
 
     private _vis = {
@@ -530,4 +532,8 @@ export class PanelManager {
     }
 
 
+    setVisibilityNeighborPanels(visibility: boolean) {
+        this.panels.projectorPanel.style('display', visibility?null:'none');
+        this.panels.statePictoPanel.style('display', visibility?null:'none');
+    }
 }

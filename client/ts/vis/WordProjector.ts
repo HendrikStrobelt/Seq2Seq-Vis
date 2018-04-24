@@ -45,7 +45,8 @@ export class WordProjector extends VComponent<any> {
             words: d => d.word,
             compare: d => d.compare
         },
-        text_measurer: null
+        text_measurer: null,
+        loc: null
     };
 
 
@@ -144,15 +145,15 @@ export class WordProjector extends VComponent<any> {
             .text(d => d.word)
             .style('font-size', d => wordScale(d.score) + 'pt');
 
-        if (this._current.has_compare) {
-            const bd_max = _.max(<number[]>renderData.map(d => d.compare.dist));
-            const bd_scale = d3.scaleLinear<string, string>().domain([0, bd_max])
-                .range(['#ffffff', '#63676e']); //TODO: hard-coded range ??
-            allWords.select('rect').style('fill', d => {
-                return bd_scale(d.compare.dist)
-            })
-
-        }
+        // if (this._current.has_compare) {
+        //     const bd_max = _.max(<number[]>renderData.map(d => d.compare.dist));
+        //     const bd_scale = d3.scaleLinear<string, string>().domain([0, bd_max])
+        //         .range(['#ffffff', '#63676e']); //TODO: hard-coded range ??
+        //     allWords.select('rect').style('fill', d => {
+        //         return bd_scale(d.compare.dist)
+        //     })
+        //
+        // }
 
 
         if (this._current.clearHighlights) {

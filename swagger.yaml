@@ -43,7 +43,16 @@ paths:
       responses:
         200:
           description: fun
-
+  /project_info:
+    get:
+      tags: [All]
+      operationId: server.get_info
+      summary: get general project informations
+      parameters:
+        - $ref: '#/parameters/project_id'
+      responses:
+        200:
+          description: fun
 #  /compare_translation:
 #    get:
 #      tags: [Translate, All]
@@ -207,7 +216,12 @@ parameters:
     items:
       type: integer
     required: false
-
+  project_id:
+    name: project_id
+    description: Project ID
+    in: query
+    type: string
+    required: false
 
 
 # These definitions are only needed for proper documentation

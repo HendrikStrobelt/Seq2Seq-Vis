@@ -29,6 +29,8 @@ class S2SProject:
 
         self.indexType = self.config.get('indexType', 'annoy')
         self.indices = {}
+        print(self.config,('indices' in self.config) )
+        self.has_neighbors = ('indices' in self.config)
 
         self.currentIndexName = None
         self.currentIndex = None
@@ -50,6 +52,13 @@ class S2SProject:
                         self.dicts['i2t'][h][0] = '<unk>'  # todo: hack
                         self.dicts['t2i'][h][token] = iid
                     raw = f.readline()
+
+
+    def info(self):
+        return {
+            'model': self.config['model'],
+            'has_neighbors': self.has_neighbors
+        }
 
     def cached_norm(self, loc, matrix):
         if self.cached_norms[loc] is None:

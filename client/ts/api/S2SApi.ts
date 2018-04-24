@@ -15,15 +15,32 @@ export type TrainDataIndexResponse = {
 export class S2SApi {
 
 
+    static project_info(project_id) {
+        const request = Networking.ajax_request('/api/project_info');
+
+
+        let payload = new Map();
+        if (project_id) {
+            payload = new Map(
+                [
+                    ['project_id', project_id]
+                ]);
+        }
+
+        return request.get(payload)
+
+
+    }
+
     static translate({
-                         input, partial = <string[]>[],force_attn = <{[key:number]:number}>{},
+                         input, partial = <string[]>[], force_attn = <{ [key: number]: number }>{},
                          neighbors: neighbors = ['decoder', 'encoder'] //, 'context'
                      }) {
         const request = Networking.ajax_request('/api/translate');
 
         let force_attn_array = null;
-        for (const key in force_attn){
-            if (!force_attn_array) force_attn_array=[];
+        for (const key in force_attn) {
+            if (!force_attn_array) force_attn_array = [];
             force_attn_array.push(key);
             force_attn_array.push(force_attn[key]);
         }

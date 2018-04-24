@@ -34,7 +34,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--nodebug", default=True)
 parser.add_argument("--port", default="8080")
 parser.add_argument("--nocache", default=False)
-parser.add_argument("--dir", type=str, default=os.path.abspath('model_api/data'))
+parser.add_argument("--dir", type=str,
+                    default=os.path.abspath('model_api/data'))
 # parser.add_argument('-api', type=str, default='pytorch',
 #                     choices=['pytorch', 'lua'],
 #                     help="""The API to use.""")
@@ -524,6 +525,14 @@ def get_neighbor_details(**request):
         request["vector_name"])  # type: AnnoyVectorIndex
 
     return index.get_details(indices)
+
+
+def get_info(**request):
+    if 'project_id' not in request:
+        current_project = list(projects.values())[0]  # type: S2SProject
+        return current_project.info()
+
+    return request
 
 
 def get_close_vectors(**request):
