@@ -88,6 +88,7 @@ def closest_vector_n(index, v, r=5):
 
     return res
 
+
 def project_states(vectors, p_method='pca', anchors=None):
     pca = P_METHODS[p_method]
 
@@ -354,30 +355,27 @@ def get_translation(**request):
             is_key = not is_key
         attn_overwrite.append(att)
 
-    print(force_attn, attn_overwrite, 'fa')
-    print(in_sentence)
-    print(partials, neighbors)
-
-    translations = None
-    # translations = cache_translate.get(in_sentence + str(partials) + str(force_attn))
+    translation_id = in_sentence + str(partials) + str(force_attn)
+    translations = cache_translate.get(translation_id)
     if not translations:
         translations = translate(current_project, [in_sentence],
                                  partial=partials,
                                  attn_overwrite=attn_overwrite)
-        cache_translate.add(in_sentence + str(partials), translations)
+        cache_translate.add(translation_id, translations)
 
     res = translations[0]
 
     if len(neighbors) > 0:
-        all_n = cache_neighbors.get(
-            in_sentence + str(partials) + str(force_attn) + str(neighbors))
+        # neighbor_id = in_sentence + str(partials) + str(force_attn) + str(
+        #     neighbors)
+        # all_n = cache_neighbors.get(neighbor_id)
 
-        if not all_n:
-            all_n = all_neighbors(current_project, translations, neighbors)
-            cache_neighbors.add(in_sentence + str(partials) + str(neighbors),
-                                all_n)
+        if 'allNeighbors' not in res:
+            res['allNeighbors'] = all_neighbors(current_project, translations,
+                                                neighbors)
+            # cache_neighbors.add(neighbor_id, all_n)
 
-        res['allNeighbors'] = all_n
+        # res['allNeighbors'] = all_n
 
     return res
 

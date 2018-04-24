@@ -1,20 +1,18 @@
 # from model_api.abstract_model_api import AbstractModelAPI
 from __future__ import division, unicode_literals
+
 import argparse
-import codecs
 import io
-import json
 from itertools import chain
 
 import h5py
-import torch
-
 import numpy as np
-import onmt.io
-import onmt.translate
 import onmt
 import onmt.ModelConstructor
+import onmt.io
 import onmt.modules
+import onmt.translate
+import torch
 from onmt.io import TextDataset
 
 PAD_WORD = '<blank>'
