@@ -69,7 +69,48 @@ Enjoy exploring !
 ## Run own models
 
 ### 1 - Prepare your data
-to be done.
+You can use any model trained with OpenNMT-py to extract your own data. To gain access to the extraction scripts, follow the instructions above to install the modified OpenNMT-py version. 
+
+
+First, create a folder `s2s` that will be used to save all the extractions by calling `mkdir s2s`. 
+
+Then, call 
+```
+python extract_context.py -src $your_input_file \
+                          -tgt $your_target_file \
+                          -model $your_model.pt \
+                          -gpu $your_GPU_id (can be ignored for CPU extraction) \
+                          -batch_size $your_batch_size
+                          
+```
+You can customize the maximum sequence lengths by setting `max_src_len`, and `max_tgt_len` in the script. If you want to restrict the number of examples in your state file, you can uncomment the following lines and set it to your desrired size:
+```
+# if bcounter > 100:
+#     break
+```
+
+The script creates a file in the location `s2s/states.h5`. This file is what you need to create the indices for searching.
+
+The file for this is located in this directory in `scripts/h5_to_faiss.py`. 
+Call it three times (once for each type of state) with the parameters 
+```
+-states s2s/states.h5 # Your states file location
+-data [decoder_out, encoder_out, cstar] # The three datasets within the states h5 file
+-output $your_index_name # We recommend just naming them decoder.faiss, encoder.faiss, and context.faiss
+-stepsize 100 # you can increase this, this is the number of batches it will add to the index at once. It is bottlenecked by your memory
+```
+
+To generate the dictionary and embedding files, modify [this](https://github.com/sebastianGehrmann/OpenNMT-py/blob/states_in_translation/VisServer.py#L369) line with the location of your model and call
+
+```
+python VisServer.py
+```
+This will also test that your model works with our server as it calls the same API. The script will create three files:
+
+- s2s/embs.h5
+- s2s/src.dict
+- s2s/tgt.dict
+
 
 ### 2 - Create a `s2s.yaml` file to describe project
 
