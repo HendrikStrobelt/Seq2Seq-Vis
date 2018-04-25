@@ -525,7 +525,7 @@ export class PanelController {
                     if (loc === 'src') {
                         if (aChg.selected > -1) {
                             const a = this._current.translations[0]
-                                .increaseAttn(aChg.selected, d.col);
+                                .setAttn(aChg.selected, d.col);
 
                             aChg.changes[aChg.selected] = _.indexOf(a, _.max(a));
 
@@ -720,7 +720,6 @@ export class PanelController {
 
             this.pm.panels.loadProjectSpinner.style('display', 'inline');
 
-            this.cleanPanels();
 
             if (this._current.comparison === ComparisonMode.enc_diff) {
                 // then we are in compare mode
@@ -729,6 +728,7 @@ export class PanelController {
                     compare: this._current.translations[1].inputSentence
                 }).then(data => {
                     // TODO: ENC / DEC difference !!!
+                    this.cleanPanels();
                     this._current.comparison = ComparisonMode.enc_diff;
                     data = <ComparisonFeedBack>JSON.parse(data);
 
@@ -742,6 +742,7 @@ export class PanelController {
                 // here in single mode
                 S2SApi.translate({input: this._current.sentence})
                     .then((data: string) => {
+                        this.cleanPanels();
                         const raw_data = JSON.parse(data);
                         console.log(raw_data, "--- raw_data");
 

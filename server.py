@@ -378,6 +378,7 @@ def get_translation(**request):
 
         # res['allNeighbors'] = all_n
 
+    res['request'] = request
     return res
 
 

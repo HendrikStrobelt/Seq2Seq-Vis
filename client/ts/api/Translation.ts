@@ -41,11 +41,29 @@ export class Translation {
         for (const i in _.range(l)) {
 
             if (i == encPos) {
-                console.log("-hen-- encPOS ");
                 curAttn[i] += factor
             } else {
                 curAttn[i] -= curAttn[i] * factor / cost;
                 curAttn[i] = Math.max(curAttn[i], 0);
+            }
+        }
+
+        this.filterAttention();
+
+        return curAttn;
+    }
+
+    public setAttn(decPos, encPos, beam = 0) {
+        const curAttn = this._result.attn[beam][decPos];
+        const l = curAttn.length;
+
+        for (const i in _.range(l)) {
+
+            if (i == encPos) {
+                console.log("-hen-- encPOS ");
+                curAttn[i] = 1
+            } else {
+                curAttn[i] = 0
             }
         }
 
