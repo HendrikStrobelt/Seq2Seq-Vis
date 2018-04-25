@@ -13,7 +13,7 @@ from flask import send_from_directory, redirect, json
 import numpy as np
 from sklearn.decomposition import PCA
 from sklearn.manifold import MDS, TSNE
-
+from flask_cors import CORS
 from copy import deepcopy
 
 from s2s.lru import LRU
@@ -30,6 +30,7 @@ pre_cached = []
 
 logging.basicConfig(level=logging.INFO)
 app = connexion.App(__name__)
+
 
 parser = argparse.ArgumentParser(
     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -589,7 +590,7 @@ def find_and_load_project(directory):
 
 
 app.add_api('swagger.yaml')
-
+CORS(app.app)
 
 def preload_cache(cache):
     if len(cache) > 0:
