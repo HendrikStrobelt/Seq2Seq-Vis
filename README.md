@@ -1,18 +1,15 @@
 # Seq2Seq-Vis
 
 ### A visual debugging tool for Sequence-to-Sequence models 
-*by IBM Research AI and Harvard SEAS  -- more info [seq2seq-vis.io](http://seq2seq-vis.io)
+*by IBM Research in Cambridge and Harvard SEAS  -- more info [seq2seq-vis.io](http://seq2seq-vis.io)
 
 ![Seq2Seq-Vis](docs/pics/s2s_teaser.png)
 
 
-
-
-
-
-
-
-
+## Release Plan
+V 0.9 -- end April 2018
+V 1.0 -- summer 2018
+V 2.0 -- summer 2019
 
 
 ## Install with `conda`
