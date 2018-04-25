@@ -9,7 +9,7 @@ import connexion
 import logging
 
 # import umap
-from flask import send_from_directory, redirect
+from flask import send_from_directory, redirect, json
 import numpy as np
 from sklearn.decomposition import PCA
 from sklearn.manifold import MDS, TSNE
@@ -26,6 +26,7 @@ projects = {}
 cache_translate = LRU(50)
 # cache_neighbors = LRU(20)
 cache_compare = LRU(50)
+pre_cached = []
 
 logging.basicConfig(level=logging.INFO)
 app = connexion.App(__name__)
@@ -36,6 +37,8 @@ parser.add_argument("--debug", action='store_true', help=' Debug mode')
 parser.add_argument("--port", default="8080", help="Port to run the app. ")
 # parser.add_argument("--nocache", default=False)
 parser.add_argument("--preload", action='store_true', help="Preload indices.")
+parser.add_argument("--cache", type=str, default='',
+                    help="Preload cache from dir")
 parser.add_argument("--dir", type=str,
                     default=os.path.abspath('data'),
                     help='Path to project')
@@ -101,7 +104,7 @@ def project_states(vectors, p_method='pca', anchors=None):
     #     pm = P_METHODS[p_method]
 
     pm = P_METHODS[p_method]
-    anchors = None # TODO: remove fix
+    anchors = None  # TODO: remove fix
 
     if anchors:
         pm.fit(anchors)
@@ -531,7 +534,9 @@ def get_neighbor_details(**request):
 def get_info(**request):
     if 'project_id' not in request:
         current_project = list(projects.values())[0]  # type: S2SProject
-        return current_project.info()
+        res = current_project.info()
+        res['pre_cached'] = pre_cached
+        return res
 
     return request
 
@@ -585,9 +590,37 @@ def find_and_load_project(directory):
 
 app.add_api('swagger.yaml')
 
+
+def preload_cache(cache):
+    if len(cache) > 0:
+        all_files = [os.path.join(cache, f) for f in os.listdir(cache) if
+                     os.path.isfile(os.path.join(cache, f))]
+        for file in all_files:
+            if file.endswith('.json'):
+                with open(file, 'r') as f:
+                    a = json.load(f)
+                    print(a['request'])
+                    request = a['request']
+                    neighbors = request.get('neighbors', [''])
+                    partials = request.get('partial', [''])
+                    force_attn = request.get('force_attn', [''])
+                    # Make empty lists empty:
+                    partials = [] if partials == [''] else partials
+                    neighbors = [] if neighbors == [''] else neighbors
+                    force_attn = [] if force_attn == [''] else force_attn
+                    translation_id = request['in'] + str(partials) + str(
+                        force_attn)
+                    cache_translate.preload(translation_id, [a])
+                    pre_cached.append(request)
+
+
+
+
+
 if __name__ == '__main__':
     args = parser.parse_args()
     app.run(port=int(args.port), debug=args.debug, host="0.0.0.0")
 else:
     args, _ = parser.parse_known_args()
     find_and_load_project(args.dir)
+    preload_cache(args.cache)

@@ -138,14 +138,16 @@ class S2SProject:
             self.indices[name] = self._load_index(name)
 
     def get_index(self, name):
-        print('loading ', name)
+
         if self.indices is not None:  # if pre-loaded
             if name not in self.indices:
+                print('loading ', name)
                 self.indices[name] = self._load_index(name)
             return self.indices[name]
 
         else:  # if NOT pre-loaded
             if name != self.currentIndexName:
+                print('loading ', name)
                 self.currentIndexName = name
                 self.currentIndex = self._load_index(name)
             return self.currentIndex
@@ -172,3 +174,6 @@ class S2SProject:
         #             self.indices[name] = AnnoyVectorIndex(path)
         #
         # return self.indices[name]
+
+
+
