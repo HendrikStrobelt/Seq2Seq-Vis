@@ -7,9 +7,9 @@
 
 
 ## Release Plan
-V 0.9 -- end April 2018
-V 1.0 -- summer 2018
-V 2.0 -- summer 2019
+- V 0.9 beta -- end April 2018
+- V 1.0 -- summer 2018
+- V 2.0 -- summer 2019
 
 
 ## Install with `conda`
