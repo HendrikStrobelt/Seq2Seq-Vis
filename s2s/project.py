@@ -28,10 +28,9 @@ class S2SProject:
         self.directory = os.path.abspath(directory)
 
         self.indexType = self.config.get('indexType', 'annoy')
-        self.indices = {}
-        print(self.config,('indices' in self.config) )
         self.has_neighbors = ('indices' in self.config)
 
+        self.indices = None
         self.currentIndexName = None
         self.currentIndex = None
 
@@ -52,7 +51,6 @@ class S2SProject:
                         self.dicts['i2t'][h][0] = '<unk>'  # todo: hack
                         self.dicts['t2i'][h][token] = iid
                     raw = f.readline()
-
 
     def info(self):
         return {
@@ -116,31 +114,41 @@ class S2SProject:
         # print(tgt)
         return res
 
+    def _load_index(self, name):
+        path = None
+        if 'indices' in self.config:
+            if name in self.config['indices']:
+                path = os.path.join(self.directory,
+                                    self.config['indices'][name])
+        if not path:
+            extension = ".ann"
+            if self.indexType == 'faiss':
+                extension = ".faiss"
+            path = os.path.join(self.directory, name + extension)
+
+        if os.path.exists(path):
+            if self.indexType == 'faiss':
+                return FaissVectorIndex(path)
+            else:
+                return AnnoyVectorIndex(path)
+
+    def preload_indices(self, names=[]):
+        self.indices = {}
+        for name in names:
+            self.indices[name] = self._load_index(name)
+
     def get_index(self, name):
+        print('loading ', name)
+        if self.indices is not None:  # if pre-loaded
+            if name not in self.indices:
+                self.indices[name] = self._load_index(name)
+            return self.indices[name]
 
-        if name != self.currentIndexName:
-
-            self.currentIndexName = name
-            path = None
-            if 'indices' in self.config:
-                if name in self.config['indices']:
-                    path = os.path.join(self.directory,
-                                        self.config['indices'][name])
-            if not path:
-                extension = ".ann"
-                if self.indexType == 'faiss':
-                    extension = ".faiss"
-                path = os.path.join(self.directory, name + extension)
-
-            print('index:', str(path))
-
-            if os.path.exists(path):
-                if self.indexType == 'faiss':
-                    self.currentIndex = FaissVectorIndex(path)
-                else:
-                    self.currentIndex = AnnoyVectorIndex(path)
-
-        return self.currentIndex
+        else:  # if NOT pre-loaded
+            if name != self.currentIndexName:
+                self.currentIndexName = name
+                self.currentIndex = self._load_index(name)
+            return self.currentIndex
 
         # if name not in self.indices:
         #

@@ -22,7 +22,15 @@ input[type="text"] {
   -moz-box-sizing: border-box;
   box-sizing: border-box;
   padding: 8px 6px;
+
+
 }
+
+ ::placeholder {
+    color: #b3b3b3;
+}
+
+
 
 ul.topnav {
   list-style-type: none;

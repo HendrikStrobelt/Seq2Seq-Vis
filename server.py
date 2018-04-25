@@ -20,22 +20,26 @@ from s2s.lru import LRU
 from s2s.project import S2SProject
 from index.annoyVectorIndex import AnnoyVectorIndex
 
-__author__ = 'Hendrik Strobelt, Sebastian Gehrmann'
+__author__ = 'Hendrik Strobelt, Sebastian Gehrmann, Alexander M. Rush'
 CONFIG_FILE_NAME = 's2s.yaml'
 projects = {}
-cache_translate = LRU(20)
-cache_neighbors = LRU(20)
-cache_compare = LRU(20)
+cache_translate = LRU(50)
+# cache_neighbors = LRU(20)
+cache_compare = LRU(50)
 
 logging.basicConfig(level=logging.INFO)
 app = connexion.App(__name__)
 
-parser = argparse.ArgumentParser()
-parser.add_argument("--nodebug", default=True)
-parser.add_argument("--port", default="8080")
-parser.add_argument("--nocache", default=False)
+parser = argparse.ArgumentParser(
+    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+parser.add_argument("--debug", action='store_true', help=' Debug mode')
+parser.add_argument("--port", default="8080", help="Port to run the app. ")
+# parser.add_argument("--nocache", default=False)
+parser.add_argument("--preload", action='store_true', help="Preload indices.")
 parser.add_argument("--dir", type=str,
-                    default=os.path.abspath('model_api/data'))
+                    default=os.path.abspath('data'),
+                    help='Path to project')
+
 # parser.add_argument('-api', type=str, default='pytorch',
 #                     choices=['pytorch', 'lua'],
 #                     help="""The API to use.""")
@@ -91,23 +95,19 @@ def closest_vector_n(index, v, r=5):
 
 
 def project_states(vectors, p_method='pca', anchors=None):
-    pca = P_METHODS[p_method]
-
-    # todo: project down for TSNE
-    # if p_method == 'tsne':
-    #     vectors = PCA(n_components=50).fit_transform(vectors)
-    #     anchors = None
-    anchors = None
-
     # if p_method == 'umap':
-    #     pca = umap.UMAP(n_neighbors=min(len(vectors), 10))
-    #     anchors = None
+    #     pm = umap.UMAP(n_neighbors=min(len(vectors), 10))
+    # else:
+    #     pm = P_METHODS[p_method]
+
+    pm = P_METHODS[p_method]
+    anchors = None # TODO: remove fix
 
     if anchors:
-        pca.fit(anchors)
-        return pca.transform(vectors)
+        pm.fit(anchors)
+        return pm.transform(vectors)
     else:
-        return pca.fit_transform(vectors)
+        return pm.fit_transform(vectors)
 
 
 # noinspection SpellCheckingInspection
@@ -271,23 +271,23 @@ def all_neighbors(project, translations, neighbors, p_method='tsne'):
 
         res[neighborhood] = nb_summary_list
 
-    if 'encoder' in res and 'context' in res:
-        enc_dec_states = list(map(lambda x: deepcopy(x),
-                                  filter(lambda xx: xx['pivot'] is not None,
-                                         res['encoder'])))
-        all_decoder_list = list(map(lambda x: deepcopy(x),
-                                    filter(lambda xx: xx['pivot'] is not None,
-                                           res['context'])))
-
-        for dec in all_decoder_list:
-            dec['pivot']['trans_ID'] = 1
-            enc_dec_states.append(dec)
-
-        ed_pos = project_states([x['v'] for x in enc_dec_states], 'mds')
-        for i in range(len(ed_pos)):
-            enc_dec_states[i]['pos'] = ed_pos[i].tolist()
-
-        res['enc_ctx'] = enc_dec_states
+    # if 'encoder' in res and 'context' in res:
+    #     enc_dec_states = list(map(lambda x: deepcopy(x),
+    #                               filter(lambda xx: xx['pivot'] is not None,
+    #                                      res['encoder'])))
+    #     all_decoder_list = list(map(lambda x: deepcopy(x),
+    #                                 filter(lambda xx: xx['pivot'] is not None,
+    #                                        res['context'])))
+    #
+    #     for dec in all_decoder_list:
+    #         dec['pivot']['trans_ID'] = 1
+    #         enc_dec_states.append(dec)
+    #
+    #     ed_pos = project_states([x['v'] for x in enc_dec_states], 'mds')
+    #     for i in range(len(ed_pos)):
+    #         enc_dec_states[i]['pos'] = ed_pos[i].tolist()
+    #
+    #     res['enc_ctx'] = enc_dec_states
 
     for _, nb in res.items():
         for nbb in nb:
@@ -575,6 +575,8 @@ def find_and_load_project(directory):
         dh_id = os.path.split(p_dir)[1]
         cf = os.path.join(p_dir, CONFIG_FILE_NAME)
         p = S2SProject(directory=p_dir, config_file=cf)
+        if args.preload:
+            p.preload_indices(['encoder', 'decoder'])
         projects[dh_id] = p
 
         i += 1
@@ -584,7 +586,7 @@ app.add_api('swagger.yaml')
 
 if __name__ == '__main__':
     args = parser.parse_args()
-    app.run(port=int(args.port), debug=not args.nodebug, host="0.0.0.0")
+    app.run(port=int(args.port), debug=args.debug, host="0.0.0.0")
 else:
     args, _ = parser.parse_known_args()
     find_and_load_project(args.dir)
