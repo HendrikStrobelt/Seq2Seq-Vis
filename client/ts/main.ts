@@ -21,7 +21,6 @@ window.onload = () => {
                 panelCtrl.cleanPanels();
 
 
-
                 $('#spinner').hide();
             })
             .catch((error: Error) => console.log(error, "--- error"));
@@ -42,12 +41,7 @@ window.onload = () => {
     * URL param 'in' triggers query
     * *****************/
 
-    const input_from_url = URLHandler.parameters['in'];
-    if (input_from_url) {
-        (<HTMLInputElement> d3.select('#query_input').node())
-            .value = input_from_url;
-        translate(input_from_url);
-    }
+
     d3.select('#query_input')
         .on('keypress', () => {
             const keycode = d3.event.keyCode;
@@ -75,16 +69,21 @@ window.onload = () => {
     windowResize();
 
 
-    S2SApi.project_info(null).then((data) =>{
+    S2SApi.project_info(null).then((data) => {
 
         data = JSON.parse(data);
 
         panelCtrl.updateProjectInfo(data);
 
+        const input_from_url = URLHandler.parameters['in'];
+        if (input_from_url) {
+            (<HTMLInputElement> d3.select('#query_input').node())
+                .value = input_from_url;
+            translate(input_from_url);
+        }
+
 
     })
-
-
 
 
 };
