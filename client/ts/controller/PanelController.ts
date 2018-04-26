@@ -355,7 +355,7 @@ export class PanelController {
             const ex = info.pre_cached.map((d)=> `<div style="padding-top: 3pt;"><a href='index.html?in=${d.in}' style="font-weight: bold;">${d.in}</a></div>`).join('\n')
 
             this.pm.panels.loadProjectButton.html('<hr> Enjoy playing with the Translation View above. ' +
-                'For the demo, we only support' +
+                'For the demo, we only support ' +
                 'Neighbor View for the following examples:<br>'+ex+'<hr>')
 
         }
