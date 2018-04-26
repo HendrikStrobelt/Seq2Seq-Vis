@@ -145,7 +145,17 @@ optional arguments:
 # Cite us
 
 ```
-BIBTEX to arxive
+@ARTICLE{seq2seqvisv1,
+   author = {{Strobelt}, H. and {Gehrmann}, S. and {Behrisch}, M. and {Perer}, A. and {Pfister}, H. and {Rush}, A.~M.},
+    title = "{Seq2Seq-Vis: A Visual Debugging Tool for Sequence-to-Sequence Models}",
+  journal = {ArXiv e-prints},
+archivePrefix = "arXiv",
+   eprint = {1804.09299v1},
+ primaryClass = "cs.CL",
+ keywords = {Computer Science - Computation and Language, Computer Science - Artificial Intelligence, Computer Science - Neural and Evolutionary Computing},
+     year = 2018,
+    month = April
+}
 ```
 
 # Contributors
