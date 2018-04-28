@@ -10,8 +10,9 @@ RUN conda install --name s2sv --yes -c pytorch pytorch torchvision faiss-cpu
 #ADD setup_cpu.sh /ws/
 #RUN /ws/setup_cpu.sh
 
-#ADD setup_omnt_custom.sh /ws/
-#RUN /ws/setup_omnt_custom.sh
+WORKDIR /tmp
+ADD ./setup_onmt_custom.sh /tmp/
+RUN /tmp/setup_onmt_custom.sh && rm -rf /tmp
 
 #EXPOSE 8080
 #VOLUME /data
