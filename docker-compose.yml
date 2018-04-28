@@ -4,7 +4,7 @@ services:
     build:
       context: '.'
     volumes:
-      - '/data/0316-fakedates:/data'
+      - './data/0316-fakedates:/data'
       - '.:/ws'
     ports:
       - '8080:8080'
