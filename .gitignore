@@ -9,3 +9,4 @@ tmp.txt
 client_dist
 client/dist
 client/.cache-loader
+/data
