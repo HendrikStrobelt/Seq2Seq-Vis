@@ -25,13 +25,13 @@ window.onload = () => {
                 panelCtrl.cleanPanels();
 
 
-                $('#spinner').hide();
+                (<HTMLElement>document.querySelector('#spinner')).style.display = 'none';
             })
             .catch((error: Error) => console.log(error, "--- error"));
     };
 
     const updateAllVis = () => {
-        $('#spinner').show();
+        (<HTMLElement>document.querySelector('#spinner')).style.display = null;
         const value = (<HTMLInputElement> d3.select('#query_input').node())
             .value.trim();
 
@@ -62,13 +62,13 @@ window.onload = () => {
     function windowResize() {
         const width = window.innerWidth;
         const height = window.innerHeight
-            - $("#title").height()
-            - $("#ui").height() - 5;
+            - (<HTMLElement>document.querySelector("#title")).offsetHeight
+            - (<HTMLElement>document.querySelector("#ui")).offsetHeight - 5;
         // globalEvents.trigger('svg-resize', {width, height})
     }
 
 
-    $(window).resize(windowResize);
+    window.addEventListener('resize', windowResize);
 
     windowResize();
 
