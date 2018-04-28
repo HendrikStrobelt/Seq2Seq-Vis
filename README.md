@@ -3,7 +3,7 @@
 [![Docker Pulls](https://img.shields.io/docker/pulls/sgratzl/seq2seq-vis.svg?maxAge=604800)](https://hub.docker.com/r/sgratzl/seq2seq-vis/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Latest Release](https://github.com/HendrikStrobelt/Seq2Seq-Vis/releases)](https://img.shields.io/github/release/HendrikStrobelt/Seq2Seq-Vis/all.svg)
+[![Latest Release](https://img.shields.io/github/release/HendrikStrobelt/Seq2Seq-Vis/all.svg) ](https://github.com/HendrikStrobelt/Seq2Seq-Vis/releases)
 
 
 ### A visual debugging tool for Sequence-to-Sequence models 
