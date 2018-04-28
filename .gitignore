@@ -6,5 +6,6 @@ model_api/data
 *.pyc
 model_api/processing/.ipynb_checkpoints
 tmp.txt
+client_dist
 client/dist
 client/.cache-loader
