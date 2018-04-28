@@ -1,0 +1,47 @@
+version: 2
+jobs:
+  build:
+    working_directory: ~/ws
+    docker:
+      - image: circleci/node:8
+      - image: docker:17.05.0-ce-git
+    steps:
+      - checkout
+      - setup_remote_docker
+      - restore_cache:
+          key: dependency-cache-{{ checksum "client/package.json" }}
+      - run:
+          name: install npm
+          command: |
+            cd client
+            npm install
+      - save_cache:
+          key: dependency-cache-{{ checksum "client/package.json" }}
+          paths:
+            - ./client/node_modules
+      - run:
+          name: login docker hub
+          command: |
+            cat > ~/.dockercfg << EOF
+            {
+              "https://index.docker.io/v1/": {
+                "auth": "$DOCKER_AUTH"
+              }
+            }
+            EOF
+      - run:
+          name: build client
+          command: |
+            cd client
+            npm run build
+      - run:
+          name: build image
+          command: |
+            docker build -t sgratzl/seq2seq-vis .
+      - deploy:
+          name: deploy to docker hub
+          command: |
+            if "${CIRCLE_BRANCH}" == "master" ] ; then
+              docker push sgratzl/seq2seq-vis
+            fi
+
