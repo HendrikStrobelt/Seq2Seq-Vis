@@ -14,9 +14,9 @@ WORKDIR /tmp
 ADD ./setup_onmt_custom.sh /tmp/
 RUN /tmp/setup_onmt_custom.sh && rm -rf /tmp
 
-#EXPOSE 8080
-#VOLUME /data
-#WORKDIR /ws
+WORKDIR /ws
+EXPOSE 8080
+VOLUME /data
+CMD 'source activate s2sv && python3 server.py --dir /data'
 
-# TODO copy stuff
-#CMD 'source activate s2sv && python3 server.py --dir /data'
+#ADD * /ws
