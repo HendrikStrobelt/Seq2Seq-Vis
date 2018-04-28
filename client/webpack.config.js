@@ -90,5 +90,15 @@ module.exports = {
     output: {
         filename: 'bundle.js',
         path: path.resolve(__dirname, '../client_dist/')
+    },
+    devServer: {
+        port: 8090,
+        proxy: {
+            '/api/*': {
+                target: 'http://localhost:8080',
+                secure: false,
+                ws: true
+            }
+        }
     }
 };

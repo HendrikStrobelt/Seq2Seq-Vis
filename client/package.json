@@ -6,10 +6,11 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "wp": "npm build:dev",
-    "ww": "npm start",
+    "ww": "npm watch",
     "build": "webpack --mode production",
     "build:dev": "webpack --mode development --devtool=inline-source-map",
-    "start": "webpack --mode development --devtool=inline-source-map --watch"
+    "watch": "webpack --mode development --devtool=inline-source-map --watch",
+    "start": "webpack-dev-server --mode development --devtool=inline-source-map"
   },
   "author": "",
   "license": "Apache-2.0",
@@ -42,6 +43,7 @@
     "uglifyjs-webpack-plugin": "^1.2.4",
     "url-loader": "^1.0.1",
     "webpack": "^4.6.0",
-    "webpack-cli": "^2.0.14"
+    "webpack-cli": "^2.0.14",
+    "webpack-dev-server": "^3.1.3"
   }
 }
