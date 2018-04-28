@@ -62,7 +62,7 @@ print(args)
 # just a simple flask route
 @app.route('/')
 def hello_world():
-    return redirect('client/index.html')
+    return redirect('client/dist/index.html')
 
 
 # send everything from client as static content
@@ -72,18 +72,7 @@ def send_static_client(path):
 
     :param path: path from api call
     """
-    return send_from_directory('client/', path)
-
-
-# send everything from client as static content
-@app.route('/node_modules/<path:path>')
-def send_static_dep(path):
-    """ serves all files from ./node_modules/
-
-    :param path: path from api call
-    """
-    return send_from_directory('node_modules/', path)
-
+    return send_from_directory('client/dist/', path)
 
 def closest_vector_n(index, v, r=5):
     res = index.get_closest_x(v, k=100,
