@@ -37,11 +37,19 @@ jobs:
       - run:
           name: build image
           command: |
-            docker build -t sgratzl/seq2seq-vis .
+            docker build -t sgratzl/seq2seq-vis:${CIRCLE_TAG:-latest} .
       - deploy:
           name: deploy to docker hub
           command: |
-            if "${CIRCLE_BRANCH}" == "master" ] ; then
-              docker push sgratzl/seq2seq-vis
+            # master or version tag
+            if [[ $CIRCLE_BRANCH == master ]] || [[ $CIRCLE_TAG == v* ]] ; then
+              docker push sgratzl/seq2seq-vis:${CIRCLE_TAG:-latest}
             fi
-
+workflows:
+  version: 2
+  build-n-deploy:
+    jobs:
+      - build
+          filters:
+            tags:
+	          only: /^v.*/
