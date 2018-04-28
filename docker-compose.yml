@@ -1,0 +1,11 @@
+version: '3.0'
+services:
+  server:
+    build:
+      context: '.'
+    volumes: 
+      - '/data:./0316-fakedates'
+      - '/ws:.'
+    ports:
+      - '8080:8080'
+    
