@@ -1,6 +1,0 @@
-connexion>=1.1.9
-annoy>=1.11.4
-numpy
-h5py
-sklearn
-flask
