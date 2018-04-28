@@ -5,8 +5,10 @@
   "main": "webpack.config.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "wp": "webpack",
-    "ww": "webpack --watch"
+    "wp": "webpack --mode development",
+    "ww": "npm start",
+    "build": "webpack --mode production",
+    "start": "webpack --mode development --watch"
   },
   "author": "",
   "license": "Apache-2.0",
@@ -26,13 +28,20 @@
     "webcola": "^3.3.6"
   },
   "devDependencies": {
-    "css-loader": "^0.28.9",
-    "file-loader": "^1.1.6",
-    "node-sass": "^4.7.2",
-    "sass-loader": "^6.0.6",
-    "style-loader": "^0.20.1",
-    "ts-loader": "^3.2.0",
-    "typescript": "^2.6.2",
-    "webpack": "^3.10.0"
+    "cache-loader": "^1.2.2",
+    "css-loader": "^0.28.11",
+    "extract-text-webpack-plugin": "^4.0.0-beta.0",
+    "file-loader": "^1.1.11",
+    "fork-ts-checker-webpack-plugin": "^0.4.1",
+    "node-sass": "^4.8.3",
+    "sass-loader": "^7.0.1",
+    "style-loader": "^0.20.3",
+    "thread-loader": "^1.1.5",
+    "ts-loader": "^4.2.0",
+    "typescript": "^2.8.1",
+    "uglifyjs-webpack-plugin": "^1.2.4",
+    "url-loader": "^1.0.1",
+    "webpack": "^4.6.0",
+    "webpack-cli": "^2.0.14"
   }
 }

@@ -1,7 +1,7 @@
 import {VComponent} from "./VisualComponent";
 import * as _ from "lodash";
 import * as d3 from "d3"
-import * as cola from "../../node_modules/webcola/dist/index"
+import * as cola from "webcola"
 import {SimpleEventHandler} from "../etc/SimpleEventHandler";
 import {SVGMeasurements} from "../etc/SVGplus";
 import {D3Sel, LooseObject} from "../etc/LocalTypes";

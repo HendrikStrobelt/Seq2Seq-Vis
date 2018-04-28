@@ -7,3 +7,4 @@ model_api/data
 model_api/processing/.ipynb_checkpoints
 tmp.txt
 client/dist
+client/.cache-loader

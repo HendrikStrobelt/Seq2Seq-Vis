@@ -1,4 +1,5 @@
-import * as d3 from "d3"
+import * as d3 from "d3";
+import "d3-selection-multi";
 
 import {PanelController} from "./controller/PanelController";
 import {S2SApi} from "./api/S2SApi";

@@ -6,6 +6,10 @@
     "target": "es2015",
     "sourceMap": true,
 //    "jsx": "react",
-    "allowJs": true
+    "allowJs": true,
+    "lib": [ 
+      "es2016",
+      "dom"
+    ]
   }
 }
