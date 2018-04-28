@@ -59,18 +59,15 @@ window.onload = () => {
 
 
     // TODO: needed ?
-    function windowResize() {
-        const width = window.innerWidth;
-        const height = window.innerHeight
-            - (<HTMLElement>document.querySelector("#title")).offsetHeight
-            - (<HTMLElement>document.querySelector("#ui")).offsetHeight - 5;
+    // function windowResize() {
+        // const width = window.innerWidth;
+        // const height = window.innerHeight
+        //      - (<HTMLElement>document.querySelector("#title")).offsetHeight
+        //     - (<HTMLElement>document.querySelector("#ui")).offsetHeight - 5;
         // globalEvents.trigger('svg-resize', {width, height})
-    }
-
-
-    window.addEventListener('resize', windowResize);
-
-    windowResize();
+    // }
+    // window.addEventListener('resize', windowResize);
+    // windowResize();
 
 
     S2SApi.project_info(null).then((data) => {

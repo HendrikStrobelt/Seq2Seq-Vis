@@ -39,7 +39,7 @@ module.exports = {
                                 minimize: true,
                                 sourceMap: true
                             }
-                        }, 
+                        },
                         {
                             loader: 'sass-loader',
                             options: {
@@ -89,7 +89,6 @@ module.exports = {
     ],
     output: {
         filename: 'bundle.js',
-        path: path.resolve(__dirname, '../client_dist/'),
-        publicPath: 'client'
+        path: path.resolve(__dirname, '../client_dist/')
     }
 };

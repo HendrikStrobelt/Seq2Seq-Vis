@@ -5,9 +5,10 @@
   "main": "webpack.config.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "wp": "webpack --mode development --devtool=inline-source-map",
+    "wp": "npm build:dev",
     "ww": "npm start",
     "build": "webpack --mode production",
+    "build:dev": "webpack --mode development --devtool=inline-source-map",
     "start": "webpack --mode development --devtool=inline-source-map --watch"
   },
   "author": "",
