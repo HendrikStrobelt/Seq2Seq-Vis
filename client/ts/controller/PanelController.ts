@@ -11,7 +11,7 @@ import {
     StateProjector,
     StateProjectorClickEvent, StateProjectorHoverEvent
 } from "../vis/StateProjector";
-import * as _ from 'lodash';
+import {isEqual, range, indexOf, min, flatten, max} from 'lodash';
 import {StatePictograms, StatePictogramsHovered} from "../vis/StatePictograms";
 import {BeamTreeData, BeamTree} from "../vis/BeamTree";
 import ModalDialog from "../etc/ModalDialog";
@@ -216,9 +216,9 @@ export class PanelController {
 
                     let topBeam = null;
                     if (withStartToken) {
-                        topBeam = _.isEqual(subBeam.slice(1), winnerBeam.slice(0, subBeam.length - 1));
+                        topBeam = isEqual(subBeam.slice(1), winnerBeam.slice(0, subBeam.length - 1));
                     } else {
-                        topBeam = _.isEqual(subBeam.slice(0), winnerBeam.slice(0, subBeam.length));
+                        topBeam = isEqual(subBeam.slice(0), winnerBeam.slice(0, subBeam.length));
                     }
 
                     const node: BeamTree = {
@@ -247,7 +247,7 @@ export class PanelController {
             const top_predict = translation.decoderWords[0];
             // console.log(top_predict, "--- top_predict");
 
-            for (const j in _.range(translation.beam[0].length)) {
+            for (const j in range(translation.beam[0].length)) {
                 const ro: string[] = [];
                 const roCol: string[] = [];
                 const bv: number[] = [];
@@ -270,7 +270,7 @@ export class PanelController {
 
             }
 
-            const valBound = d3.extent(_.flatten(beamValues));
+            const valBound = d3.extent(flatten(beamValues));
             const cScale = d3.scaleLinear<string>().domain(valBound)
                 .range(['#fff', '#999']);
             const wordFill = beamValues.map(row => row.map(value => cScale(value)))
@@ -368,7 +368,7 @@ export class PanelController {
         const vis = this.pm.vis;
 
         const determinePanelType = caller => {
-            if ((caller === vis.left.encoder_words)) //_.includes(vis.left.encoder_extra, caller)
+            if ((caller === vis.left.encoder_words)) //includes(vis.left.encoder_extra, caller)
                 return {
                     vType: AttentionVis.VERTEX_TYPE.src,
                     col: vis.left
@@ -541,7 +541,7 @@ export class PanelController {
                             const a = this._current.translations[0]
                                 .setAttn(aChg.selected, d.col);
 
-                            aChg.changes[aChg.selected] = _.indexOf(a, _.max(a));
+                            aChg.changes[aChg.selected] = indexOf(a, max(a));
 
                             this.pm.panels.wordMode.attnApplyBtn.style('display', null);
 
@@ -598,7 +598,7 @@ export class PanelController {
 
             this.pm.panels.wordMode.attnApplyBtn.style('display', 'none');
 
-            const minIndex = _.min(Object.keys(this._current.attnChange.changes).map(d => +d));
+            const minIndex = min(Object.keys(this._current.attnChange.changes).map(d => +d));
             const partialDec = this._current.translations[0]
                 .decoderWords[0].slice(0, minIndex).join(' ')
 
@@ -694,7 +694,7 @@ export class PanelController {
                 visRoot.decoder_words.actionHighlightWord(0, wordID, hovered)
             }
 
-            for (const tID in _.range(transID + 1)) {
+            for (const tID in range(transID + 1)) {
                 const visRoot = panels[tID];
                 visRoot.attention.actionHighlightEdges(wordID, vType, hovered);
             }

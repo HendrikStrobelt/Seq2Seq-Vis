@@ -1,6 +1,6 @@
 import {VComponent} from "./VisualComponent";
 import * as d3 from "d3";
-import * as _ from "lodash";
+import {min, minBy, maxBy, sortBy, zipWith, max} from "lodash";
 import {SimpleEventHandler} from "../etc/SimpleEventHandler";
 import {SVGMeasurements} from "../etc/SVGplus";
 import {D3Sel, LooseObject} from "../etc/LocalTypes";
@@ -56,11 +56,11 @@ export class CloseWordList extends VComponent<any> {
         // const x_values = raw_pos.map(d => d[0]);
         // const y_values = raw_pos.map(d => d[1]);
         //
-        // const p0_min = _.minBy(x_values);
-        // const p1_min = _.minBy(y_values);
+        // const p0_min = minBy(x_values);
+        // const p1_min = minBy(y_values);
         //
-        // const diff0 = _.maxBy(x_values) - p0_min;
-        // const diff1 = _.maxBy(y_values) - p1_min;
+        // const diff0 = maxBy(x_values) - p0_min;
+        // const diff1 = maxBy(y_values) - p1_min;
         //
         //
         // let norm_pos = [];
@@ -78,7 +78,7 @@ export class CloseWordList extends VComponent<any> {
         this._current.has_compare = compare !== null;
 
         // if (this._states.has_compare) {
-        return _.sortBy(_.zipWith(words, scores, wordWidth, compare,
+        return sortBy(zipWith(words, scores, wordWidth, compare,
             (word, score, width, compare) => ({
                 word,
                 score,
@@ -86,7 +86,7 @@ export class CloseWordList extends VComponent<any> {
                 compare
             })), d => -d.score);
         // } else {
-        //     return _.sortBy(_.zipWith(words, scores, wordWidth,
+        //     return sortBy(zipWith(words, scores, wordWidth,
         //       (word, score, width) => ({word, score, width})), d => -d.score);
         // }
 
@@ -121,8 +121,8 @@ export class CloseWordList extends VComponent<any> {
         // .style('font-size', d => wordScale(d.score) + 'px')
 
 
-        const wordEnd = _.maxBy(renderData, 'width').width;
-        const maxScore = _.maxBy(renderData, 'score').score;
+        const wordEnd = maxBy(renderData, 'width').width;
+        const maxScore = maxBy(renderData, 'score').score;
 
         const barScale = d3.scaleLinear().domain([0, maxScore])
             .range([0, op.scoreWidth]);
@@ -151,7 +151,7 @@ export class CloseWordList extends VComponent<any> {
 
         if (this._current.has_compare) {
 
-            const bd_max = _.max(renderData.map(d => d.compare.dist));
+            const bd_max = max(renderData.map(d => d.compare.dist));
             const bd_scale = d3.scaleLinear().domain([0, bd_max])
                 .range([1, 100]);
 

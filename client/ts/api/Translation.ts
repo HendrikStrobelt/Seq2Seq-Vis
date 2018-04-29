@@ -1,5 +1,5 @@
 import {LooseObject} from "../etc/LocalTypes";
-import * as _ from "lodash";
+import {cloneDeep, range, sum} from "lodash";
 
 export class Translation {
 
@@ -27,7 +27,7 @@ export class Translation {
 
     constructor(result) {
         this._result = result;
-        this.attention_save = _.cloneDeep(this.attn);
+        this.attention_save = cloneDeep(this.attn);
     }
 
 
@@ -36,9 +36,9 @@ export class Translation {
         const curAttn = this._result.attn[beam][decPos];
         const l = curAttn.length;
 
-        const cost = _.sum(curAttn) - curAttn[encPos];
+        const cost = sum(curAttn) - curAttn[encPos];
 
-        for (const i in _.range(l)) {
+        for (const i in range(l)) {
 
             if (i == encPos) {
                 curAttn[i] += factor
@@ -57,7 +57,7 @@ export class Translation {
         const curAttn = this._result.attn[beam][decPos];
         const l = curAttn.length;
 
-        for (const i in _.range(l)) {
+        for (const i in range(l)) {
 
             if (i == encPos) {
                 console.log("-hen-- encPOS ");
