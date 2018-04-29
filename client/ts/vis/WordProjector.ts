@@ -1,7 +1,6 @@
 import {VComponent} from "./VisualComponent";
 import {min, max, sortBy, zipWith} from "lodash";
 import * as d3 from "d3";
-/// <reference 
 import {removeOverlaps, Rectangle} from "webcola";
 import {SimpleEventHandler} from "../etc/SimpleEventHandler";
 import {SVGMeasurements} from "../etc/SVGplus";
