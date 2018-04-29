@@ -63,9 +63,7 @@ dependencies:
   - pip:
     - annoy==1.11.5
     - faiss==0.1
-    - opennmt-py==0.1
     - torch==0.3.1.post3
     - torchtext==0.2.3
     - tqdm==4.23.1
-prefix: /opt/conda/envs/s2sv
 
