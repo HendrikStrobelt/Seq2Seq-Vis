@@ -7,8 +7,8 @@ import '../css/main.scss'
 import URLHandler from "./etc/URLHandler";
 import {Translation} from "./api/Translation";
 
-import "file-loader?name=index.html!../index.html";
-import "file-loader?name=s2s_logo.png!../assets/s2s_logo.png";
+import "!file-loader?name=index.html!../index.html";
+import "!file-loader?name=s2s_logo.png!../assets/s2s_logo.png";
 
 
 window.onload = () => {
