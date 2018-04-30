@@ -1,5 +1,4 @@
-node_modules
-/client/ts/**/*.js
+/client/node_modules
 *.map
 *.pyc
 .idea
@@ -11,8 +10,6 @@ tmp.txt
 /client/dist
 /client/.cache-loader
 /data
-
-# extras
 /docs
 /.github
 /.circleci
