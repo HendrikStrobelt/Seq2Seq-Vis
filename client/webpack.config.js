@@ -9,8 +9,8 @@ module.exports = (env) => ({
         rules: [
             {
                 test: /\.tsx?$/,
-				exclude: /node_modules/,
-				use: [{
+                exclude: /node_modules/,
+                use: [{
                     loader: 'cache-loader'
                 },
                 {
@@ -92,18 +92,18 @@ module.exports = (env) => ({
         })
     ],
     optimization: {
-		splitChunks: {
-			cacheGroups: {
-				vendor: {
-					test: /node_modules/,
-					chunks: "initial",
-					name: "vendor",
-					priority: 10,
-					enforce: true
-				}
-			}
-		}
-	},
+        splitChunks: {
+            cacheGroups: {
+                vendor: {
+                    test: /node_modules/,
+                    chunks: "initial",
+                    name: "vendor",
+                    priority: 10,
+                    enforce: true
+                }
+            }
+        }
+    },
     output: {
         filename: '[name].js',
         path: path.resolve(__dirname, '../client_dist/')
