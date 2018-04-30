@@ -11,13 +11,31 @@
 ![Seq2Seq-Vis](docs/pics/s2s_teaser.png)
 
 
+- [Seq2Seq-Vis](#seq2seq-vis)
+  * [Release Plan](#release-plan)
+  * [Install and run with `conda`](#install-and-run-with-conda)
+    + [1 - Install dependencies (server and client) and create virtual environment](#1---install-dependencies-server-and-client-and-create-virtual-environment)
+    + [2 - Install custom OpenNMT-py version](#2---install-custom-opennmt-py-version)
+    + [3 - Download some example data](#3---download-some-example-data)
+    + [4 - Run the system](#4----run-the-system)
+  * [Install and run with `docker`](#install-and-run-with-docker)
+  * [Prepare and run own models](#prepare-and-run-own-models)
+    + [1 - Prepare your data](#1---prepare-your-data)
+    + [2 - Create a `s2s.yaml` file to describe project](#2---create-a-s2syaml-file-to-describe-project)
+    + [3 - Command Line Parameters](#3---command-line-parameters)
+- [Cite us](#cite-us)
+- [Contributors](#contributors)
+- [License](#license)
+
+
 ## Release Plan
 - V 0.9 beta -- end April 2018
 - V 1.0 -- summer 2018
 - V 2.0 -- summer 2019
 
 
-## Install with `conda`
+
+## Install and run with `conda`
 
 We require using [miniconda](https://conda.io/docs/user-guide/install/index.html) to create a virtual environment and install all dependencies via scripts. 
 Seq2Seq-Vis currently works with a special version of OpenNMT-py modified version by [Sebastian Gehrmann](https://github.com/sebastianGehrmann/OpenNMT-py/tree/states_in_translation). We provide a script to install this special branch. 
@@ -51,7 +69,7 @@ Here we provide some example data for a character based dataset which converts d
 unzip fakedates.zip
 ```
 
-## Run the system
+### 4 -  Run the system
 
 ```bash
 python3 server.py --dir 0316-fakedates/
@@ -66,9 +84,20 @@ Enjoy exploring !
 
 
 
+## Install and run with `docker`
+
+Thanks, [Samuel Gratzl](https://github.com/sgratzl/Seq2Seq-Vis) for contributing a docker configuration and [image](https://hub.docker.com/r/sgratzl/seq2seq-vis/).
+Here are the steps:
+
+1. pull image: `docker pull sgratzl/seq2seq-vis`
+2. download data [Download here ~177MB](https://drive.google.com/file/d/1myjJ-surrO76ImnLd4MMJ0-527Ss2e0V/view?usp=sharing)
+and unzip: `unzip fakedates.zip`
+3. run container with bound data: <br> `docker run --name s2s -v "${pwd}/0316-fakedates:/data" -p "8080:8080" sgratzl/seq2seq-vis` 
 
 
-## Run own models
+
+
+## Prepare and run own models
 
 ### 1 - Prepare your data
 You can use any model trained with OpenNMT-py to extract your own data. To gain access to the extraction scripts, follow the instructions above to install the modified OpenNMT-py version. 
@@ -170,6 +199,7 @@ archivePrefix = "arXiv",
 - Alexander M. Rush  (Harvard NLP)
 
 - Michael Behrisch (Harvard VCG), Adam Perer (IBM Research), Hanspeter Pfister (Harvard VCG)
+- PR #16 signed-off-by: Samuel Gratzl 
 
 # License
 
