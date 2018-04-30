@@ -1,4 +1,5 @@
 const path = require('path');
+const DefinePlugin = require('webpack').DefinePlugin;
 const ExtractTextPlugin = require('extract-text-webpack-plugin');
 const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin');
 const package = require('./package.json');
@@ -82,7 +83,7 @@ module.exports = (env) => ({
         extensions: ['.ts', '.js']
     },
     plugins: [
-        new webpack.DefinePlugin({
+        new DefinePlugin({
             __VERSION__: JSON.stringify(package.version),
             __BUILDID__: JSON.stringify(new Date().toISOString())
         }),
