@@ -19,3 +19,9 @@ VOLUME /data
 CMD [ "source activate s2sv && python3 server.py --dir /data" ]
 
 ADD . /ws/
+
+# build client and clean up afterwards
+RUN /bin/bash /ws/setup_client.sh &&\
+    conda uninstall --name s2sv --yes nodejs &&\
+    conda clean --all --yes &&\
+    rm -rf client ~/.npm /boot/.cache/pip ~/.cache/pip
