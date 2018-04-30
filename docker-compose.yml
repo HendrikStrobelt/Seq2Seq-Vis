@@ -1,6 +1,7 @@
 version: '3.0'
 services:
   server:
+    #image: hendrikstrobelt/seq2seq-vis:base
     image: sgratzl/seq2seq-vis-base
     working_dir: '/ws'
     command: '"source activate s2sv && python3 server.py --dir /data"'
