@@ -5,8 +5,8 @@
   "main": "webpack.config.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "wp": "npm build:dev",
-    "ww": "npm watch",
+    "wp": "npm run build:dev",
+    "ww": "npm run watch",
     "stats": "webpack --mode production --json --profile > stats.json",
     "build": "webpack --mode production",
     "build:dev": "webpack --mode development --devtool=inline-source-map",
