@@ -92,7 +92,7 @@ Here are the steps:
 1. pull image: `docker pull sgratzl/seq2seq-vis`
 2. download data [Download here ~177MB](https://drive.google.com/file/d/1myjJ-surrO76ImnLd4MMJ0-527Ss2e0V/view?usp=sharing)
 and unzip: `unzip fakedates.zip`
-3. run container with bound data: <br> `docker run --name s2s -v "${pwd}/0316-fakedates:/data" -p "8080:8080" sgratzl/seq2seq-vis` 
+3. run container with bound data: <br> `docker run --rm -it -v "${PWD}/0316-fakedates:/data" -p "8080:8080" sgratzl/seq2seq-vis` 
 
 
 
