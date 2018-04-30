@@ -29,6 +29,8 @@ export type WordProjectorClickedEvent = {
 
 export class WordProjector extends VComponent<any> {
 
+    css_name = 'wordprojector';
+
     static events = {
         wordClicked: "WordProjector_word_clicked"
     }

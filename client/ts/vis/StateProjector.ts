@@ -39,6 +39,7 @@ export type StateProjectorHoverEvent = {
 
 export class StateProjector extends VComponent<StateProjectorData> {
 
+    css_name = 'stateprojector';
 
     static events = {
         clicked: 'state_projector_clicked',

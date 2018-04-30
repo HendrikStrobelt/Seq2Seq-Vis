@@ -14,6 +14,8 @@ export interface StateVisData {
 
 export class StateVis extends VComponent<StateVisData> {
 
+    css_name = 'statevis';
+
     layers: { main: D3Sel, axis: D3Sel };
 
     static events = {};

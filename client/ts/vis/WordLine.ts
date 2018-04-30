@@ -42,6 +42,8 @@ type WordCell = { row: number, col: number, word: WordToken };
 
 export class WordLine extends VComponent<WordLineData> {
 
+    css_name = 'wordline';
+
     static events = {
         wordHovered: 'wordline_word_hovered',
         wordSelected: 'wordline_word_selected'

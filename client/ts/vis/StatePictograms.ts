@@ -23,6 +23,8 @@ export type StatePictogramsHovered = {
 
 export class StatePictograms extends VComponent<null> {
 
+    css_name = 'statepictograms';
+
     static events = {
         segmentHovered: 'state_picto_hovered'
     };

@@ -9,6 +9,7 @@ export interface BarListData {
 
 export class BarList extends VComponent<BarListData> {
 
+    css_name = 'barlist';
 
     static events = {};
 

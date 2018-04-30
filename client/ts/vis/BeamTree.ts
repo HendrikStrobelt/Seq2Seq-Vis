@@ -20,6 +20,9 @@ export interface BeamTree {
 type NodeType = HierarchyPointNode<BeamTree>;
 
 export class BeamTreeVis extends VComponent<BeamTreeData> {
+
+    css_name = 'beamtreevis';
+
     protected options = {
         pos: {x: 0, y: 0},
         width: 600,

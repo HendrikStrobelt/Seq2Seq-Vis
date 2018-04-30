@@ -33,6 +33,8 @@ export interface AttentionVisData {
 
 export class AttentionVis extends VComponent<AttentionVisData> {
 
+    css_name = 'attentionvis';
+
     static VERTEX_TYPE = VertexType;
 
     static events = {};

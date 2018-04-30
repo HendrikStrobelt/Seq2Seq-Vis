@@ -10,6 +10,8 @@ type WordListType = LooseObject[];
 //TODO: Remove if not needed !!
 export class CloseWordList extends VComponent<any> {
 
+    css_name = 'closewordlist';
+
     options = {
         pos: {x: 0, y: 0},
         height: 400,

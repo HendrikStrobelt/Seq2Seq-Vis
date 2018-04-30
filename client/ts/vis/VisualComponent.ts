@@ -47,7 +47,7 @@ export abstract class VComponent<DataInterface> {
     protected _current: { hidden: boolean, hideElement?: D3Sel | null; [key: string]: any };
     protected data: any;
     protected renderData: any;
-
+    protected abstract css_name:string;
 
     // CONSTRUCTOR ============================================================
 
@@ -99,7 +99,7 @@ export abstract class VComponent<DataInterface> {
         // Create the base group element
         if (createSVG) {
             this.base = SVG.group(this.parent,
-                this.constructor.name.toLowerCase() + ' ID' + this.id,
+                this.css_name + ' ID' + this.id,
                 this.options.pos);
 
 
