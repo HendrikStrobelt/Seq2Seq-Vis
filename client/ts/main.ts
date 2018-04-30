@@ -11,6 +11,9 @@ import "!file-loader?name=index.html!../index.html";
 import "!file-loader?name=s2s_logo.png!../assets/s2s_logo.png";
 
 
+declare const __VERSION__:string;
+declare const __BUILDID__:string;
+
 window.onload = () => {
     const panelCtrl = new PanelController();
 

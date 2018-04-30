@@ -1,8 +1,9 @@
 const path = require('path');
 const ExtractTextPlugin = require('extract-text-webpack-plugin');
 const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin');
+const package = require('./package.json');
 
-module.exports = {
+module.exports = (env) => ({
     entry: './ts/main.ts',
     module: {
         rules: [
@@ -81,6 +82,10 @@ module.exports = {
         extensions: ['.ts', '.js']
     },
     plugins: [
+        new webpack.DefinePlugin({
+            __VERSION__: JSON.stringify(package.version),
+            __BUILDID__: JSON.stringify(new Date().toISOString())
+        }),
         new ExtractTextPlugin('style.css'),
         new ForkTsCheckerWebpackPlugin({
           checkSyntacticErrors: true
@@ -113,4 +118,4 @@ module.exports = {
             }
         }
     }
-};
+});
