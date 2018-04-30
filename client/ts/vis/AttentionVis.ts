@@ -1,5 +1,5 @@
 import * as d3 from "d3";
-import * as _ from "lodash";
+import {unzip, max, sum, flatten} from "lodash";
 
 import {VComponent} from "./VisualComponent";
 
@@ -59,9 +59,9 @@ export class AttentionVis extends VComponent<AttentionVisData> {
                          inWidths: number[], outWidths: number[],
                          inPos: number[], outPos: number[]): AV_RenderType {
 
-        const attnPerInWord = _.unzip(attnWeights);
-        const attnPerInWordSum = attnPerInWord.map(a => _.sum(a));
-        const maxAttnPerAllWords = Math.max(1, _.max(attnPerInWordSum));
+        const attnPerInWord = unzip(attnWeights);
+        const attnPerInWordSum = attnPerInWord.map(a => sum(a));
+        const maxAttnPerAllWords = Math.max(1, max(attnPerInWordSum));
         const lineWidthScale = d3.scaleLinear()
             .domain([0, maxAttnPerAllWords]).range([0, maxBundleWidth]);
 
@@ -94,7 +94,7 @@ export class AttentionVis extends VComponent<AttentionVisData> {
             })
         });
 
-        return {edges: _.flatten(inPositionGraph).filter(d => d.width > 0), maxPos};
+        return {edges: flatten(inPositionGraph).filter(d => d.width > 0), maxPos};
 
     }
 

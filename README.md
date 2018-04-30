@@ -1,4 +1,9 @@
-# Seq2Seq-Vis
+# Seq2Seq-Vis 
+[![CircleCI](https://circleci.com/gh/sgratzl/Seq2Seq-Vis.svg?style=shield)](https://circleci.com/gh/sgratzl/Seq2Seq-Vis)
+[![Docker Pulls](https://img.shields.io/docker/pulls/sgratzl/seq2seq-vis.svg?maxAge=604800)](https://hub.docker.com/r/sgratzl/seq2seq-vis/)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![Latest Release](https://img.shields.io/github/release/HendrikStrobelt/Seq2Seq-Vis/all.svg) ](https://github.com/HendrikStrobelt/Seq2Seq-Vis/releases)
+
 
 ### A visual debugging tool for Sequence-to-Sequence models 
 *by IBM Research in Cambridge and Harvard SEAS  -- more info [seq2seq-vis.io](http://seq2seq-vis.io)

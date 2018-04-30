@@ -1,10 +1,14 @@
-import * as d3 from "d3"
+import * as d3 from "d3";
+import "d3-selection-multi";
 
 import {PanelController} from "./controller/PanelController";
 import {S2SApi} from "./api/S2SApi";
 import '../css/main.scss'
 import URLHandler from "./etc/URLHandler";
 import {Translation} from "./api/Translation";
+
+import "!file-loader?name=index.html!../index.html";
+import "!file-loader?name=s2s_logo.png!../assets/s2s_logo.png";
 
 
 window.onload = () => {
@@ -21,13 +25,13 @@ window.onload = () => {
                 panelCtrl.cleanPanels();
 
 
-                $('#spinner').hide();
+                (<HTMLElement>document.querySelector('#spinner')).style.display = 'none';
             })
             .catch((error: Error) => console.log(error, "--- error"));
     };
 
     const updateAllVis = () => {
-        $('#spinner').show();
+        (<HTMLElement>document.querySelector('#spinner')).style.display = null;
         const value = (<HTMLInputElement> d3.select('#query_input').node())
             .value.trim();
 
@@ -55,18 +59,15 @@ window.onload = () => {
 
 
     // TODO: needed ?
-    function windowResize() {
-        const width = window.innerWidth;
-        const height = window.innerHeight
-            - $("#title").height()
-            - $("#ui").height() - 5;
+    // function windowResize() {
+        // const width = window.innerWidth;
+        // const height = window.innerHeight
+        //      - (<HTMLElement>document.querySelector("#title")).offsetHeight
+        //     - (<HTMLElement>document.querySelector("#ui")).offsetHeight - 5;
         // globalEvents.trigger('svg-resize', {width, height})
-    }
-
-
-    $(window).resize(windowResize);
-
-    windowResize();
+    // }
+    // window.addEventListener('resize', windowResize);
+    // windowResize();
 
 
     S2SApi.project_info(null).then((data) => {

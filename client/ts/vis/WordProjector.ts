@@ -1,7 +1,7 @@
 import {VComponent} from "./VisualComponent";
-import * as _ from "lodash";
-import * as d3 from "d3"
-import * as cola from "../../node_modules/webcola/dist/index"
+import {min, max, sortBy, zipWith} from "lodash";
+import * as d3 from "d3";
+import {removeOverlaps, Rectangle} from "webcola";
 import {SimpleEventHandler} from "../etc/SimpleEventHandler";
 import {SVGMeasurements} from "../etc/SVGplus";
 import {D3Sel, LooseObject} from "../etc/LocalTypes";
@@ -81,11 +81,11 @@ export class WordProjector extends VComponent<any> {
         const x_values = <number[]>raw_pos.map(d => d[0]);
         const y_values = <number[]>raw_pos.map(d => d[1]);
 
-        const p0_min = _.min(x_values);
-        const p1_min = _.min(y_values);
+        const p0_min = min(x_values);
+        const p1_min = min(y_values);
 
-        const diff0 = _.max(x_values) - p0_min;
-        const diff1 = _.max(y_values) - p1_min;
+        const diff0 = max(x_values) - p0_min;
+        const diff1 = max(y_values) - p1_min;
 
 
         let norm_pos = [];
@@ -103,7 +103,7 @@ export class WordProjector extends VComponent<any> {
 
         this._current.clearHighlights = true;
 
-        return _.sortBy(_.zipWith(words, scores, norm_pos, compare,
+        return sortBy(zipWith(words, scores, norm_pos, compare,
             (word, score, pos, compare) => ({word, score, pos, compare})),
             (d: { word, score, pos, compare }) => -d.score);
     }
@@ -146,7 +146,7 @@ export class WordProjector extends VComponent<any> {
             .style('font-size', d => wordScale(d.score) + 'pt');
 
         // if (this._current.has_compare) {
-        //     const bd_max = _.max(<number[]>renderData.map(d => d.compare.dist));
+        //     const bd_max = max(<number[]>renderData.map(d => d.compare.dist));
         //     const bd_scale = d3.scaleLinear<string, string>().domain([0, bd_max])
         //         .range(['#ffffff', '#63676e']); //TODO: hard-coded range ??
         //     allWords.select('rect').style('fill', d => {
@@ -175,13 +175,13 @@ export class WordProjector extends VComponent<any> {
 
             const width = text_measurer.textLength(w, 'font-size:' + height + 'pt;');
 
-            ofree.push(new cola.Rectangle(x - width / 2 - 4, x + width / 2 + 4,
+            ofree.push(new Rectangle(x - width / 2 - 4, x + width / 2 + 4,
                 y - height / 2 - 3, y + height / 2 + 3))
 
         }
 
 
-        cola.removeOverlaps(ofree);
+        removeOverlaps(ofree);
 
         const newPos = {};
         ofree.forEach((d, i) => {

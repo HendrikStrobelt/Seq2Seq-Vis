@@ -353,7 +353,7 @@ export class PanelManager {
 
 
         const partial_diff = (x) => {
-            const y = x.map(e => _.isArray(e.cstar) ? e.cstar : [])
+            const y = x.map(e => Array.isArray(e.cstar) ? e.cstar : [])
 
             // diff:
             // for (let i = 0; i < y.length - 1; i++) {

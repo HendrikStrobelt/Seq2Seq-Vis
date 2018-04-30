@@ -1,6 +1,6 @@
 import {VComponent} from "./VisualComponent";
 import * as d3 from "d3";
-import * as _ from "lodash";
+import {flattenDeep} from "lodash";
 import {SimpleEventHandler} from "../etc/SimpleEventHandler";
 import {D3Sel} from "../etc/LocalTypes";
 import {SVG} from "../etc/SVGplus";
@@ -46,7 +46,7 @@ export class StateVis extends VComponent<StateVisData> {
 
         const orig_states = data.states;
         const states = <number[][]> d3.transpose(orig_states);
-        const yDomain = d3.extent(<number[]>_.flattenDeep(states));
+        const yDomain = d3.extent(<number[]>flattenDeep(states));
 
         this.parent.attrs({
             width: (orig_states.length * op.cell_width + (op.x_offset + 5 + 20)),

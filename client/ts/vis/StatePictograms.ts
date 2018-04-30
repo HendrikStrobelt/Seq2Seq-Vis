@@ -6,7 +6,7 @@ import {
     StateProjectorClickEvent,
     StateProjectorData
 } from "./StateProjector";
-import * as _ from "lodash";
+import {range} from "lodash";
 
 
 export type PointSegment = {
@@ -89,7 +89,7 @@ export class StatePictograms extends VComponent<null> {
 
         const lineSeqs: PointSegment[][] = [];
         const pivots = pCur.pivots;
-        for (const transID of _.range(pivots.length)) {
+        for (const transID of range(pivots.length)) {
             const line = pivots[transID];
 
             const lineSeq: PointSegment[] = [];
@@ -99,7 +99,7 @@ export class StatePictograms extends VComponent<null> {
                 vContext.strokeStyle = col.pl.c[transID];
                 vContext.lineWidth = col.pl.w;
                 vContext.beginPath();
-                for (const pID of _.range(line.length)) {
+                for (const pID of range(line.length)) {
                     const pp = line[pID].pos;
                     if (pID == 0) vContext.moveTo(pCur.xScale(pp[0]), pCur.yScale(pp[1]));
                     else vContext.lineTo(pCur.xScale(pp[0]), pCur.yScale(pp[1]))
@@ -211,7 +211,7 @@ export class StatePictograms extends VComponent<null> {
                 pointIDs: [d.id],
                 neighborIDs
             };
-            
+
             this.eventHandler
                 .trigger(StateProjector.events.clicked, detail);
 

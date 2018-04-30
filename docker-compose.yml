@@ -1,0 +1,11 @@
+version: '3.0'
+services:
+  server:
+    build:
+      context: '.'
+    #command: '"source activate s2sv && python3 server.py --dir /data"'
+    volumes:
+      - './data/0316-fakedates:/data'
+      - '.:/ws'
+    ports:
+      - '8080:8080'

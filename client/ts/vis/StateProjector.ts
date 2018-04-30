@@ -1,6 +1,6 @@
 import {VComponent} from "./VisualComponent";
 import * as d3 from 'd3'
-import * as _ from "lodash";
+import {includes} from "lodash";
 import {ZoomTransform} from "d3-zoom";
 import * as concaveman from "concaveman"
 
@@ -408,10 +408,10 @@ export class StateProjector extends VComponent<StateProjectorData> {
 
         this.layers.main.selectAll('.pp')
             .classed('selected',
-                (d: StateDesc) => _.includes(point_IDs, d.id));
+                (d: StateDesc) => includes(point_IDs, d.id));
         this.layers.fg.selectAll('.plPoint')
             .classed('selected',
-                (d: StateDesc) => _.includes(point_IDs, d.id));
+                (d: StateDesc) => includes(point_IDs, d.id));
 
     }
 
