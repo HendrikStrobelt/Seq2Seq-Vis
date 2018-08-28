@@ -1,8 +1,7 @@
 {
   "name": "S2SVis",
-  "version": "0.0.1",
+  "version": "0.9.0",
   "description": "",
-  "main": "webpack.config.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "wp": "npm run build:dev",
@@ -11,7 +10,12 @@
     "build": "webpack --mode production",
     "build:dev": "webpack --mode development --devtool=inline-source-map",
     "watch": "webpack --mode development --devtool=inline-source-map --watch",
-    "start": "webpack-dev-server --mode development --devtool=inline-source-map"
+    "start": "webpack-dev-server --mode development --devtool=inline-source-map",
+    "preversion": "npm run build",
+    "release:major": "npm version major && git push --follow-tags",
+    "release:minor": "npm version minor && git push --follow-tags",
+    "release:patch": "npm version patch && git push --follow-tags",
+    "release:pre": "npm version prerelease && git push --follow-tags"
   },
   "author": "",
   "license": "Apache-2.0",

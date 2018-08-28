@@ -1,9 +1,10 @@
 version: '3.0'
 services:
   server:
-    build:
-      context: '.'
-    #command: '"source activate s2sv && python3 server.py --dir /data"'
+    #image: hendrikstrobelt/seq2seq-vis:base
+    image: sgratzl/seq2seq-vis-base
+    working_dir: '/ws'
+    command: '"source activate s2sv && python3 server.py --dir /data"'
     volumes:
       - './data/0316-fakedates:/data'
       - '.:/ws'

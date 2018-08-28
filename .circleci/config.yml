@@ -20,16 +20,6 @@ jobs:
           paths:
             - ./client/node_modules
       - run:
-          name: login docker hub
-          command: |
-            cat > ~/.dockercfg << EOF
-            {
-              "https://index.docker.io/v1/": {
-                "auth": "$DOCKER_AUTH"
-              }
-            }
-            EOF
-      - run:
           name: build client
           command: |
             cd client
@@ -37,14 +27,7 @@ jobs:
       - run:
           name: build image
           command: |
-            docker build -t sgratzl/seq2seq-vis:${CIRCLE_TAG:-latest} .
-      - deploy:
-          name: deploy to docker hub
-          command: |
-            # master or version tag
-            if [[ $CIRCLE_BRANCH == master ]] || [[ $CIRCLE_TAG == v* ]] ; then
-              docker push sgratzl/seq2seq-vis:${CIRCLE_TAG:-latest}
-            fi
+            docker build -t seq2seq-vis .
 workflows:
   version: 2
   build-n-deploy:

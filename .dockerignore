@@ -1,4 +1,15 @@
-/client
-/.github
+/client/node_modules
+*.map
+*.pyc
+.idea
+__pycache__
+/model_api/data
+/model_api/processing/.ipynb_checkpoints
+tmp.txt
+/client_dist
+/client/dist
+/client/.cache-loader
 /data
 /docs
+/.github
+/.circleci

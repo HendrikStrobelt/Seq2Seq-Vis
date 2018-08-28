@@ -1,15 +1,17 @@
 const path = require('path');
+const DefinePlugin = require('webpack').DefinePlugin;
 const ExtractTextPlugin = require('extract-text-webpack-plugin');
 const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin');
+const package = require('./package.json');
 
-module.exports = {
+module.exports = (env) => ({
     entry: './ts/main.ts',
     module: {
         rules: [
             {
                 test: /\.tsx?$/,
-				exclude: /node_modules/,
-				use: [{
+                exclude: /node_modules/,
+                use: [{
                     loader: 'cache-loader'
                 },
                 {
@@ -81,24 +83,28 @@ module.exports = {
         extensions: ['.ts', '.js']
     },
     plugins: [
+        new DefinePlugin({
+            __VERSION__: JSON.stringify(package.version),
+            __BUILDID__: JSON.stringify(new Date().toISOString())
+        }),
         new ExtractTextPlugin('style.css'),
         new ForkTsCheckerWebpackPlugin({
           checkSyntacticErrors: true
         })
     ],
     optimization: {
-		splitChunks: {
-			cacheGroups: {
-				vendor: {
-					test: /node_modules/,
-					chunks: "initial",
-					name: "vendor",
-					priority: 10,
-					enforce: true
-				}
-			}
-		}
-	},
+        splitChunks: {
+            cacheGroups: {
+                vendor: {
+                    test: /node_modules/,
+                    chunks: "initial",
+                    name: "vendor",
+                    priority: 10,
+                    enforce: true
+                }
+            }
+        }
+    },
     output: {
         filename: '[name].js',
         path: path.resolve(__dirname, '../client_dist/')
@@ -113,4 +119,4 @@ module.exports = {
             }
         }
     }
-};
+});
