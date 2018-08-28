@@ -63,7 +63,7 @@ source Seq2Seq-Vis/setup_onmt_custom.sh
 ```
 
 ### 3 - Download some example data
-Here we provide some example data for a character based dataset which converts date strings (e.g. "March 03, 1999" , "03/03/99") into a base form "mm-dd-yyyy".  [Download here ~177MB](https://drive.google.com/file/d/1myjJ-surrO76ImnLd4MMJ0-527Ss2e0V/view?usp=sharing) and unzip it in `/Seq2Seq-Vis`
+Here we provide some example data for a character based dataset which converts date strings (e.g. "March 03, 1999" , "03/03/99") into a base form "mm-dd-yyyy".  [Download here ~177MB](https://drive.google.com/file/d/1myjJ-surrO76ImnLd4MMJ0-527Ss2e0V/view?usp=sharing) save it to `/Seq2Seq-Vis` and unzip:
 
 ```bash
 unzip fakedates.zip
