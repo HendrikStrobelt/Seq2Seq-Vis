@@ -18,9 +18,9 @@ class S2SProject:
             self.config = yaml.load(cff)
         self.model = ONMTmodelAPI(os.path.join(directory, self.config['model']))
         self.embeddings = h5py.File(
-            os.path.join(directory, self.config['embeddings']))
+            os.path.join(directory, self.config['embeddings']), mode='r')
         self.train_data = h5py.File(
-            os.path.join(directory, self.config['train']))
+            os.path.join(directory, self.config['train']), mode='r')
         self.dicts = {'i2t': {'src': {}, 'tgt': {}},
                       't2i': {'src': {}, 'tgt': {}}}
 
@@ -174,6 +174,3 @@ class S2SProject:
         #             self.indices[name] = AnnoyVectorIndex(path)
         #
         # return self.indices[name]
-
-
-
