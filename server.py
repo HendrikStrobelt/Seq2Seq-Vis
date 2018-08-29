@@ -581,7 +581,7 @@ app.add_api('swagger.yaml')
 
 
 def preload_cache(cache):
-    if len(cache) > 0:
+    if len(cache) > 0 and os.path.exists(cache):
         all_files = [os.path.join(cache, f) for f in os.listdir(cache) if
                      os.path.isfile(os.path.join(cache, f))]
         for file in all_files:

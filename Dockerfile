@@ -21,7 +21,7 @@ FROM sgratzl/seq2seq-vis-base
 WORKDIR /ws
 EXPOSE 8080
 VOLUME /data
-CMD [ "source activate s2sv && python3 server.py --dir /data" ]
+CMD [ "source activate s2sv && python3 server.py --dir /data  --cache /data/cache" ]
 
 ADD . /ws/
 
