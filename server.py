@@ -42,10 +42,6 @@ parser.add_argument("--cache", type=str, default='',
 parser.add_argument("--dir", type=str,
                     default=os.path.abspath('data'),
                     help='Path to project')
-
-# parser.add_argument('-api', type=str, default='pytorch',
-#                     choices=['pytorch', 'lua'],
-#                     help="""The API to use.""")
 args = parser.parse_args()
 
 print(args)
