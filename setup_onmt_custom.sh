@@ -8,5 +8,5 @@ git clone https://github.com/sebastianGehrmann/OpenNMT-py.git
 cd OpenNMT-py/
 git checkout states_in_translation
 python setup.py install
-pip install torchtext
+pip install torchtext==0.2.3
 cd ..
