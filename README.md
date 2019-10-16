@@ -35,7 +35,7 @@
 
 ## Install and run with `conda`
 
-We require using [miniconda](https://conda.io/docs/user-guide/install/index.html) to create a virtual environment and install all dependencies via scripts. 
+We require using [miniconda 4.5.1](https://repo.continuum.io/miniconda/Miniconda3-4.5.1-Linux-x86_64.sh) to create a virtual environment and install all dependencies via scripts. 
 Seq2Seq-Vis currently works with a special version of OpenNMT-py modified version by [Sebastian Gehrmann](https://github.com/sebastianGehrmann/OpenNMT-py/tree/states_in_translation). We provide a script to install this special branch. 
 
 ### 1 - Install dependencies (server and client) and create virtual environment
