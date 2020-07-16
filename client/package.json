@@ -29,7 +29,7 @@
     "d3": "^4.8.0",
     "d3-selection-multi": "^1.0.1",
     "font-awesome": "~4.7.0",
-    "lodash": "^4.17.10",
+    "lodash": "^4.17.19",
     "webcola": "^3.3.8"
   },
   "devDependencies": {
