@@ -429,7 +429,7 @@ export class StateProjector extends VComponent<StateProjectorData> {
 
             const polygon = concaveman(points)
 
-            const lGen = d3.line().curve(d3.curveLinearClosed);
+            const lGen:any = d3.line().curve(d3.curveLinearClosed);
 
             const allPoly = this.layers.main
                 .selectAll('.hoverLine').data([polygon])
