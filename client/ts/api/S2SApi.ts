@@ -16,7 +16,7 @@ export class S2SApi {
 
 
     static project_info(project_id) {
-        const request = Networking.ajax_request('/api/project_info');
+        const request = Networking.ajax_request('../api/project_info');
 
 
         let payload = new Map();
@@ -36,7 +36,7 @@ export class S2SApi {
                          input, partial = <string[]>[], force_attn = <{ [key: number]: number }>{},
                          neighbors: neighbors = ['decoder', 'encoder'] //, 'context'
                      }) {
-        const request = Networking.ajax_request('/api/translate');
+        const request = Networking.ajax_request('../api/translate');
 
         let force_attn_array = null;
         for (const key in force_attn) {
@@ -58,7 +58,7 @@ export class S2SApi {
                                  input, compare,
                                  neighbors = ['decoder', 'encoder'] //, 'context'
                              }) {
-        const request = Networking.ajax_request('/api/translate_compare');
+        const request = Networking.ajax_request('../api/translate_compare');
         const payload = new Map([
             ['in', input],
             ['compare', compare],
@@ -68,7 +68,7 @@ export class S2SApi {
     }
 
     static closeWords({input, limit = 50, loc = 'src'}) {
-        const request = Networking.ajax_request('/api/close_words');
+        const request = Networking.ajax_request('../api/close_words');
         const payload = new Map([
             ['in', input],
             ['loc', loc],
@@ -90,7 +90,7 @@ export class S2SApi {
 
     static trainDataIndices(indices: number[], loc: string) {
         //http://0.0.0.0:8080/api/train_data_for_index?indices=123%2C333&loc=src
-        const request = Networking.ajax_request('/api/train_data_for_index');
+        const request = Networking.ajax_request('../api/train_data_for_index');
         const payload = new Map([['indices', indices.join(',')],
             ['loc', loc]]);
 
