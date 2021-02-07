@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>S2S Attention</title>
+
+    <!--<link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600&amp;subset=cyrillic,cyrillic-ext,greek,greek-ext,latin-ext,vietnamese"-->
+    <!--rel="stylesheet">-->
+
+    <link rel="stylesheet" type="text/css" href="style.css">
+</head>
+<body>
+
+<!--<div class="head-menu">-->
+<!--<ul class="topnav">-->
+<!--<li><a class="active" href="#home">Home</a></li>-->
+<!--<li><a href="#news">News</a></li>-->
+<!--<li><a href="#contact">Contact</a></li>-->
+<!--<li class="right"><a href="#about">About</a></li>-->
+<!--</ul>-->
+
+<!--</div>-->
+
+<div class="header">
+    <!--<div style="padding: 0px 6px;">Start entering some encoder sentence (enter-->
+        <!--triggers request)...-->
+    <!--</div>-->
+    <div style="position: relative; ">
+        <span style="position: absolute;left: 3px; top:3px">
+            <a href="http://seq2seq-vis.io" target="_blank"><img style="vertical-align: middle;" src="s2s_logo.png"
+                 alt="" width="140px"></a>
+        </span>
+        <div style="margin-left: 160px;">
+            <input style="width:100%; box-sizing: border-box;"
+                   type="text" id="query_input" placeholder="Enter encoder sentence here."/>
+        </div>
+    </div>
+</div>
+
+
+<div><i id='spinner' class="fa fa-spinner fa-spin"
+        style="font-size:24px; position: absolute; left: 10px; top:130px;display:none;"></i>
+</div>
+<div class="mainPanel">
+    <div class="col0 column" style="width:100px;text-align:right"></div>
+    <div class="col1 column" style="padding-left: 5px;">
+        <!--<svg id="vis" width="500" height="500"></svg>-->
+    </div>
+    <div class="col_for_btn column"
+         style="border-left: 3px #4a4a4a;vertical-align: middle;">
+
+        <div id="reset_attn" class="btn" style="display:none;">reset attn</div>
+        <div id="apply_attn" class="btn" style="display:none;">apply attn</div>
+
+        <div style=""><i class="fa fa-arrow-left" aria-hidden="true"></i>
+            change:
+        </div>
+        <div style="display: table">
+            <div id="word_vector_fix_btn"
+                 class="btn btn_left word_mode selected"
+                 style="display: table-cell">word
+            </div>
+            <div id="attn_fix_btn" class="btn btn_right word_mode"
+                 style="display: table-cell">attn
+            </div>
+        </div>
+        <div style="padding-top: 5px;"><i class="fa fa-arrow-right"
+                                          aria-hidden="true"></i>compare:
+        </div>
+
+        <div id="comparison_btn" class="btn"> sentence
+        </div>
+        <div style="padding-top: 5px;">swap:</div>
+        <div id="make_pivot_btn" class="btn">
+            <i class="fa fa-arrows-h" aria-hidden="true"
+               style="font-size: 16pt;color: #767676; font-weight: 100;"></i>
+        </div>
+    </div>
+    <div class="col2 column"
+         style="border-left: 3px #4a4a4a;vertical-align: middle;">
+
+    </div>
+    <div class="col3 column" style="padding-left: 25px;">
+        <!--<svg width="100" height="100"><rect width="50" height="50"></rect></svg>-->
+    </div>
+    <div class="col4 column"></div>
+    <div class="column" style="width: 99%"></div>
+</div>
+
+<div id="beam-view"></div>
+
+
+<button id="loadProject" style="margin: 5px" class="btn"> explore neighborhoods
+</button>
+<div id="alternativeProjectText" style="display: none;margin: 5pt;font-size: 12pt;"></div>
+<i id='lPspinner' class="fa fa-spinner fa-spin"
+   style="font-size:24px; display:none;"></i>
+<select id="projectorSelect"
+        style="padding: 5px; margin: 5px;display:none;"></select>
+
+
+<div>
+    <div class='column' id="projectorPanel" style="padding: 10px">
+        <!--<div class="menu">-->
+        <!--show:-->
+        <!--<div class="btn btn_left btn_project_edges selected">edges</div>-->
+        <!--<div class="btn btn_right btn_project_nodes selected">nodes</div>-->
+        <!--</div>-->
+    </div>
+
+    <div class="column">
+        <div style="height: 500px; overflow-y: auto;">
+
+            <div class="col5"></div>
+        </div>
+
+    </div>
+
+</div>
+
+<div class="scrollable">
+    <div id="statePictos" style="white-space: nowrap; padding: 5px;"></div>
+</div>
+
+<!--MODAL DIALOGS-->
+
+<div class="modalDialog" id="comparisonDialog" hidden>
+    <h2> Enter space separated sequence for comparison:</h2>
+    <div class="uiRow">
+        <label for="compare_enc">Encoder:</label>
+        <input type="text" class="textInput" id="compare_enc">
+        <div style="margin-top: 5px; text-align: end;">
+            <button class="btn" id="cmp_translate"> translate</button>
+        </div>
+    </div>
+
+
+    <div class="uiRow">
+        <label for="compare_dec">Decoder:</label>
+        <input type="text" class="textInput" id="compare_dec">
+        <div style="margin-top: 5px; text-align: end;">
+            <button class="btn" id="cmp_partial"> partial decode</button>
+        </div>
+    </div>
+
+    <!--<div id='pd_results' class="uiRow" style="max-height: 300px; overflow: auto;">-->
+
+    <!--</div>-->
+
+    <div class="uiRow" style="text-align: end;">
+        <button class="btn uiCancel"> cancel</button>
+        <!--<button class="uiButton uiSubmit"> accept</button>-->
+    </div>
+
+
+</div>
+
+
+<script src="vendor.js"></script>
+<script src="main.js"></script>
+
+</body>
+</html>
