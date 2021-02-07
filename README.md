@@ -12,7 +12,6 @@
 
 
 - [Seq2Seq-Vis](#seq2seq-vis)
-  * [Release Plan](#release-plan)
   * [Install and run with `conda`](#install-and-run-with-conda)
     + [1 - Install dependencies (server and client) and create virtual environment](#1---install-dependencies-server-and-client-and-create-virtual-environment)
     + [2 - Install custom OpenNMT-py version](#2---install-custom-opennmt-py-version)
@@ -23,25 +22,27 @@
     + [1 - Prepare your data](#1---prepare-your-data)
     + [2 - Create a `s2s.yaml` file to describe project](#2---create-a-s2syaml-file-to-describe-project)
     + [3 - Command Line Parameters](#3---command-line-parameters)
+  * [Change frontend](client/README.md)
 - [Cite us](#cite-us)
 - [Contributors](#contributors)
 - [License](#license)
-
-
-## Release Plan
-- V 2.0 -- late 2019
-
-
 
 ## Install and run with `conda`
 
 We require using [miniconda](https://conda.io/docs/user-guide/install/index.html) to create a virtual environment and install all dependencies via scripts. 
 Seq2Seq-Vis currently works with a special version of OpenNMT-py modified version by [Sebastian Gehrmann](https://github.com/sebastianGehrmann/OpenNMT-py/tree/states_in_translation). We provide a script to install this special branch. 
 
+after installation you should have a file structure like this:
+```
+MyS2S/Seq2Seq-Vis                   ==> the tool
+MyS2S/Seq2Seq-Vis/0316-fakedates/   ==> example data
+MyS2S/OpenNMT-py                    ==> modified OpenNMT
+```
+
 ### 1 - Install dependencies (server and client) and create virtual environment
 
 
-
+create root directory (`MyS2S`)and then:
 ```bash
 git clone https://github.com/HendrikStrobelt/Seq2Seq-Vis.git
 cd Seq2Seq-Vis
@@ -55,6 +56,7 @@ source setup_cpu.sh
 
 ### 2 - Install custom OpenNMT-py version
 
+return to root directory:
 ```bash
 cd ..
 source Seq2Seq-Vis/setup_onmt_custom.sh
