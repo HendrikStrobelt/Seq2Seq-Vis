@@ -30,7 +30,7 @@
     "d3-selection-multi": "^1.0.1",
     "font-awesome": "~4.7.0",
     "lodash": "^4.17.10",
-    "node-sass": "^5.0.0",
+    "node-sass": "^7.0.0",
     "webcola": "^3.3.8"
   },
   "devDependencies": {
